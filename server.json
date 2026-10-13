@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.TOSTES-LAB/andre_009988",
+  "title": "QORVEX",
+  "description": "Reverse engineer anything from your terminal or agent with one CLI and MCP server.",
+  "websiteUrl": "https://github.com/TOSTES-LAB/andre_009988",
+  "repository": {
+    "url": "https://github.com/TOSTES-LAB/andre_009988",
+    "source": "github"
+  },
+  "version": "6.4.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "qorvex-agents",
+      "version": "6.4.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}
