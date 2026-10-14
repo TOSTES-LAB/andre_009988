@@ -29,6 +29,7 @@ it.each([
     const client = { name, format, configPath };
     const custom = {
       QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "off",
       QORVEX_MCP_MAX_RESPONSE_BYTES: "33554432",
       QORVEX_BROWSER_EXECUTABLE: join(root, "custom-browser"),
       GHIDRA_INSTALL_DIR: join(root, "old-ghidra"),
@@ -142,6 +143,16 @@ it.each([
     "invalid profile",
     { QORVEX_MCP_INPUT_SCHEMA_PROFILE: "bogus" },
     "QORVEX_MCP_INPUT_SCHEMA_PROFILE",
+  ],
+  [
+    "empty output profile",
+    { QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "" },
+    "QORVEX_MCP_OUTPUT_SCHEMA_PROFILE",
+  ],
+  [
+    "invalid output profile",
+    { QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "bogus" },
+    "QORVEX_MCP_OUTPUT_SCHEMA_PROFILE",
   ],
   [
     "invalid response budget",

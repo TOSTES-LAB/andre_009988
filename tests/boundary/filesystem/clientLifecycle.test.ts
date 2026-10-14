@@ -1335,7 +1335,7 @@ describe("Codex configuration comments", () => {
       await configureClientConfiguration(
         { name: "codex", configPath, format: "toml" },
         {},
-        ["/isolated prefix/bin/qorvex", "mcp"],
+        [PRODUCT_IDENTITY.cliBinary, "mcp"],
       ),
     ).toMatchObject({ status: "configured" });
     const configured = await readFile(configPath, "utf8");
@@ -1505,7 +1505,7 @@ describe("client configuration filesystem removal", () => {
       cursor,
       JSON.stringify({
         mcpServers: {
-          qorvex: { command: "/isolated prefix/bin/qorvex", args: ["mcp"] },
+          qorvex: { command: PRODUCT_IDENTITY.cliBinary, args: ["mcp"] },
           other: { command: "other" },
         },
       }),

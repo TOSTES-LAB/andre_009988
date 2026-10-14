@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -112,7 +112,9 @@ describe("client registration status", () => {
       ]);
     },
   );
+});
 
+describe("client registration launcher identity", () => {
   it("reports an unversioned npx registration as stale", async () => {
     const home = await createTestTempDirectory("qorvex-registrations-");
     await mkdir(join(home, ".codex"));
@@ -130,6 +132,96 @@ describe("client registration status", () => {
         state: "stale",
       }),
     ]);
+  });
+
+  it("reports an unpinned bunx registration as stale rather than aligned", async () => {
+    const home = await createTestTempDirectory("qorvex-bunx-unpinned-");
+    await writeFile(
+      join(home, ".claude.json"),
+      JSON.stringify({
+        mcpServers: {
+          qorvex: { command: "bunx", args: ["qorvex-agents", "mcp"] },
+        },
+      }),
+    );
+
+    const [status] = await readClientRegistrationStatuses(home);
+
+    expect(status).toMatchObject({
+      client: "claude_code",
+      command: ["bunx", "qorvex-agents", "mcp"],
+      state: "stale",
+    });
+  });
+
+  it("preserves direct command identity as unknown when the current entrypoint is absent", async () => {
+    const home = await createTestTempDirectory("qorvex-registration-unknown-");
+    await mkdir(join(home, ".cursor"));
+    const command = ["/opt/qorvex/bin/qorvex", "mcp"];
+    await writeFile(
+      join(home, ".cursor/mcp.json"),
+      JSON.stringify({
+        mcpServers: { qorvex: { command: command[0], args: [command[1]] } },
+      }),
+    );
+
+    const [status] = await readClientRegistrationStatuses(home, "");
+
+    expect(status).toMatchObject({
+      client: "cursor",
+      command,
+      state: "unknown",
+      remediation: expect.stringContaining("registration was retained"),
+    });
+  });
+
+  it("does not use the QORVEX process cwd to resolve a client's relative launcher path", async () => {
+    const home = await createTestTempDirectory("qorvex-registration-relative-");
+    await mkdir(join(home, ".cursor"));
+    const currentEntry = resolve("./qorvex.mjs");
+    const configPath = join(home, ".cursor/mcp.json");
+    const registration = (
+      scriptPath: string,
+      executable = process.execPath,
+    ) => ({
+      mcpServers: {
+        qorvex: { command: executable, args: [scriptPath, "mcp"] },
+      },
+    });
+    await writeFile(configPath, JSON.stringify(registration("./qorvex.mjs")));
+
+    const [relativeStatus] = await readClientRegistrationStatuses(
+      home,
+      currentEntry,
+    );
+    expect(relativeStatus).toMatchObject({
+      command: [process.execPath, "./qorvex.mjs", "mcp"],
+      state: "unknown",
+    });
+
+    await writeFile(configPath, JSON.stringify(registration(currentEntry)));
+    const [absoluteStatus] = await readClientRegistrationStatuses(
+      home,
+      currentEntry,
+    );
+    expect(absoluteStatus).toMatchObject({
+      command: [process.execPath, currentEntry, "mcp"],
+      state: "aligned",
+    });
+
+    const relativeInterpreter = relative(process.cwd(), process.execPath);
+    await writeFile(
+      configPath,
+      JSON.stringify(registration(currentEntry, relativeInterpreter)),
+    );
+    const [relativeInterpreterStatus] = await readClientRegistrationStatuses(
+      home,
+      currentEntry,
+    );
+    expect(relativeInterpreterStatus).toMatchObject({
+      command: [relativeInterpreter, currentEntry, "mcp"],
+      state: "unknown",
+    });
   });
 
   it("reports the exact requested package version when it differs from this CLI", async () => {
