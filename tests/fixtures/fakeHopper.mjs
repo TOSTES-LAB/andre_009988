@@ -217,6 +217,7 @@ const server = createServer((socket) => {
                 name: "QORVEX Hopper bridge",
                 version: "1.0.0",
                 run_id: runId,
+                process_id: process.pid,
               },
             },
             true,

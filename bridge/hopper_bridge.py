@@ -736,7 +736,12 @@ def _analyze_function(document, params):
 def _dispatch(method, params):
     """Dispatch only the closed operation set implemented by QORVEX's public tools."""
     if method == "health":
-        return {"name": "QORVEX Hopper bridge", "version": "1.0.0", "run_id": QORVEX_RUN_ID}
+        return {
+            "name": "QORVEX Hopper bridge",
+            "version": "1.0.0",
+            "run_id": QORVEX_RUN_ID,
+            "process_id": os.getpid(),
+        }
     if method in ("shutdown", "shutdown_document"):
         document = _session_document()
         if document is None:

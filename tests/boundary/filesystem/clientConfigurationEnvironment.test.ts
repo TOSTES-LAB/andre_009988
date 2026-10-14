@@ -32,6 +32,11 @@ it.each([
       QORVEX_MCP_MAX_RESPONSE_BYTES: "33554432",
       QORVEX_BROWSER_EXECUTABLE: join(root, "custom-browser"),
       GHIDRA_INSTALL_DIR: join(root, "old-ghidra"),
+      HOPPER_LOADER_ARGS_JSON: '["", "--loader", "Mach-O"]',
+      QORVEX_REFERENCE_SECRET_PATTERNS_JSON: '["*.private", "local/**"]',
+      QORVEX_GHIDRA_LANGUAGE_ID: "x86:LE:32:default",
+      QORVEX_GHIDRA_COMPILER_SPEC_ID: "borlandcpp",
+      CALLER_SETTING: "preserve exactly",
     };
     const original = serializeClientConfiguration(
       {
@@ -53,9 +58,10 @@ it.each([
     ).toMatchObject({ status: "configured" });
     const configured = await readFile(configPath, "utf8");
     const parsed = parseClientConfiguration(configured, format);
-    expect(effectiveClientServer(parsed, "qorvex")).toMatchObject({
-      [environmentKey]: { ...custom, ...providers },
-    });
+    expect(effectiveClientServer(parsed, "qorvex")).toHaveProperty(
+      environmentKey,
+      { ...custom, ...providers },
+    );
     expect(effectiveClientServer(parsed, "other")).toEqual(
       effectiveClientServer(
         parseClientConfiguration(original, format),
@@ -141,6 +147,36 @@ it.each([
     "invalid response budget",
     { QORVEX_MCP_MAX_RESPONSE_BYTES: "1" },
     "QORVEX_MCP_MAX_RESPONSE_BYTES",
+  ],
+  [
+    "malformed loader JSON",
+    { HOPPER_LOADER_ARGS_JSON: "{" },
+    "HOPPER_LOADER_ARGS_JSON",
+  ],
+  [
+    "non-array loader JSON",
+    { HOPPER_LOADER_ARGS_JSON: "{}" },
+    "HOPPER_LOADER_ARGS_JSON",
+  ],
+  [
+    "NUL loader argument",
+    { HOPPER_LOADER_ARGS_JSON: JSON.stringify(["a\0b"]) },
+    "HOPPER_LOADER_ARGS_JSON",
+  ],
+  [
+    "malformed exclusion JSON",
+    { QORVEX_REFERENCE_SECRET_PATTERNS_JSON: "{" },
+    "QORVEX_REFERENCE_SECRET_PATTERNS_JSON",
+  ],
+  [
+    "empty exclusion pattern",
+    { QORVEX_REFERENCE_SECRET_PATTERNS_JSON: '[""]' },
+    "QORVEX_REFERENCE_SECRET_PATTERNS_JSON",
+  ],
+  [
+    "unpaired compiler specification",
+    { QORVEX_GHIDRA_COMPILER_SPEC_ID: "borlandcpp" },
+    "QORVEX_GHIDRA_COMPILER_SPEC_ID",
   ],
 ] as const)(
   "refuses %s before changing the configuration",
