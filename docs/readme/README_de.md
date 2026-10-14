@@ -1,6 +1,7 @@
 <div align="center">
 
 [English](../../README.md) · [简体中文](README_zh.md) · [繁體中文](README_zh-TW.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Türkçe](README_tr.md) · [Русский](README_ru.md) · [Tiếng Việt](README_vi.md) · [ไทย](README_th.md) · **Deutsch** · [Español](README_es.md) · [Français](README_fr.md) · [Українська](README_uk.md) · [Polski](README_pl.md) · [Português (Brasil)](README_pt-BR.md) · [العربية](README_ar.md) · [فارسی](README_fa.md) · [Bahasa Indonesia](README_id.md) · [Italiano](README_it.md)
+· [Ελληνικά](README_el.md)
 
 # QORVEX: Alles reverse-engineeren
 
@@ -19,13 +20,13 @@
 
 **[Website](https://qorvex.tools/de/) · [Anleitungen](https://qorvex.tools/de/guides/) · [Fallstudien](https://qorvex.tools/de/showcase/)**
 
-[Schnellstart](#schnellstart) · [So funktioniert QORVEX](#so-funktioniert-qorvex) · [Was du analysieren kannst](#was-du-analysieren-kannst) · [Fallstudien](#fallstudien) · [Häufige Fragen](#häufige-fragen) · [Dokumentation](#dokumentation)
+[Schnellstart](#schnellstart) · [So funktioniert QORVEX](#so-funktioniert-qorvex) · [Was du analysieren kannst](#was-du-analysieren-kannst) · [Fallstudien](#fallstudien) · [Häufige Fragen](#häufige-fragen) · [GNU-objdump- und Rizin-Tools](../reverse-engineering-tools.md) · [Dokumentation](#dokumentation)
+
+<code>npx qorvex-agents setup</code>
 
 > [!IMPORTANT]
 > Offizielle Quellen für QORVEX: [TOSTES-LAB/andre_009988](https://github.com/TOSTES-LAB/andre_009988), [qorvex.tools](https://qorvex.tools/), [qorvex-agents](https://www.npmjs.com/package/qorvex-agents) (npm).
 > Folge den Installations- und Release-Links aus diesen offiziellen Quellen. Ein ähnlicher Repository-Name oder eine kopierte README belegt nicht, dass ein Download offiziell ist.
-
-<code>npx qorvex-agents setup</code>
 
 <br />
 

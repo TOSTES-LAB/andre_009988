@@ -1,6 +1,7 @@
 <div align="center">
 
 [English](../../README.md) · [简体中文](README_zh.md) · **繁體中文** · [日本語](README_ja.md) · [한국어](README_ko.md) · [Türkçe](README_tr.md) · [Русский](README_ru.md) · [Tiếng Việt](README_vi.md) · [ไทย](README_th.md) · [Deutsch](README_de.md) · [Español](README_es.md) · [Français](README_fr.md) · [Українська](README_uk.md) · [Polski](README_pl.md) · [Português (Brasil)](README_pt-BR.md) · [العربية](README_ar.md) · [فارسی](README_fa.md) · [Bahasa Indonesia](README_id.md) · [Italiano](README_it.md)
+· [Ελληνικά](README_el.md)
 
 # QORVEX：逆向一切
 
@@ -19,13 +20,13 @@
 
 **[網站](https://qorvex.tools/zh-TW/) · [指南](https://qorvex.tools/zh-TW/guides/) · [案例](https://qorvex.tools/zh-TW/showcase/)**
 
-[快速開始](#快速開始) · [QORVEX 的工作原理](#qorvex-的工作原理) · [可以分析什麼](#可以分析什麼) · [案例](#案例) · [常見問題](#常見問題) · [文件](#文件)
+[快速開始](#快速開始) · [QORVEX 的工作原理](#qorvex-的工作原理) · [可以分析什麼](#可以分析什麼) · [案例](#案例) · [常見問題](#常見問題) · [GNU objdump 與 Rizin 工具](../reverse-engineering-tools.md) · [文件](#文件)
+
+<code>npx qorvex-agents setup</code>
 
 > [!IMPORTANT]
 > QORVEX 官方來源： [TOSTES-LAB/andre_009988](https://github.com/TOSTES-LAB/andre_009988), [qorvex.tools](https://qorvex.tools/), [qorvex-agents](https://www.npmjs.com/package/qorvex-agents) (npm).
 > 請透過這些官方來源提供的安裝與發布連結取得 QORVEX。相似的儲存庫名稱或複製的 README 不能證明下載內容來自官方。
-
-<code>npx qorvex-agents setup</code>
 
 <br />
 

@@ -8,7 +8,7 @@ volatile int qorvex_c_global = 7;
 /* Keep the full-size literal even when a loader does not type it as a string. */
 __attribute__((used)) const char qorvex_long_literal[] =
     "QORVEX_LONG_LITERAL_" QORVEX_LONG_1024 QORVEX_LONG_1024 QORVEX_LONG_1024 QORVEX_LONG_1024 "needle";
-/* Linux Hopper 6.4.2 recognizes this extent and splits it into native objects. */
+/* Verified Hopper loaders recognize this extent and split it into native objects. */
 __attribute__((used)) const char qorvex_fragmented_literal[] =
     "QORVEX_FRAGMENTED_LITERAL_" QORVEX_LONG_256 QORVEX_LONG_256 "fragment_tail";
 __attribute__((used)) const char qorvex_utf8_literal[] = "QORVEX_UTF8_é_😀";
