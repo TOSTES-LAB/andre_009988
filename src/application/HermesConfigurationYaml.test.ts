@@ -8,6 +8,34 @@ import {
 } from "./HermesConfigurationYaml.js";
 
 describe("Hermes configuration YAML", () => {
+  it("retains a quoted sequence element when replacing its registration", () => {
+    const source =
+      "mcp_servers:\n  qorvex:\n    command: old\n    args:\n      - 'mcp'\n";
+    expect(
+      editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], {
+        command: "qorvex",
+        args: ["mcp"],
+      }),
+    ).toBe(source.replace("command: old", "command: qorvex"));
+  });
+
+  it("retains explicit string tags on unchanged keys and values", () => {
+    const source =
+      "%YAML 1.2\n---\nmcp_servers:\n  qorvex:\n    command: old\n    env:\n      !!str ON: !!str off\n";
+    const written = editHermesConfigurationYaml(
+      source,
+      ["mcp_servers", "qorvex"],
+      {
+        command: "qorvex",
+        env: { ON: "off" },
+      },
+    );
+    expect(written).toBe(source.replace("command: old", 'command: "qorvex"'));
+    expect(
+      parse(written.slice("%YAML 1.2\n---\n".length), { version: "1.1" }),
+    ).toMatchObject({ mcp_servers: { qorvex: { env: { ON: "off" } } } });
+  });
+
   it("writes an edited number from its new value", () => {
     expect(
       editHermesConfigurationYaml("mode: 0600\nmask: 0x1F\n", ["mode"], 420),
