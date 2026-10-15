@@ -42,6 +42,27 @@ it("omits QORVEX_JADX_MCP_JAR from the provider registration environment when it
   expect(environment).not.toHaveProperty("QORVEX_JADX_MCP_JAR");
 });
 
+it("carries a validated QORVEX_KUNA_COMMAND into the provider registration environment", async () => {
+  expect(DOCTOR_PROVIDER_IDS).toContain("kuna");
+  const root = await createTestTempDirectory("qorvex-kuna-registration-");
+  const kuna = join(root, "kuna");
+  await writeFile(kuna, "#!/bin/sh\nprintf 'kuna 1.833\\n'\n", { mode: 0o700 });
+
+  const inspections = await createSystemDoctorHost({
+    QORVEX_KUNA_COMMAND: kuna,
+    QORVEX_KUNA_CACHE_DIR: join(root, "cache"),
+  }).providerInspections?.();
+
+  expect(inspections?.find(({ id }) => id === "kuna")).toMatchObject({
+    available: true,
+    providerVersion: "1.833",
+  });
+  expect(providerRegistrationEnvironment(inspections ?? [])).toMatchObject({
+    QORVEX_KUNA_COMMAND: kuna,
+    QORVEX_KUNA_CACHE_DIR: join(root, "cache"),
+  });
+});
+
 const createFakeJdk = async (root: string): Promise<string> => {
   const javaHome = join(root, "fake-jdk");
   const bin = join(javaHome, "bin");
