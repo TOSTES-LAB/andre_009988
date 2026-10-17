@@ -1024,6 +1024,8 @@ export QORVEX_GHIDRA_COMPILER_SPEC_ID="borlandcpp"   # optional; requires a lang
 
 QORVEX passes `-processor`/`-cspec`, checks both against the installation's `.ldefs`, and records them in the analysis profile. DOS imports reject an override.
 
+Language definitions must be well-formed XML encoded as UTF-8 or BOM-marked UTF-16, with any encoding declaration matching the bytes. Literal Unicode replacement characters (U+FFFD) are accepted; malformed source bytes are rejected.
+
 To seed code that auto-analysis cannot reach (computed jumps, pointers in data):
 
 ```bash
@@ -1233,6 +1235,21 @@ in the current project's `node_modules/.bin`; it does not make `qorvex` availabl
 on the shell `PATH`. Use the setup command above for the guided setup
 journey, `npx -y qorvex-agents@latest` for unattended one-off commands, or install globally
 with `npm install --global qorvex-agents` for a shell-visible `qorvex` command.
+
+For many concurrent agent sessions, run setup directly from a global installation
+to avoid keeping a separate npm launcher process for each MCP connection:
+
+```bash
+npm install --global qorvex-agents
+qorvex setup
+```
+
+Review the plan, approve the selected client changes, then restart those clients.
+This registers the installed entrypoint directly; installing the global package
+alone does not replace existing `npx` registrations. Each client still has its own
+QORVEX process and analysis state. Direct registrations follow the installed CLI;
+use `qorvex update` to update it. Running setup through `npx` again selects the pinned
+package-runner command. Do not register paths inside npm's temporary package cache.
 
 The optional curl wrapper installs only the global npm package:
 

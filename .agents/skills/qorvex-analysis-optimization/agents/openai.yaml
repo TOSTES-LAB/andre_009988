@@ -1,0 +1,4 @@
+interface:
+  display_name: "QORVEX analysis optimization"
+  short_description: "Optimize analysis with preserved Evidence and measured costs"
+  default_prompt: "Use $qorvex-analysis-optimization to find and verify a concrete analysis bottleneck while preserving correctness and Evidence."
