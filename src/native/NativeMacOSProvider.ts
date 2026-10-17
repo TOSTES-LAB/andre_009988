@@ -10,8 +10,15 @@ import {
   NATIVE_MACOS_PROVIDER_IDENTITY as IDENTITY,
   nativeMacOSCapabilities,
 } from "./NativeMacOSProviderMetadata.js";
-import { inspectAppleDispatchMetadata } from "./AppleDispatchMetadata.js";
-import { observeNativeUi } from "./NativeUiObservation.js";
+import {
+  appleDispatchMetadataFailure,
+  inspectAppleDispatchMetadata,
+} from "./AppleDispatchMetadata.js";
+import {
+  observeNativeUi,
+  finishNativeUiObservation,
+} from "./NativeUiObservation.js";
+import { NativeUiCleanupError } from "./NativeUiCleanupError.js";
 import { LldbCallTracer, type NativeCallTracer } from "./LldbCallTracer.js";
 import { observeNativeCalls } from "./NativeCallObservation.js";
 import { basename, dirname, isAbsolute, resolve } from "node:path";
@@ -53,7 +60,6 @@ import {
   AnalysisError,
   resolvedAnalysisError,
 } from "../domain/analysisErrorBase.js";
-import { regularFileCancellation } from "../filesystem/OwnedRegularFile.js";
 import { jsonValueSchema, type JsonValue } from "../domain/jsonValue.js";
 import type { NativeUiObservationResult } from "../domain/native/nativeUiObservation.js";
 import {
@@ -157,6 +163,7 @@ class NativeMacOSClient implements AnalysisClient {
   readonly #signatureResources = new ArtifactResourceScope();
   readonly #plistResources = new ArtifactResourceScope();
   readonly #callResources = new ArtifactResourceScope();
+  readonly #dispatchResources = new ArtifactResourceScope();
   #nativeUiTail: Promise<void> = Promise.resolve();
   #closed = false;
 
@@ -211,10 +218,13 @@ class NativeMacOSClient implements AnalysisClient {
           ),
         );
       try {
-        const result = await inspectAppleDispatchMetadata(
-          this.target,
-          input.data.max_records,
-          options?.signal,
+        const result = await this.#dispatchResources.run(() =>
+          inspectAppleDispatchMetadata(
+            this.target,
+            input.data.max_records,
+            this.#dispatchResources,
+            options?.signal,
+          ),
         );
         return ok(
           createAnalysisExecution(result, result.provider, {
@@ -225,26 +235,7 @@ class NativeMacOSClient implements AnalysisClient {
           }),
         );
       } catch (cause) {
-        if (cause instanceof AnalysisError) return err(cause);
-        const cancellation = regularFileCancellation(cause);
-        if (cancellation !== undefined)
-          return err(
-            new AnalysisCancelledError(operation, {
-              cause: cancellation.reason,
-            }),
-          );
-        return err(
-          options?.signal?.aborted
-            ? new AnalysisCancelledError(operation)
-            : new ProviderAdapterError(IDENTITY.id, operation, {
-                cause,
-                diagnostics: {
-                  target_path: this.target.path,
-                  reason:
-                    cause instanceof Error ? cause.message : String(cause),
-                },
-              }),
-        );
+        return err(appleDispatchMetadataFailure(cause, this.target.path));
       }
     }
     if (!isNativeOperation(operation))
@@ -315,6 +306,10 @@ class NativeMacOSClient implements AnalysisClient {
       this.#callResources,
       "native-call-target",
     );
+    const dispatchCleanup = await closeNativeFileScope(
+      this.#dispatchResources,
+      "native-dispatch-metadata-target",
+    );
     const commandCleanup = await this.#retryNativeCommandCleanup();
     let result = await this.tracer.close();
     const cleanupErrors = [
@@ -325,6 +320,7 @@ class NativeMacOSClient implements AnalysisClient {
       ...(signatureCleanup === undefined ? [] : [signatureCleanup]),
       ...(plistCleanup === undefined ? [] : [plistCleanup]),
       ...(callCleanup === undefined ? [] : [callCleanup]),
+      ...(dispatchCleanup === undefined ? [] : [dispatchCleanup]),
     ];
     for (const cleanupError of cleanupErrors)
       result = result.ok
@@ -358,12 +354,16 @@ class NativeMacOSClient implements AnalysisClient {
           this.#nativeUiCleanupFailure(earlierCleanupFailures, operation),
         );
       const runtime = createNativeUiHelperRuntime(this.environment);
+      const observationSignal =
+        signal === undefined
+          ? runtime.signal
+          : AbortSignal.any([signal, runtime.signal]);
       this.#pendingNativeUiRuntimes.add(runtime);
       let result: Awaited<ReturnType<typeof observeNativeUi>>;
       try {
         result = await observeNativeUi(this.target, operation, parameters, {
           environment: this.environment,
-          signal,
+          signal: observationSignal,
           runtime,
         });
       } catch (cause: unknown) {
@@ -377,6 +377,11 @@ class NativeMacOSClient implements AnalysisClient {
         await runtime.close();
         this.#pendingNativeUiRuntimes.delete(runtime);
       } catch (cause: unknown) {
+        result = finishNativeUiObservation(
+          result,
+          operation,
+          observationSignal,
+        );
         const cleanup = this.#nativeUiCleanupFailure(
           [{ runtime, cause }],
           operation,
@@ -385,9 +390,14 @@ class NativeMacOSClient implements AnalysisClient {
         return err(
           result.ok
             ? cleanup
-            : analysisErrorWithCleanupFailure(result.error, cleanup, operation),
+            : analysisErrorWithCleanupFailure(
+                result.error,
+                cleanup,
+                operation,
+              ).bindCleanupDependencies([result.error, cleanup]),
         );
       }
+      result = finishNativeUiObservation(result, operation, observationSignal);
       return result.ok
         ? ok(
             createAnalysisExecution(result.value, IDENTITY, {
@@ -455,26 +465,7 @@ class NativeMacOSClient implements AnalysisClient {
     operation: string,
     partialObservation?: NativeUiObservationResult,
   ): ProviderCleanupError {
-    const resources = failures.flatMap(({ runtime }) => runtime.resources());
-    return new ProviderCleanupError(
-      IDENTITY.id,
-      resources.length === 0 ? ["native-ui-runtime"] : resources,
-      {
-        reason: "Native UI runtime cleanup remains incomplete",
-        failures: failures.map(({ runtime, cause }) => ({
-          resources: [...runtime.resources()],
-          reason: cause instanceof Error ? cause.message : String(cause),
-        })),
-      },
-      {
-        operation,
-        cause: new AggregateError(
-          failures.map(({ cause }) => cause),
-          "Native UI runtime cleanup failed",
-        ),
-        ...(partialObservation === undefined ? {} : { partialObservation }),
-      },
-    );
+    return new NativeUiCleanupError(failures, operation, partialObservation);
   }
 
   #dispatch(
