@@ -43,6 +43,10 @@ describe("client registration status", () => {
 
   it("distinguishes aligned, stale, missing, and invalid registrations", async () => {
     const home = await createTestTempDirectory("qorvex-registrations-");
+    const currentEntry = join(home, "current-qorvex.mjs");
+    const foreignEntry = join(home, "foreign-qorvex.mjs");
+    await writeFile(currentEntry, "// current dispatcher\n");
+    await writeFile(foreignEntry, "// different dispatcher\n");
     await Promise.all([
       mkdir(join(home, ".codex")),
       mkdir(join(home, ".cursor")),
@@ -57,13 +61,13 @@ describe("client registration status", () => {
       join(home, ".cursor/mcp.json"),
       JSON.stringify({
         mcpServers: {
-          qorvex: { command: "/old/qorvex", args: ["mcp"], env: { SECRET: "x" } },
+          qorvex: { command: foreignEntry, args: ["mcp"], env: { SECRET: "x" } },
         },
       }),
     );
     await writeFile(join(home, ".gemini/settings.json"), "not-json");
 
-    const statuses = await readClientRegistrationStatuses(home, "/current/qorvex");
+    const statuses = await readClientRegistrationStatuses(home, currentEntry);
     expect(statuses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -74,7 +78,7 @@ describe("client registration status", () => {
         expect.objectContaining({
           client: "cursor",
           state: "stale",
-          command: ["/old/qorvex", "mcp"],
+          command: [foreignEntry, "mcp"],
           remediation: expect.any(String),
         }),
         expect.objectContaining({
