@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { parseClientConfiguration } from "./ClientConfigurationDocument.js";
+import {
+  parseClientConfiguration,
+  shadowedClientServers,
+} from "./ClientConfigurationDocument.js";
 
 describe("parseClientConfiguration shape diagnostics", () => {
   it.each([
@@ -30,5 +33,26 @@ describe("parseClientConfiguration shape diagnostics", () => {
     expect(() => parseClientConfiguration("not-json", "json")).toThrow(
       SyntaxError,
     );
+  });
+
+  it("reports only duplicates in the effective server object", () => {
+    const owned = '{"command":"qorvex","args":["mcp"]}';
+    const activeTable = `{"mcpServers":{"qorvex":null,"qorvex":${owned}}}`;
+    const active = parseClientConfiguration(activeTable, "json");
+    expect(shadowedClientServers(activeTable, active, "qorvex")).toEqual({
+      servers: [null],
+      legacyServers: [],
+    });
+
+    // Removing from the effective parent leaves an earlier repeated parent
+    // inactive. Its members are not registrations the client would reveal.
+    const inactiveParent =
+      `{"mcpServers":{"qorvex":{"command":"/usr/bin/false"}},` +
+      `"mcpServers":{"qorvex":${owned}}}`;
+    const parsed = parseClientConfiguration(inactiveParent, "json");
+    expect(shadowedClientServers(inactiveParent, parsed, "qorvex")).toEqual({
+      servers: [],
+      legacyServers: [],
+    });
   });
 });
