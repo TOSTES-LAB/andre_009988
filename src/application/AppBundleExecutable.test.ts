@@ -4,7 +4,34 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { createTestTempDirectory } from "../../tests/fixtures/temporaryDirectory.js";
 import { resolveAppBundleExecutable } from "./AppBundleExecutable.js";
+
+it.each([
+  ["macOS", ["Contents"], ["Contents", "MacOS"]],
+  ["iOS", [], []],
+] as const)(
+  "resolves the %s bundle layout when Info.plist contains processing instructions",
+  async (_kind, plistDirectory, programDirectory) => {
+    const root = await createTestTempDirectory("qorvex-app-plist-pi-");
+    const bundle = join(root, "Fixture.app");
+    const plistPath = join(bundle, ...plistDirectory, "Info.plist");
+    const executable = join(bundle, ...programDirectory, "Fixture");
+    await mkdir(join(bundle, ...plistDirectory), { recursive: true });
+    await mkdir(join(bundle, ...programDirectory), { recursive: true });
+    await writeFile(
+      plistPath,
+      '<plist version="1.0"><?qorvex ignored?><dict><?qorvex ignored?><key>CFBundleExecutable</key><?qorvex ignored?><string>Fixture</string><?qorvex ignored?></dict><?qorvex ignored?></plist>',
+    );
+    await writeFile(executable, "inert fixture; never executed");
+
+    const result = await resolveAppBundleExecutable(bundle);
+    expect(result).toEqual({
+      ok: true,
+      value: { executable, infoPlist: plistPath },
+    });
+  },
+);
 
 describe("app bundle Info.plist magic", () => {
   it("does not decode a high-bit fold of bplist as a binary Info.plist", async () => {
