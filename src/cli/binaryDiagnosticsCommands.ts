@@ -48,6 +48,7 @@ export const registerBinaryDiagnosticsCommands = (
               pe,
               "qorvex-pe-resources",
               "inspect_pe_resources",
+              signal,
             ),
         );
       }),

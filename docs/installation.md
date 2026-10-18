@@ -276,14 +276,14 @@ Register with the variable unset:
 <!-- x-release-please-start-version -->
 
 ```bash
-claude mcp add --scope local qorvex -- npx -y qorvex-agents@6.5.0 mcp
+claude mcp add --scope local qorvex -- npx -y qorvex-agents@6.6.0 mcp
 ```
 
 On native Windows, use the same project directory and wrap the package-runner
 shim so the stdio client can launch it:
 
 ```powershell
-claude mcp add --scope local qorvex -- cmd.exe /d /c npx -y qorvex-agents@6.5.0 mcp
+claude mcp add --scope local qorvex -- cmd.exe /d /c npx -y qorvex-agents@6.6.0 mcp
 ```
 
 <!-- x-release-please-end -->
@@ -1187,7 +1187,7 @@ For a client that requires manual configuration, use:
   "mcpServers": {
     "qorvex": {
       "command": "npx",
-      "args": ["-y", "qorvex-agents@6.5.0", "mcp"]
+      "args": ["-y", "qorvex-agents@6.6.0", "mcp"]
     }
   }
 }
