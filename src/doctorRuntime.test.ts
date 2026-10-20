@@ -231,6 +231,32 @@ it("omits QORVEX_JADX_MCP_JAR from the provider registration environment when it
   expect(environment).not.toHaveProperty("QORVEX_JADX_MCP_JAR");
 });
 
+it("shares one parsed IDA registration between timeout-budget and doctor projections", async () => {
+  const root = await createTestTempDirectory("qorvex-ida-registration-fact-");
+  const registration = join(root, "registration.json");
+  await writeFile(
+    registration,
+    JSON.stringify({ command: "fixture", timeoutMs: 3210 }),
+  );
+  const host = createSystemDoctorHost({ QORVEX_IDA_MCP_CONFIG: registration });
+  try {
+    expect(
+      await host.resolveProviderRequestBudget?.("ida", {
+        QORVEX_IDA_MCP_CONFIG: registration,
+      }),
+    ).toEqual(ok(3210));
+    await writeFile(registration, "not JSON anymore");
+    const inspections = await host.providerInspections?.();
+    expect(inspections?.find(({ id }) => id === "ida")).toMatchObject({
+      configured: true,
+      available: true,
+      checks: [{ name: "registration", ok: true }],
+    });
+  } finally {
+    await host.close?.();
+  }
+});
+
 it("carries a validated QORVEX_KUNA_COMMAND into the provider registration environment", async () => {
   expect(DOCTOR_PROVIDER_IDS).toContain("kuna");
   const root = await createTestTempDirectory("qorvex-kuna-registration-");

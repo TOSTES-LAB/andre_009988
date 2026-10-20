@@ -268,6 +268,7 @@ Inizia dalle [guide pratiche](https://qorvex.tools/it/guides/) del sito web. Per
 
 - [Installazione e configurazione](../installation.md): registrazione agente, configurazione provider, aggiornamenti e disinstallazione.
 - [Pronto all'uso e risoluzione dei problemi](../installation.md#check-readiness-for-your-task): diagnostica un agente o un motore di analisi.
+- [GGUF / safetensors](../model-artifacts.md)
 - [CLI ed Evidence](../cli.md): comandi, selezione provider, snapshot, import/export e stati di uscita.
 - [Contratti MCP](../mcp-contracts.md) e [prompt agente](../mcp-prompts.md): risultati degli strumenti, sessioni e indagini guidate.
 - [Catalogo strumenti](../mcp-contracts.md#generated-catalog): inventario generato di strumenti, provider e comandi CLI.
