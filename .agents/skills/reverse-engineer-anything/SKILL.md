@@ -2,7 +2,7 @@
 name: reverse-engineer-anything
 description: Reverse engineer native, managed, Electron/JavaScript, packaged, firmware, and browser targets with QORVEX. Use shipped-artifact or requested runtime evidence to explain features, compare versions, decompile code, or guide a reconstruction. Skip QORVEX for ordinary source-repository architecture analysis.
 metadata:
-  version: "42"
+  version: "43"
 ---
 
 # QORVEX
@@ -255,6 +255,12 @@ is the complete tool inventory; use `tools/list` for canonical tool schemas.
 Provider candidate facts describe possible providers, while top-level session
 capabilities describe the current route and `analysis_provider_binding` names the
 selected provider. Do not treat those scopes as interchangeable.
+
+For a Ghidra startup timeout on a large native target, follow
+[deadline recovery](references/native-and-artifacts.md#ghidra-startup-deadline-recovery)
+before abandoning deep analysis or repeating the same cold import. The default
+330 seconds is configurable; changing the server's environment requires a new
+QORVEX process.
 
 ## Work summary-first
 

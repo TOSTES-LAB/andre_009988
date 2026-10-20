@@ -155,6 +155,36 @@ operation's full ordered list. Candidate capabilities describe possible
 providers. Top-level session capabilities describe the current route, and
 `analysis_provider_binding` identifies the selected provider.
 
+## Ghidra startup deadline recovery
+
+`provider_timeout` during the first Ghidra query can cover import, auto-analysis,
+bridge startup, and readiness. The default 330,000 ms is configurable through
+`QORVEX_GHIDRA_STARTUP_TIMEOUT_MS`; a smaller query still needs the same cold import.
+
+Preserve useful Evidence before closing the session or restarting QORVEX. Check
+`close_binary` and resolve reported cleanup failures. Set a larger startup budget
+in the environment that launches QORVEX, then restart QORVEX and reconnect the MCP
+client before reopening the same target. Closing and reopening a binary in the
+existing server keeps its original configuration and starts import again.
+Environment changes in an agent's shell do not update an already running MCP
+server. If its launch configuration cannot be changed, report that constraint
+and the exact retry setting instead of claiming a fixed technical limit.
+
+The client's tool-call deadline must allow startup plus the requested query;
+server settings and progress notifications cannot override it. CLI analysis
+avoids the MCP client deadline, but retains the provider deadline. For example:
+
+```sh
+QORVEX_GHIDRA_STARTUP_TIMEOUT_MS=1800000 qorvex analyze /absolute/path/to/app.exe --provider ghidra --json
+```
+
+Thirty minutes is an example budget, not a completion guarantee. Keep host CPU
+and memory controls in place. Disable specific expensive analyzers only when
+their missing coverage is acceptable and retain the resulting limitations.
+Exported C and embedded resources remain useful independent evidence, but a
+timeout does not establish complete analysis or absence of code. See the
+[deadline and client guide](https://github.com/TOSTES-LAB/andre_009988/blob/main/docs/mcp-contracts.md#ghidra-first-query-deadlines-and-recovery).
+
 ## Static memory and original file bytes
 
 For Ghidra, `read_bytes` reads initialized analysis memory, including loader
@@ -326,3 +356,22 @@ with two complete inspection Evidence records (or current-session retained
 references) and explicit scope. Preserve unknown types/duplicate names; static
 interface equality is not runtime compatibility. CLI accepts complete inline
 Evidence in `qorvex compare-wasm-interfaces input.json --json`.
+
+## Godot PCK
+
+For a standalone PCK, `open_binary` then `inspect_artifact` with
+`detail: "summary"` retains the complete static inventory. Use the returned
+`parent_evidence_id` with `inspect_analysis_view` inventory occurrences filtered
+by exact `logical_paths` or `occurrence_ids`, and join `artifact_id` to nodes
+filtered by `artifact_ids`. Select only needed fields; identity links remain.
+Prefer `inspect-artifact --detail summary --evidence_output PATH` for CLI tasks;
+the same CLI discovers embedded packs via their EOF trailer without opening a
+native analysis provider. Normal native opening remains unchanged.
+
+Distinguish declared MD5 from observed SHA-256 and graph/page completeness from
+`source_coverage`. Encrypted directories and sparse bundles have unknown entry
+coverage; encrypted members have unknown content identity. An empty filtered
+page cannot prove absence in unknown coverage. Retained views are historical,
+not fresh filesystem checks. No decryption, Godot resource decoding, GDScript
+decompilation or target execution is provided. See
+[Godot PCK](https://github.com/TOSTES-LAB/andre_009988/blob/main/docs/godot-pck.md).
