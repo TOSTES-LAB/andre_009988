@@ -183,6 +183,7 @@ it.each([
     environment: {
       QORVEX_ANALYSIS_PROVIDER: "auto",
       QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
+      QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
       QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
     },
     providerConfigured: false,
@@ -214,6 +215,7 @@ it.each([
         expect(initial.providerEnvironment).toMatchObject({
           QORVEX_ANALYSIS_PROVIDER: "auto",
           QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
+          QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
           QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
         });
       }
