@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultHopperLauncherPath,
+  nativeAnalysisConfigurationError,
   parseConfig,
 } from "./config/parseConfig.js";
 import {
@@ -96,6 +97,28 @@ describe("runtime configuration", () => {
     });
     for (const invalid of ["", "Auto", "ghidra_1", "ghidra "])
       expect(parseConfig({ QORVEX_ANALYSIS_PROVIDER: invalid }).ok).toBe(false);
+  });
+
+  it("shares native admission with doctor and ignores the JEB-only timeout", () => {
+    expect(nativeAnalysisConfigurationError({})).toBeUndefined();
+    expect(
+      nativeAnalysisConfigurationError({ QORVEX_JEB_MCP_TIMEOUT_MS: "abc" }),
+    ).toBeUndefined();
+    expect(parseConfig({ QORVEX_JEB_MCP_TIMEOUT_MS: "abc" }).ok).toBe(true);
+    const rejected = nativeAnalysisConfigurationError({
+      QORVEX_ANALYSIS_PROVIDER: "Hopper",
+      QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "abc",
+    });
+    expect(rejected?.settings.map(({ setting }) => setting)).toEqual([
+      "QORVEX_ANALYSIS_PROVIDER",
+      "QORVEX_GHIDRA_STARTUP_TIMEOUT_MS",
+    ]);
+    expect(
+      parseConfig({
+        QORVEX_ANALYSIS_PROVIDER: "Hopper",
+        QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "abc",
+      }).ok,
+    ).toBe(false);
   });
 
   it("parses absolute BYO Ghidra and optional Java paths", () => {
