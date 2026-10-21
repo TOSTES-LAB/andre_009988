@@ -6,7 +6,31 @@ import { err, ok, type Result } from "../domain/result.js";
 // This override supports clients with larger frames. Keep the configuration
 // parser independent of the SDK's eager server imports; conformance verifies
 // this floor against the pinned SDK's actual default receive-buffer size.
-const MINIMUM_RESPONSE_BYTES = 10 * 1024 * 1024;
+export const MINIMUM_RESPONSE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Facts for a completed or failed MCP result that exceeded the stdio receive
+ * budget. The effective value is the configured receive buffer, including the
+ * envelope reservation. QORVEX's reserved string limit is separate from, and
+ * lower than, Node's single-string ceiling. This setting raises neither.
+ */
+export const stdioResponseBudgetRecovery = (
+  effectiveResponseBytes: number,
+  reservedStringCodeUnits: number,
+  nodeStringCeilingCodeUnits: number,
+): string =>
+  `The effective QORVEX_MCP_MAX_RESPONSE_BYTES value is ${String(effectiveResponseBytes)} bytes (floor ${String(MINIMUM_RESPONSE_BYTES)} bytes, 10 MiB). A change requires restarting the QORVEX process and a matching client receive buffer. It does not raise QORVEX's reserved single-string limit of ${String(reservedStringCodeUnits)} UTF-16 code units or Node's single-string ceiling of ${String(nodeStringCeilingCodeUnits)} UTF-16 code units. This release has no runtime override for either limit.`;
+
+/**
+ * Facts for a result that exceeded QORVEX's reserved string limit.
+ * `reservedStringCodeUnits` is that QORVEX limit. `nodeStringCeilingCodeUnits`
+ * is Node's own ceiling and is not the same number.
+ */
+export const nodeStringCeilingRecovery = (
+  reservedStringCodeUnits: number,
+  nodeStringCeilingCodeUnits: number,
+): string =>
+  `QORVEX's reserved single-string limit is ${String(reservedStringCodeUnits)} UTF-16 code units, below Node's single-string ceiling of ${String(nodeStringCeilingCodeUnits)} UTF-16 code units. This release has no runtime override for either limit, and QORVEX_MCP_MAX_RESPONSE_BYTES does not raise them.`;
 
 /** Optional stdio response budget, including room for the protocol envelope. */
 export const mcpResponseBudgetSchema = z
