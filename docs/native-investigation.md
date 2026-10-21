@@ -202,8 +202,10 @@ Function dossiers retain this same string evidence. Native call edges retain
 Hopper's partial `CallReference` classification and exact endpoints; detailed
 reference flags remain unavailable rather than being invented.
 Regex searches use ECMAScript Unicode syntax in a cancellable worker with a
-five-second matching deadline. Deadline or cancellation stops matching while
-leaving the Hopper API available. Literal mode retains Unicode casefold matching.
+five-second matching deadline and a 128 MiB worker heap. Deadline or
+cancellation stops matching while leaving the Hopper API available. This
+release has no runtime override for that deadline or heap. Literal mode
+retains Unicode casefold matching.
 
 ## Bounded static traces
 
@@ -537,8 +539,10 @@ cleanup. A later abort does not replace an earlier helper or output failure.
 Cleanup failures retain their runtime owner until a confirmed cleanup retry.
 
 Scenarios accept caller-selected action lists and accessibility node counts.
-Individual waits cannot exceed the operation's 180-second deadline, and the
-complete scenario result has a 64 MiB output budget. Screenshots are scaled to
+One wait step stays capped at 180000 ms. That cap has no runtime override.
+The operation deadline is `native_ui_deadline_ms` (omitted means 180000 ms)
+and does not raise the wait-step cap. The complete scenario result has a
+64 MiB output budget. Screenshots are scaled to
 at most 2,048 pixels and captured only for the selected window. QORVEX compiles one
 owned helper per scenario, removes its temporary compiler cache and stops its
 helper on cancellation. It does not launch or own the selected application. UI

@@ -77,6 +77,9 @@ export const parseConfig = (
     ...(env.QORVEX_MCP_INPUT_SCHEMA_PROFILE === undefined
       ? {}
       : { mcpInputSchemaProfile: env.QORVEX_MCP_INPUT_SCHEMA_PROFILE }),
+    ...(env.QORVEX_MCP_OUTPUT_SCHEMA_PROFILE === undefined
+      ? {}
+      : { mcpOutputSchemaProfile: env.QORVEX_MCP_OUTPUT_SCHEMA_PROFILE }),
     analysisProvider: env.QORVEX_ANALYSIS_PROVIDER,
     ...(env.QORVEX_IDA_MCP_CONFIG === undefined
       ? {}
