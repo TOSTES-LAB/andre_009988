@@ -482,7 +482,7 @@ const workflowAvailabilityFor = ({
       : {
           reason: "provider_missing",
           remediation:
-            "On Linux, supply TShark 4.x via absolute QORVEX_TSHARK_COMMAND and util-linux prlimit (QORVEX_TSHARK_PRLIMIT_COMMAND, default /usr/bin/prlimit). No active binary target or hardware is required; the tool is checked at execution.",
+            "On Linux, supply TShark 4.x on PATH or through absolute QORVEX_TSHARK_COMMAND, and util-linux prlimit (QORVEX_TSHARK_PRLIMIT_COMMAND, default /usr/bin/prlimit). No active binary target or hardware is required; the tool is checked at execution.",
         };
   if (name === "decode_signal_recording" || name === "inspect_signal_decoders")
     return policy.signalRecordingEnabled === true

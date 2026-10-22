@@ -792,7 +792,5 @@ it("rejects a corrupted build-owned catalog before starting the connection", asy
   expect(child.error).toBeUndefined();
   expect(child.status).toBe(1);
   expect(child.stdout).toBe("");
-  expect(child.stderr).toBe(
-    "QORVEX could not start. Run `qorvex doctor`, then restart QORVEX from your MCP client.\n",
-  );
+  expect(child.stderr).toBe(`${SERVER_START_FAILED}\n`);
 });

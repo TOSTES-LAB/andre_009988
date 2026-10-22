@@ -83,6 +83,7 @@ describe("production MCP doctor", () => {
       {
         dispatcherPath: resolve("tests/fixtures/mcpDoctorExit.mjs"),
         packageRoot: process.cwd(),
+        stdoutIsTerminal: false,
       },
     );
     expect(result.exitCode).toBe(1);
@@ -189,6 +190,38 @@ describe("production MCP doctor", () => {
     },
     30_000,
   );
+});
+
+describe("production MCP doctor output", () => {
+  it.each([
+    { name: "report", args: ["--json"] },
+    { name: "full-output envelope", args: ["--json", "--full-output"] },
+    { name: "validation error", args: ["--json", "--unknown"] },
+  ])("indents $name JSON only for a terminal stdout", async ({ args }) => {
+    const render = (stdoutIsTerminal: boolean) =>
+      runProductionMcpDoctorCli(args, {
+        dispatcherPath: resolve("tests/fixtures/mcpDoctorExit.mjs"),
+        packageRoot: process.cwd(),
+        stdoutIsTerminal,
+      });
+    const [redirected, terminal] = await Promise.all([
+      render(false),
+      render(true),
+    ]);
+
+    expect(redirected.output.split("\n")).toHaveLength(2);
+    expect(redirected.output.endsWith("\n")).toBe(true);
+    expect(terminal.output).toContain('\n  "');
+    const withoutDuration = (output: string): unknown => {
+      const value = JSON.parse(output) as { meta?: { duration?: string } };
+      if (value.meta) delete value.meta.duration;
+      return value;
+    };
+    expect(withoutDuration(redirected.output)).toEqual(
+      withoutDuration(terminal.output),
+    );
+    expect(redirected.exitCode).toBe(terminal.exitCode);
+  });
 });
 
 describe("production MCP doctor probe validation", () => {
@@ -377,8 +410,13 @@ describe("production MCP doctor child lifecycle", () => {
     const result = await vi.waitFor(() => pending, { timeout: 10_000 });
     vi.useRealTimers();
     expect(result.healthy).toBe(false);
-    expect(result.checks[0]?.detail).toContain("60000 ms");
-    expect(result.checks[0]?.detail).toContain("no runtime override");
+    expect(result.checks[0]?.detail).toContain(
+      "The effective QORVEX_MCP_DOCTOR_DEADLINE_MS value for the MCP doctor startup deadline is 60000 ms (source setting; default 30000 ms, floor 1 ms, maximum 2147483647 ms).",
+    );
+    expect(result.checks[0]?.detail).toContain(
+      "Set QORVEX_MCP_DOCTOR_DEADLINE_MS in the environment that starts QORVEX",
+    );
+    expect(result.checks[0]?.detail).not.toContain("no runtime override");
     expect(result.checks[0]?.detail).toContain(
       "Codex startup_timeout_sec of 30 seconds is client guidance",
     );
@@ -417,12 +455,17 @@ describe("production MCP doctor request-flow deadline", () => {
       (check) => check.name === "request-flow",
     );
     expect(requestFlow?.ok).toBe(false);
-    expect(requestFlow?.detail).toContain("60000 ms");
-    expect(requestFlow?.detail).toContain("no runtime override");
+    expect(requestFlow?.detail).toContain(
+      "The effective QORVEX_MCP_DOCTOR_DEADLINE_MS value for the MCP doctor startup deadline is 60000 ms (source setting; default 30000 ms, floor 1 ms, maximum 2147483647 ms).",
+    );
+    expect(requestFlow?.detail).toContain(
+      "Set QORVEX_MCP_DOCTOR_DEADLINE_MS in the environment that starts QORVEX",
+    );
+    expect(requestFlow?.detail).not.toContain("no runtime override");
     expect(requestFlow?.detail).toContain(
       "Codex startup_timeout_sec of 30 seconds is client guidance",
     );
-    expect(requestFlow?.detail).not.toContain("30000 ms");
+    expect(requestFlow?.detail).not.toContain("is 30000 ms");
     expect(requestFlow?.detail).not.toContain("QORVEX_MCP_STARTUP");
   }, 15_000);
 
@@ -456,6 +499,63 @@ describe("production MCP doctor request-flow deadline", () => {
     },
     10_000,
   );
+
+  it("uses QORVEX_MCP_DOCTOR_DEADLINE_MS when no caller deadline is passed", async () => {
+    const root = await createTestTempDirectory("qorvex-mcp-doctor-setting-");
+    const pidPath = join(root, "pid");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const pending = runProductionMcpDoctor({
+      command: process.execPath,
+      args: [resolve("tests/fixtures/mcpDoctorHang.mjs")],
+      cwd: process.cwd(),
+      environment: {
+        ...process.env,
+        QORVEX_MCP_DOCTOR_PID_PATH: pidPath,
+        QORVEX_MCP_DOCTOR_DEADLINE_MS: "2000",
+      },
+    });
+    const pid = await vi.waitFor(
+      async () => {
+        const value = Number.parseInt(await readFile(pidPath, "utf8"), 10);
+        expect(Number.isSafeInteger(value) && value > 0).toBe(true);
+        return value;
+      },
+      { timeout: 10_000 },
+    );
+    await vi.advanceTimersByTimeAsync(2_000);
+    const result = await vi.waitFor(() => pending, { timeout: 10_000 });
+    vi.useRealTimers();
+    expect(result.healthy).toBe(false);
+    expect(result.checks[0]?.detail).toContain(
+      "The effective QORVEX_MCP_DOCTOR_DEADLINE_MS value for the MCP doctor startup deadline is 2000 ms (source setting; default 30000 ms, floor 1 ms, maximum 2147483647 ms).",
+    );
+    expect(result.checks[0]?.detail).not.toContain("no runtime override");
+    await expect(waitForExit(pid)).resolves.toBeUndefined();
+  }, 10_000);
+
+  it("refuses an invalid phase budget before starting a child", async () => {
+    const result = await runProductionMcpDoctor({
+      command: process.execPath,
+      args: ["definitely-missing-mcp-doctor-child.mjs"],
+      cwd: process.cwd(),
+      environment: {
+        ...process.env,
+        QORVEX_MCP_INITIALIZE_BUDGET_MS: "0",
+        QORVEX_MCP_DOCTOR_DEADLINE_MS: "0",
+      },
+    });
+    expect(result.healthy).toBe(false);
+    expect(result.server).toBeNull();
+    expect(result.checks.map(({ name }) => name)).toEqual([
+      "QORVEX_MCP_INITIALIZE_BUDGET_MS",
+      "QORVEX_MCP_DOCTOR_DEADLINE_MS",
+    ]);
+    expect(result.checks[0]?.detail).toContain(
+      "QORVEX_MCP_INITIALIZE_BUDGET_MS must be a positive decimal integer from 1 to 2147483647 ms",
+    );
+    expect(result.checks[1]?.detail).toContain("QORVEX_MCP_DOCTOR_DEADLINE_MS");
+    expect(result.checks[0]?.detail).not.toContain("no runtime override");
+  });
 });
 
 const runNoisyDoctorChild = async (body: string) => {

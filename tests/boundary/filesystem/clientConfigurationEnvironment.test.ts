@@ -497,6 +497,36 @@ it.each([
     "QORVEX_REGEX_MATCHING_DEADLINE_MS",
   ],
   [
+    "capture decoder heap below its floor",
+    { QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB: "7" },
+    "QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB",
+  ],
+  [
+    "regex worker heap request below its floor",
+    { QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB: "6" },
+    "QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB",
+  ],
+  [
+    "MCP initialize budget of zero",
+    { QORVEX_MCP_INITIALIZE_BUDGET_MS: "0" },
+    "QORVEX_MCP_INITIALIZE_BUDGET_MS",
+  ],
+  [
+    "MCP tools/list budget above its maximum",
+    { QORVEX_MCP_TOOLS_LIST_BUDGET_MS: "2147483648" },
+    "QORVEX_MCP_TOOLS_LIST_BUDGET_MS",
+  ],
+  [
+    "MCP first-catalog budget with a leading zero",
+    { QORVEX_MCP_FIRST_CATALOG_BUDGET_MS: "020000" },
+    "QORVEX_MCP_FIRST_CATALOG_BUDGET_MS",
+  ],
+  [
+    "MCP doctor deadline that is not decimal",
+    { QORVEX_MCP_DOCTOR_DEADLINE_MS: "30_000" },
+    "QORVEX_MCP_DOCTOR_DEADLINE_MS",
+  ],
+  [
     "malformed loader JSON",
     { HOPPER_LOADER_ARGS_JSON: "{" },
     "HOPPER_LOADER_ARGS_JSON",
