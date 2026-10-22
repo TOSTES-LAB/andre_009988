@@ -7,6 +7,7 @@ const SELECTED_REGISTRATION_SETTINGS = [
   "QORVEX_HOPPER_STARTUP_TIMEOUT_MS",
   "QORVEX_JEB_MCP_TIMEOUT_MS",
   "QORVEX_MCP_INPUT_SCHEMA_PROFILE",
+  "QORVEX_REGEX_MATCHING_DEADLINE_MS",
 ] as const;
 
 /** Preserve selected setup settings without copying unrelated process values. */

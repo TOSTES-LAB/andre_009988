@@ -492,6 +492,11 @@ it.each([
     "QORVEX_ASAR_MAX_HEADER_BYTES",
   ],
   [
+    "regex matching deadline of zero",
+    { QORVEX_REGEX_MATCHING_DEADLINE_MS: "0" },
+    "QORVEX_REGEX_MATCHING_DEADLINE_MS",
+  ],
+  [
     "malformed loader JSON",
     { HOPPER_LOADER_ARGS_JSON: "{" },
     "HOPPER_LOADER_ARGS_JSON",

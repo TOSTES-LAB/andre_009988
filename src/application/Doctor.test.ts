@@ -164,6 +164,7 @@ describe("doctor native analysis configuration", () => {
 
   it.each([
     ["QORVEX_ANALYSIS_PROVIDER", "Hopper"],
+    ["QORVEX_REGEX_MATCHING_DEADLINE_MS", "0"],
     ["QORVEX_GHIDRA_STARTUP_TIMEOUT_MS", "abc"],
     ["QORVEX_SWIFTC_COMPILE_TIMEOUT_MS", "0"],
     ["QORVEX_LOG_LEVEL", "verbose"],

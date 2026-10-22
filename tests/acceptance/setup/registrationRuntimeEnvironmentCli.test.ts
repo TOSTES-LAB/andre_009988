@@ -486,6 +486,7 @@ cliTest(
       QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "2800002",
       QORVEX_JEB_MCP_TIMEOUT_MS: "2900003",
       QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
+      QORVEX_REGEX_MATCHING_DEADLINE_MS: "10000",
       QORVEX_UNRELATED_MARKER: "do-not-persist",
     };
     const run = (arguments_: readonly string[]) =>
@@ -514,6 +515,7 @@ cliTest(
     );
     expect(codexRegistration).toMatchObject({ tool_timeout_sec: 3021 });
     expect(codexConfig).toContain('QORVEX_JEB_MCP_TIMEOUT_MS = "2900003"');
+    expect(codexConfig).toContain('QORVEX_REGEX_MATCHING_DEADLINE_MS = "10000"');
     expect(codexConfig).not.toContain("QORVEX_UNRELATED_MARKER");
 
     const kimiPath = join(kimiHome, "mcp.json");
@@ -529,6 +531,7 @@ cliTest(
         QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "2800002",
         QORVEX_JEB_MCP_TIMEOUT_MS: "2900003",
         QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
+        QORVEX_REGEX_MATCHING_DEADLINE_MS: "10000",
       },
     });
     expect(await readFile(kimiPath, "utf8")).not.toContain(
