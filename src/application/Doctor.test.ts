@@ -165,6 +165,7 @@ describe("doctor native analysis configuration", () => {
   it.each([
     ["QORVEX_ANALYSIS_PROVIDER", "Hopper"],
     ["QORVEX_REGEX_MATCHING_DEADLINE_MS", "0"],
+    ["QORVEX_BRIDGE_MAX_REQUEST_BYTES", "7463"],
     ["QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB", "7"],
     ["QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB", "6"],
     ["QORVEX_MCP_INITIALIZE_BUDGET_MS", "0"],

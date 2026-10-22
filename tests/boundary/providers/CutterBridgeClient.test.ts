@@ -919,18 +919,22 @@ describe("CutterBridgeClient: scenario group 6", () => {
       port,
       "synthetic-cutter-bridge-token-for-test",
     );
-    await expect(
-      createClient({ QORVEX_CUTTER_BRIDGE_DIR: directory }).execute({
-        sessionId,
-        expectedGeneration: 0,
-        command: "pd 1",
-        json: false,
-      }),
-    ).resolves.toMatchObject({
+    const execution = await createClient({
+      QORVEX_CUTTER_BRIDGE_DIR: directory,
+    }).execute({
+      sessionId,
+      expectedGeneration: 0,
+      command: "pd 1",
+      json: false,
+    });
+    expect(execution).toMatchObject({
       executionState: "unknown",
       error: "transport-response-missing",
-      message: expect.stringContaining("may have completed"),
+      message: expect.stringMatching(
+        /framed transport limit of 16777216 bytes.*QORVEX_BRIDGE_MAX_REQUEST_BYTES.*may have completed/s,
+      ),
     });
+    expect(execution.message).not.toContain("no runtime override");
   });
 
   it("rejects stale sessions and preserves failures before command dispatch", async () => {

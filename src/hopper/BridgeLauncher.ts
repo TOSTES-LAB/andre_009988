@@ -47,6 +47,11 @@ import {
   acquireLinuxHopperApplicationLease,
 } from "../process/HopperLease.js";
 import type { HopperTargetLease } from "../process/HopperLease.js";
+import {
+  MAXIMUM_BRIDGE_MAX_REQUEST_BYTES,
+  MINIMUM_BRIDGE_MAX_REQUEST_BYTES,
+  type BridgeMaxRequestBytes,
+} from "../config/bridgeMaxRequestBytes.js";
 import { HOPPER_SHUTDOWN_TIMEOUT_MS } from "./HopperSessionValues.js";
 import { verifyMacHopperNativeHelper } from "./HopperMacPublisher.js";
 import { inspectLinuxHopperLauncher } from "../application/LinuxHopper.js";
@@ -129,6 +134,8 @@ interface SharedHopperApplicationLauncherOptions {
   readonly targetKind: "executable" | "database";
   readonly loaderArgs: readonly string[];
   readonly bridgeScriptPath: string;
+  /** Caller-selected request ceiling. Omitted or source default leaves the bridge at 16 MiB. */
+  readonly bridgeMaxRequestBytes?: BridgeMaxRequestBytes;
   readonly preparedImage?: {
     readonly image: HopperMachOImage;
     readonly sourceSha256: string;
@@ -554,22 +561,33 @@ export class HopperApplicationLauncher implements BridgeLauncher {
   }
 }
 
-const bridgeBootstrapSource = (
+/** Bootstrap assignments Hopper execs before the bridge module. Exported for the ceiling regression. */
+export const bridgeBootstrapSource = (
   session: BridgeSession,
   options: SharedHopperApplicationLauncherOptions,
   ownsProcessLifetime: boolean,
   loadedPath: string,
-): string =>
-  [
+): string => {
+  const limit = options.bridgeMaxRequestBytes;
+  const injectedLimit =
+    limit?.source === "setting" &&
+    Number.isSafeInteger(limit.maximumBytes) &&
+    limit.maximumBytes >= MINIMUM_BRIDGE_MAX_REQUEST_BYTES &&
+    limit.maximumBytes <= MAXIMUM_BRIDGE_MAX_REQUEST_BYTES
+      ? `QORVEX_BRIDGE_MAX_REQUEST_BYTES = ${String(limit.maximumBytes)}`
+      : undefined;
+  return [
     `QORVEX_SOCKET = ${JSON.stringify(session.socketPath)}`,
     `QORVEX_TOKEN = ${JSON.stringify(session.token)}`,
     `QORVEX_RUN_ID = ${JSON.stringify(session.runId)}`,
     `QORVEX_TARGET_PATH = ${JSON.stringify(loadedPath)}`,
     `QORVEX_OWNS_PROCESS_LIFETIME = ${ownsProcessLifetime ? "True" : "False"}`,
     `QORVEX_RECONNECT_TIMEOUT_SECONDS = ${HOPPER_SHUTDOWN_TIMEOUT_MS / 1_000}`,
+    ...(injectedLimit === undefined ? [] : [injectedLimit]),
     `exec(compile(open(${JSON.stringify(options.bridgeScriptPath)}, 'rb').read(), ${JSON.stringify(options.bridgeScriptPath)}, 'exec'))`,
     "",
   ].join("\n");
+};
 
 const launchHopperProcess = async (input: {
   readonly options: HopperApplicationLauncherOptions;

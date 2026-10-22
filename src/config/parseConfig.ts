@@ -4,6 +4,7 @@ import type { ConfigurationError } from "../domain/configurationErrors.js";
 import { ok, type Result } from "../domain/result.js";
 import { parseEnvironment } from "./environment.js";
 import { homeDirectoryFromEnvironment } from "./homeDirectory.js";
+import { DEFAULT_BRIDGE_MAX_REQUEST } from "./bridgeMaxRequestBytes.js";
 import { DEFAULT_REGEX_MATCHING_DEADLINE } from "./regexMatchingDeadline.js";
 import { DEFAULT_REGEX_WORKER_HEAP_REQUEST } from "./regexWorkerHeapRequest.js";
 import type { AppConfig } from "./types.js";
@@ -123,6 +124,13 @@ export const parseConfig = (
     referenceSourcePolicy: {
       secretPatterns: env.referenceSecretPatterns,
     },
+    bridgeMaxRequestBytes:
+      env.QORVEX_BRIDGE_MAX_REQUEST_BYTES === undefined
+        ? DEFAULT_BRIDGE_MAX_REQUEST
+        : {
+            maximumBytes: env.QORVEX_BRIDGE_MAX_REQUEST_BYTES,
+            source: "setting",
+          },
     regexMatchingDeadline:
       env.QORVEX_REGEX_MATCHING_DEADLINE_MS === undefined
         ? DEFAULT_REGEX_MATCHING_DEADLINE

@@ -182,6 +182,7 @@ it.each([
     name: "registration-only settings",
     environment: {
       QORVEX_ANALYSIS_PROVIDER: "auto",
+      QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
       QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
       QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
       QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
@@ -221,6 +222,7 @@ it.each([
       if ("QORVEX_MCP_INPUT_SCHEMA_PROFILE" in environment) {
         expect(initial.providerEnvironment).toMatchObject({
           QORVEX_ANALYSIS_PROVIDER: "auto",
+          QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
           QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
           QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
           QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
@@ -233,6 +235,9 @@ it.each([
           QORVEX_MCP_DOCTOR_DEADLINE_MS: "31000",
         });
       } else {
+        expect(initial.providerEnvironment).not.toHaveProperty(
+          "QORVEX_BRIDGE_MAX_REQUEST_BYTES",
+        );
         expect(initial.providerEnvironment).not.toHaveProperty(
           "QORVEX_REGEX_MATCHING_DEADLINE_MS",
         );

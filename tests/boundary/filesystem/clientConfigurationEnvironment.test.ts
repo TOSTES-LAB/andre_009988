@@ -507,6 +507,16 @@ it.each([
     "QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB",
   ],
   [
+    "bridge request ceiling below its floor",
+    { QORVEX_BRIDGE_MAX_REQUEST_BYTES: "7463" },
+    "QORVEX_BRIDGE_MAX_REQUEST_BYTES",
+  ],
+  [
+    "bridge request ceiling above its maximum",
+    { QORVEX_BRIDGE_MAX_REQUEST_BYTES: "536870888" },
+    "QORVEX_BRIDGE_MAX_REQUEST_BYTES",
+  ],
+  [
     "MCP initialize budget of zero",
     { QORVEX_MCP_INITIALIZE_BUDGET_MS: "0" },
     "QORVEX_MCP_INITIALIZE_BUDGET_MS",

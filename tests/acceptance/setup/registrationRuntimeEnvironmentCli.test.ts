@@ -482,6 +482,7 @@ cliTest(
       KIMI_CODE_HOME: kimiHome,
       ...missingHopperAndGhidraEnvironment(home),
       QORVEX_ANALYSIS_PROVIDER: "auto",
+      QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
       QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700001",
       QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "2800002",
       QORVEX_JEB_MCP_TIMEOUT_MS: "2900003",
@@ -520,6 +521,7 @@ cliTest(
       "qorvex",
     );
     expect(codexRegistration).toMatchObject({ tool_timeout_sec: 3021 });
+    expect(codexConfig).toContain('QORVEX_BRIDGE_MAX_REQUEST_BYTES = "33554432"');
     expect(codexConfig).toContain('QORVEX_JEB_MCP_TIMEOUT_MS = "2900003"');
     expect(codexConfig).toContain(
       'QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB = "256"',
@@ -541,6 +543,7 @@ cliTest(
       toolTimeoutMs: 3_020_003,
       env: {
         QORVEX_ANALYSIS_PROVIDER: "auto",
+        QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
         QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700001",
         QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "2800002",
         QORVEX_JEB_MCP_TIMEOUT_MS: "2900003",

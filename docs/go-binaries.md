@@ -61,7 +61,7 @@ qorvex inspect-go-binary ./application --detail summary --evidence_output ./go-e
 `--evidence_output` is required for CLI summary delivery and never overwrites an
 existing file. The default CLI/MCP reply remains complete.
 
-[Measured workflows](../experiments/analysis-efficiency/go-build-views.md) include
+[Measured workflows](https://github.com/TOSTES-LAB/andre_009988/blob/42e1a17d6e6c0487f17be0bae248553c4caba7f7/experiments/analysis-efficiency/go-build-views.md) include
 catalog repetition and extra calls. Identity/count questions benefit from a
 single summary. In the tested Codex full-catalog configuration, a compound
 question about identity and one dependency uses fewer tokens in captured request JSON with
