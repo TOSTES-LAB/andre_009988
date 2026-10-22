@@ -18,11 +18,13 @@ import {
 import { mcpInputSchemaProfileSchema } from "./mcpInputSchemaProfile.js";
 import { mcpOutputSchemaProfileSchema } from "./mcpOutputSchemaProfile.js";
 import { mcpResponseBudgetSchema } from "./mcpResponseBudget.js";
+import { asarMaxHeaderBytesSchema } from "./asarHeaderAdmission.js";
 import { parseLoaderArgs, parseStringArray } from "./parsers.js";
 
 const environmentSchema = z.object({
   QORVEX_ANALYSIS_PROVIDER: analysisProviderSelectorSchema.default("auto"),
   QORVEX_MCP_MAX_RESPONSE_BYTES: mcpResponseBudgetSchema.optional(),
+  QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema.optional(),
   QORVEX_MCP_INPUT_SCHEMA_PROFILE: mcpInputSchemaProfileSchema.optional(),
   QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: mcpOutputSchemaProfileSchema.optional(),
   QORVEX_IDA_MCP_CONFIG: z

@@ -3,7 +3,6 @@ import {
   createAnalysisProfile,
   type AnalysisProfileCommitment,
 } from "../domain/analysisProfile.js";
-
 /** Provider identity for deterministic composed analysis workflows. */
 export const QORVEX_WORKFLOW_PROVIDER = {
   id: "qorvex-workflow",
@@ -109,20 +108,6 @@ export const ANALYSIS_VIEW_PROVIDER = {
 export const JAVASCRIPT_APPLICATION_WORKFLOW_PROVIDER = {
   id: "qorvex-javascript-application-workflows",
   name: "QORVEX JavaScript application workflows",
-  version: "1",
-} as const;
-
-/** Provider identity for deterministic cross-artifact comparisons. */
-export const ARTIFACT_COMPARISON_PROVIDER = {
-  id: "qorvex-artifact-comparison",
-  name: "QORVEX artifact comparison",
-  version: "1",
-} as const;
-
-/** Provider identity for deterministic cross-function comparisons. */
-export const FUNCTION_COMPARISON_PROVIDER = {
-  id: "qorvex-function-comparison",
-  name: "QORVEX function comparison",
   version: "1",
 } as const;
 

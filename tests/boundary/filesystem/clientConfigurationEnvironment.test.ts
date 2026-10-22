@@ -23,6 +23,7 @@ import {
 import { snapshotEnvironment } from "../../../src/process/snapshotEnvironment.js";
 import { npxRegistrationCommand } from "../../../src/application/ClientRegistrationIdentity.js";
 import { ok } from "../../../src/domain/result.js";
+import { MCP_STARTUP_POLICY } from "../../../src/mcpStartupPolicy.js";
 
 it("awaits the owner-parsed provider request budget without changing caller strings", async () => {
   const parsed = parseClientConfiguration(
@@ -55,6 +56,55 @@ it("awaits the owner-parsed provider request budget without changing caller stri
       values: { QORVEX_IDA_MCP_CONFIG: "/tmp/qorvex-registration.json/" },
       timeoutInputs: { providerRequestTimeoutMs: 17 },
     },
+  });
+});
+
+it("reuses desired registration facts within a snapshot and revalidates later inspections", async () => {
+  const home = await createTestTempDirectory("qorvex-registration-snapshot-");
+  const configPath = join(home, "mcp.json");
+  const environment = {
+    QORVEX_ANALYSIS_PROVIDER: "ida",
+    QORVEX_IDA_MCP_CONFIG: "/tmp/qorvex-registration.json/",
+    QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+  };
+  const original = JSON.stringify({
+    mcpServers: {
+      qorvex: {
+        command: "qorvex",
+        args: ["mcp"],
+        env: environment,
+        startupTimeoutMs: MCP_STARTUP_POLICY.kimiStartupTimeoutMs,
+        toolTimeoutMs: 450_000,
+      },
+    },
+  });
+  await writeFile(configPath, original);
+  const client = { name: "kimi", format: "kimi", configPath } as const;
+  const observations: string[] = [];
+  const resolveBudget = async (
+    provider: string,
+    observedEnvironment: Readonly<Record<string, string>>,
+  ) => {
+    expect(observedEnvironment.QORVEX_IDA_MCP_CONFIG).toBe(
+      environment.QORVEX_IDA_MCP_CONFIG,
+    );
+    observations.push(provider);
+    return ok(17);
+  };
+
+  expect(
+    await clientConfigurationAligned(client, {}, ["qorvex", "mcp"], resolveBudget),
+  ).toBe(true);
+  expect(observations).toEqual(["ida"]);
+
+  expect(
+    await inspectClientConfiguration(client, {}, ["qorvex", "mcp"], resolveBudget),
+  ).toEqual({ status: "already_current" });
+  // Inspection checks both the layered preflight and the freshly read document.
+  expect(observations).toEqual(["ida", "ida", "ida"]);
+  expect(await readFile(configPath, "utf8")).toBe(original);
+  await expect(access(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
+    code: "ENOENT",
   });
 });
 
@@ -435,6 +485,11 @@ it.each([
     "invalid response budget",
     { QORVEX_MCP_MAX_RESPONSE_BYTES: "1" },
     "QORVEX_MCP_MAX_RESPONSE_BYTES",
+  ],
+  [
+    "ASAR header admission above its maximum",
+    { QORVEX_ASAR_MAX_HEADER_BYTES: "268435457" },
+    "QORVEX_ASAR_MAX_HEADER_BYTES",
   ],
   [
     "malformed loader JSON",
