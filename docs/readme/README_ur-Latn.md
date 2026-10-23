@@ -245,7 +245,12 @@ Latest npm release ke baad add hone wale features ki
 
 ## Amli misaalein
 
-[![DX-Ball sound-pan, Notion clipboard-bridge aur TH04 bullet-ring case studies ki tasveerein](../assets/qorvex-showcases.png)](https://qorvex.tools/showcase/)
+<a href="https://qorvex.tools/showcase/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/qorvex-showcases-dark.svg" />
+    <img alt="DX-Ball sound-pan, Notion clipboard-bridge aur TH04 bullet-ring case studies ki tasveerein" src="../assets/qorvex-showcases.svg" />
+  </picture>
+</a>
 
 ### DX-Ball: sound-pan calculation dobara banayein
 

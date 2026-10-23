@@ -52,6 +52,7 @@
     "bridge/hopper_bridge.py",
     "bridge/cutter/qorvex_bridge.py",
     "bridge/native/NativeUIChildren.swift",
+    "bridge/native/NativeUIValues.swift",
     "bridge/native/ReaNativeUI.swift",
     "bridge/native/qorvex_lldb_tracer.py",
     "bridge/process/ProcessRunTokenReader.swift",

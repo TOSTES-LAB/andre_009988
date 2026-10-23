@@ -377,3 +377,30 @@ it("projects the fake Kuna through the completed doctor workflow", async () => {
     await host.close!();
   }
 });
+
+it.each([
+  ["QORVEX_KUNA_CACHE_DIR", "relative"],
+  ["QORVEX_KUNA_CACHE_MAX_BYTES", "0"],
+  ["QORVEX_KUNA_PROJECT_TIMEOUT_MS", "0"],
+  ["QORVEX_KUNA_TIMEOUT_MS", "0"],
+  ["QORVEX_KUNA_JOBS", "33"],
+] as const)(
+  "recommends repairing %s without replacing a valid executable",
+  async (setting, value) => {
+    const root = await createTestTempDirectory("qorvex-kuna-setting-remediation-");
+    const command = join(root, "caller-kuna");
+    const inspection = await inspectKunaProvider({
+      QORVEX_KUNA_COMMAND: command,
+      [setting]: value,
+    });
+    expect(inspection.available).toBe(false);
+    expect(inspection.checks[0]).toMatchObject({
+      code: "open_options_invalid",
+      classification: "config_drift",
+      details: { setting },
+      remediation: expect.stringContaining(`Correct ${setting}`),
+    });
+    expect(inspection.checks[0]?.remediation).not.toContain("QORVEX_KUNA_COMMAND");
+    await expect(lstat(command)).rejects.toMatchObject({ code: "ENOENT" });
+  },
+);

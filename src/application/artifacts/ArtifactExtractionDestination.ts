@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { absoluteCallerPath } from "../../filesystem/callerPath.js";
 
 /** Choose a fresh temporary destination for an artifact extraction. */
 export const createArtifactExtractionDestination = (): string =>
-  join(tmpdir(), `qorvex-extracted-${randomUUID()}`);
+  absoluteCallerPath(`${tmpdir()}/qorvex-extracted-${randomUUID()}`);

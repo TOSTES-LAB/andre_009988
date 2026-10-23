@@ -7,6 +7,44 @@ import {
   stringifyHermesConfigurationYaml,
 } from "./HermesConfigurationYaml.js";
 
+for (const version of ["1.1", "1.2"] as const)
+  it.each(["refresh", "remove"] as const)(
+    `preserves YAML ${version} consumers of a replaced QORVEX anchor during %s`,
+    (operation) => {
+      const original =
+        `${version === "1.2" ? "%YAML 1.2\n---\n" : ""}` +
+        "mcp_servers:\n  qorvex: &server\n    command: old-qorvex\n    args: [mcp]\n    env: &environment {MODE: 'on'}\n  other: *server # caller binding\nobserver: *server\nenvironment: *environment\n";
+      const before = parse(original, { version });
+      const updated = editHermesConfigurationYaml(
+        original,
+        ["mcp_servers", "qorvex"],
+        operation === "refresh"
+          ? { command: "new-qorvex", args: ["mcp"] }
+          : undefined,
+      );
+      expect(parse(updated, { version })).toEqual({
+        mcp_servers: {
+          ...(operation === "refresh"
+            ? { qorvex: { command: "new-qorvex", args: ["mcp"] } }
+            : {}),
+          other: before.mcp_servers.other,
+        },
+        observer: before.observer,
+        environment: before.environment,
+      });
+      expect(updated).toContain("# caller binding");
+      expect(
+        editHermesConfigurationYaml(
+          updated,
+          ["mcp_servers", "qorvex"],
+          operation === "refresh"
+            ? { command: "new-qorvex", args: ["mcp"] }
+            : undefined,
+        ),
+      ).toBe(updated);
+    },
+  );
+
 describe("Hermes YAML deletion", () => {
   for (const version of ["1.1", "1.2"] as const) {
     for (const [name, body, path] of [
