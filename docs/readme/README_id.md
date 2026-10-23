@@ -141,7 +141,7 @@ Perintah CLI menggunakan alur kerja yang sama.
 
 ## Hal yang Dapat Anda Analisis
 
-QORVEX memerlukan Node.js 22.x (>=22.19), 24.x (>=24.11), atau 26+, beserta npm.
+QORVEX memerlukan Node.js 22.x (>=22.23.4), 24.x (>=24.22.1), atau 26+ (>=26.12.1), beserta npm.
 
 Alat tambahan dan dukungan sistem host bergantung pada target yang dianalisis:
 

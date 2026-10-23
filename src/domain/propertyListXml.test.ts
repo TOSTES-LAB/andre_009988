@@ -38,6 +38,17 @@ it("keeps document-level processing instructions outside plist members", () => {
   expect(parsed.numberLiterals.incomplete).toBe(false);
 });
 
+it("rejects a dictionary key without a value and preserves an explicit empty string", () => {
+  expect(() =>
+    parseXmlPropertyList("<plist><dict><key>missing</key></dict></plist>"),
+  ).toThrow("Missing value for key while parsing <dict/>");
+  expect(
+    parseXmlPropertyList(
+      "<plist><dict><key>empty</key><string/></dict></plist>",
+    ).value,
+  ).toEqual({ empty: "" });
+});
+
 it.each([
   ["CDATA", "<![CDATA[before<?qorvex content?>after]]>"],
   ["escaped text", "before&lt;?qorvex content?&gt;after"],

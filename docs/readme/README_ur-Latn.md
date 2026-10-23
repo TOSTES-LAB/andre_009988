@@ -181,7 +181,7 @@ karti hain.
 
 ## Kya kuch analyze kar sakte hain
 
-QORVEX ke liye Node.js 22.x (>=22.19), 24.x (>=24.11) ya 26+, aur npm chahiye.
+QORVEX ke liye Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) ya 26.12.1+, aur npm chahiye.
 Mazeed tools aur host support target par depend karte hain:
 
 | Target                  | QORVEX kya wapas deta hai                                                                            | Zarooriyat aur guide                                                                                                              |

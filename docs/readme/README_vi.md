@@ -137,7 +137,7 @@ Tác nhân gọi QORVEX qua MCP để kiểm tra mục tiêu và lần theo mã 
 
 ## Những gì bạn có thể phân tích
 
-QORVEX yêu cầu Node.js 22.x (>=22.19), 24.x (>=24.11) hoặc 26+, cùng với npm. Công cụ bổ sung và nền tảng chạy QORVEX được hỗ trợ tùy thuộc vào mục tiêu:
+QORVEX yêu cầu Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) hoặc 26+ (>=26.12.1), cùng với npm. Công cụ bổ sung và nền tảng chạy QORVEX được hỗ trợ tùy thuộc vào mục tiêu:
 
 | Mục tiêu                          | QORVEX trả về gì                                                                                                   | Yêu cầu và hướng dẫn                                                                                                                      |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |

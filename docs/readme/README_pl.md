@@ -137,7 +137,7 @@ Twój agent wywołuje QORVEX przez MCP, aby analizować cel i śledzić istotny 
 
 ## Co możesz analizować
 
-QORVEX wymaga Node.js 22.x (>=22.19), 24.x (>=24.11) lub 26+ oraz npm. Dodatkowe narzędzia i obsługiwane platformy zależą od celu analizy:
+QORVEX wymaga Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) lub 26+ (>=26.12.1) oraz npm. Dodatkowe narzędzia i obsługiwane platformy zależą od celu analizy:
 
 | Cel                                     | Co zwraca QORVEX                                                                                                         | Wymagania i przewodnik                                                                                                               |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |

@@ -140,7 +140,7 @@ Votre agent appelle QORVEX via MCP pour inspecter la cible et suivre le code per
 
 ## Ce que vous pouvez analyser
 
-QORVEX nécessite Node.js 22.x (>=22.19), 24.x (>=24.11) ou 26+, ainsi que npm. Les outils supplémentaires et les hôtes pris en charge dépendent de la cible :
+QORVEX nécessite Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) ou 26+ (>=26.12.1), ainsi que npm. Les outils supplémentaires et les hôtes pris en charge dépendent de la cible :
 
 | Cible                        | Ce que QORVEX renvoie                                                                                          | Prérequis et guide                                                                                                                |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
