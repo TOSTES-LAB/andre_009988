@@ -165,3 +165,9 @@ export const RECONSTRUCTION_PROVIDER = {
   name: "QORVEX reconstruction verifier",
   version: "1",
 } as const;
+
+export const PE_LOAD_CONFIG_PROVIDER = Object.freeze({
+  id: "qorvex-pe-load-config",
+  name: "QORVEX PE TLS/load-config parser",
+  version: "1",
+} as const);
