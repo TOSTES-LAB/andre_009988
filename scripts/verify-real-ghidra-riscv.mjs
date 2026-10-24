@@ -213,6 +213,7 @@ try {
     const dossier = functionDossierSchema.parse(
       await call("analyze_function", {
         procedure: fixture.symbols.qorvex_riscv_entry,
+        detail: "complete",
       }),
     );
     assert.ok(dossier.pseudocode.trim().length > 0);

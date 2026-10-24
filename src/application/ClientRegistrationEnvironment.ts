@@ -37,6 +37,7 @@ interface ResolvedClientRegistrationEnvironmentDetails extends ClientRegistratio
 
 const TIMEOUT_INPUT_SETTINGS: ReadonlySet<string> = new Set([
   "QORVEX_ANALYSIS_PROVIDER",
+  "QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS",
   "QORVEX_GHIDRA_STARTUP_TIMEOUT_MS",
   "QORVEX_HOPPER_STARTUP_TIMEOUT_MS",
   "QORVEX_JEB_MCP_TIMEOUT_MS",
@@ -65,14 +66,6 @@ export const clientRegistrationEnvironment = (
   validation: "fragment" | "effective" = "effective",
   platform: NodeJS.Platform = process.platform,
 ): Result<Readonly<Record<string, string>>, ConfigurationError> => {
-  if (parsed?.dialect === "dsh") {
-    const environment = dshDocument(parsed.document).environment(
-      overrides,
-      validation,
-      platform,
-    );
-    return environment.ok ? ok(environment.value.values) : environment;
-  }
   const details = clientRegistrationEnvironmentDetails(
     parsed,
     overrides,
@@ -212,6 +205,12 @@ const environmentDetails = (
     : {
         analysisProvider: configuration.QORVEX_ANALYSIS_PROVIDER,
         ghidraStartupTimeoutMs: configuration.QORVEX_GHIDRA_STARTUP_TIMEOUT_MS,
+        ...(configuration.QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS === undefined
+          ? {}
+          : {
+              ghidraDecompileTimeoutMs:
+                configuration.QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS * 1000,
+            }),
         hopperStartupTimeoutMs: configuration.QORVEX_HOPPER_STARTUP_TIMEOUT_MS,
         ...(configuration.QORVEX_JEB_MCP_TIMEOUT_MS === undefined
           ? {}
