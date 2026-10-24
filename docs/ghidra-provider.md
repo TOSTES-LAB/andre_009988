@@ -36,6 +36,18 @@ provider stays bound to the target; runtime failure never selects another
 provider automatically. The contracts below describe Ghidra observations,
 not equivalence with another engine's pseudocode or analysis database.
 
+## Request payload ceiling
+
+Ghidra requests use `QORVEX_BRIDGE_MAX_REQUEST_BYTES`: default 16 MiB, with a
+configurable range of 7,464–536,870,887 bytes. QORVEX measures UTF-8 JSON, including
+escaping, before allocating the serialized request or sending it. The framing
+newline is excluded. An oversized request returns `resource_constraint` with
+the effective setting, its source, and the exact payload byte count.
+
+Set the value in the environment that starts QORVEX, then restart QORVEX to apply it.
+This setting is enforced by the QORVEX client; the Java bridge has no corresponding
+request ceiling.
+
 ## Admitted inventory semantics
 
 | Concern          | Ghidra contract                                                                                                                                                                                                                                                                                 |

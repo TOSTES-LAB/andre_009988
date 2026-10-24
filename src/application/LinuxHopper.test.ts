@@ -504,7 +504,10 @@ describe("Linux Hopper temporary cleanup ownership", () => {
         attempts += 1;
         throw new Error("still busy");
       }),
-    ).toContain("/tmp/qorvex-hopper");
+    ).toMatchObject({
+      reason: expect.stringContaining("/tmp/qorvex-hopper"),
+      resources: ["/tmp/qorvex-hopper"],
+    });
     expect(
       await owner.retry(async () => {
         attempts += 1;
