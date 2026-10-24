@@ -9,7 +9,7 @@ import { FUNCTION_COMPARISON_PROVIDER } from "../domain/comparisonEvidenceIdenti
 import { jsonValueSchema } from "../domain/jsonValue.js";
 import type { RecordUnknownInput } from "../domain/residualUnknown.js";
 import { recordDerivedEvidence } from "./recordDerivedEvidence.js";
-import { recordSessionEvidenceSources } from "./sessionEvidence.js";
+import { recordEvidenceSources } from "../application/investigation/recordEvidenceSources.js";
 import { runDerivedOperation } from "./runDerivedOperation.js";
 import { toolRegistrationOptions } from "./toolRegistrationOptions.js";
 import { withAdmittedAnalysis } from "./analysisAdmission.js";
@@ -17,7 +17,6 @@ import { runAdmittedToolOperation } from "./admittedToolOperation.js";
 
 import { compareFunctions } from "../domain/functionComparison.js";
 import { uniqueSorted } from "../domain/canonicalOrdering.js";
-import { investigationEvidenceLookup } from "../application/investigation/InvestigationEvidence.js";
 /** Register explicit Evidence-backed function comparison. */
 export const registerFunctionComparisonTool = (
   server: EvidenceMcpServer,
@@ -37,7 +36,7 @@ export const registerFunctionComparisonTool = (
         async () => {
           const resolved = resolvePairedEvidenceRequest(
             input,
-            investigationEvidenceLookup(session),
+            session.evidenceForAnalysis.bind(session),
           );
           if (!resolved.ok)
             return server.delivery.toCallToolResult(resolved, contract);
@@ -69,7 +68,7 @@ export const registerFunctionComparisonTool = (
           const rightEvidence = right.evidence;
           const leftIds = [leftEvidence.evidence_id];
           const rightIds = [rightEvidence.evidence_id];
-          const recordedSources = recordSessionEvidenceSources(
+          const recordedSources = recordEvidenceSources(
             (evidence) => session.recordEvidence(evidence),
             [leftEvidence, rightEvidence],
           );

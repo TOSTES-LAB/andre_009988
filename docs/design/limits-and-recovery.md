@@ -18,8 +18,10 @@ default, any floor, the maximum, the schema, the parser, and the recovery
 text. Register that schema on `environmentSchema` in
 [`environment.ts`](https://github.com/TOSTES-LAB/andre_009988/blob/main/src/config/environment.ts).
 `parseConfig` calls `parseEnvironment`. Doctor uses that same parser through
-`nativeAnalysisConfigurationError`, so startup and `qorvex doctor` accept the
-same values. Add the name to `SELECTED_REGISTRATION_SETTINGS` so `qorvex setup`
+`inspectNativeAnalysisConfiguration`, which also preserves a supplied Hopper
+timeout's parsed diagnostic when another setting is invalid. Startup and
+`qorvex doctor` accept the same values. Add the name to
+`SELECTED_REGISTRATION_SETTINGS` so `qorvex setup`
 copies it into the client registration. Unset keeps today's behavior. An
 invalid value is a `ConfigurationError` and projects as `configuration_invalid`.
 Do not fall back to the default.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultHopperLauncherPath,
-  nativeAnalysisConfigurationError,
+  inspectNativeAnalysisConfiguration,
   parseConfig,
 } from "./config/parseConfig.js";
 import {
@@ -100,16 +100,16 @@ describe("runtime configuration", () => {
   });
 
   it("shares native admission with doctor and ignores the JEB-only timeout", () => {
-    expect(nativeAnalysisConfigurationError({})).toBeUndefined();
+    expect(inspectNativeAnalysisConfiguration({})).toEqual({ issues: [] });
     expect(
-      nativeAnalysisConfigurationError({ QORVEX_JEB_MCP_TIMEOUT_MS: "abc" }),
-    ).toBeUndefined();
+      inspectNativeAnalysisConfiguration({ QORVEX_JEB_MCP_TIMEOUT_MS: "abc" }),
+    ).toEqual({ issues: [] });
     expect(parseConfig({ QORVEX_JEB_MCP_TIMEOUT_MS: "abc" }).ok).toBe(true);
-    const rejected = nativeAnalysisConfigurationError({
+    const rejected = inspectNativeAnalysisConfiguration({
       QORVEX_ANALYSIS_PROVIDER: "Hopper",
       QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "abc",
     });
-    expect(rejected?.settings.map(({ setting }) => setting)).toEqual([
+    expect(rejected.issues.map(({ setting }) => setting)).toEqual([
       "QORVEX_ANALYSIS_PROVIDER",
       "QORVEX_GHIDRA_STARTUP_TIMEOUT_MS",
     ]);
@@ -119,6 +119,33 @@ describe("runtime configuration", () => {
         QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "abc",
       }).ok,
     ).toBe(false);
+  });
+
+  it("preserves the timeout's schema cause when aggregate admission stops at NUL", () => {
+    const inspected = inspectNativeAnalysisConfiguration({
+      CALLER_SETTING: "private\0value",
+      QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "0",
+    });
+    expect(inspected.issues).toEqual([
+      {
+        setting: "CALLER_SETTING",
+        constraint:
+          "Environment variable names and values must not contain NUL bytes",
+      },
+    ]);
+    const timeout = inspected.configuredHopperStartupTimeout;
+    if (timeout === undefined || timeout.ok)
+      throw new Error("Expected the configured timeout's independent refusal");
+    expect(timeout.error.cause).toMatchObject({
+      name: "ZodError",
+      issues: [{ message: "must be a positive decimal integer" }],
+    });
+    expect(timeout.error.settings).toEqual([
+      {
+        setting: "QORVEX_HOPPER_STARTUP_TIMEOUT_MS",
+        constraint: "must be a positive decimal integer",
+      },
+    ]);
   });
 
   it("parses absolute BYO Ghidra and optional Java paths", () => {
