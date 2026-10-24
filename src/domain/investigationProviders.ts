@@ -41,6 +41,12 @@ export const PE_IMPORTS_PROVIDER = Object.freeze({
 } as const);
 
 /** Provider identity for portable, execution-free ELF note-table decoding. */
+export const DEVICETREE_PROVIDER = Object.freeze({
+  id: "qorvex-devicetree",
+  name: "QORVEX flattened devicetree parser",
+  version: "1",
+} as const);
+
 export const ELF_NOTES_PROVIDER = Object.freeze({
   id: "qorvex-elf-notes",
   name: "QORVEX ELF note parser",
@@ -51,6 +57,12 @@ export const ELF_NOTES_PROVIDER = Object.freeze({
 export const APPLE_IPS_PROVIDER = Object.freeze({
   id: "qorvex-apple-ips",
   name: "QORVEX Apple IPS parser",
+  version: "1",
+} as const);
+/** Provider identity for portable, execution-free Linux kernel-module metadata. */
+export const KERNEL_MODULE_PROVIDER = Object.freeze({
+  id: "qorvex-kernel-module",
+  name: "QORVEX kernel module parser",
   version: "1",
 } as const);
 

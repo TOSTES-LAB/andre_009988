@@ -1,4 +1,11 @@
 import {
+  devicetreeViewRequestSchema,
+  devicetreeViewItemsSchema,
+  devicetreeSummarySchema,
+  devicetreePageContextSchema,
+  projectDevicetreeView,
+} from "./devicetreeView.js";
+import {
   apkSignatureViewRequestSchema,
   apkSignatureViewItemsSchema,
 } from "../apkSignature/apkSignatureQuery.js";
@@ -165,6 +172,7 @@ import {
 import { projectBinaryLayoutView } from "./binaryLayoutView.js";
 import { projectJavaScriptApplicationView } from "./javascriptApplicationView.js";
 import {
+  createApiSurfaceAccumulator,
   projectWebNetworkApiSurfaceView,
   apiSurfaceFields,
   apiSurfaceViewSchema,
@@ -225,12 +233,15 @@ import {
 import type { WebNetworkApiSurfaceAccumulator } from "./WebNetworkApiSurfaceAccumulator.js";
 import type { EnvironmentManifestAccumulator } from "./EnvironmentManifestAccumulator.js";
 import type { EnvironmentStateAccumulator } from "./EnvironmentStateAccumulator.js";
+import { admitAnalysisViewData } from "./analysisViewDataAdmission.js";
 import {
+  createEnvironmentManifestAccumulator,
   projectEnvironmentManifestView,
   environmentManifestFields,
   environmentManifestViewRequestSchema,
 } from "./environmentManifestView.js";
 import {
+  createEnvironmentStateAccumulator,
   environmentStateFields,
   environmentStateViewRequestSchema,
   projectEnvironmentStateView,
@@ -351,6 +362,7 @@ const nativeViewSchema = z.strictObject({
 
 /** Caller-selected projection of already completed analysis Evidence. */
 export const analysisViewRequestSchema = z.discriminatedUnion("kind", [
+  devicetreeViewRequestSchema,
   erlangBeamViewRequestSchema,
   pythonPycViewRequestSchema,
   nativeExportsViewRequestSchema,
@@ -479,6 +491,7 @@ const viewResultBase = {
   parent_operation: z.enum([
     "inspect_python_pyc",
     "inspect_erlang_beam",
+    "inspect_devicetree",
     "inspect_byte_entropy",
     "inspect_native_exports",
     "inspect_binary_layout",
@@ -534,6 +547,11 @@ export const nativeExportsSummaryViewResultSchema = z.strictObject({
   summary: nativeExportsSummarySchema,
 });
 
+export const devicetreeSummaryViewResultSchema = z.strictObject({
+  ...summaryViewResultBase,
+  parent_operation: z.literal("inspect_devicetree"),
+  summary: devicetreeSummarySchema,
+});
 export const erlangBeamSummaryViewResultSchema = z.strictObject({
   ...summaryViewResultBase,
   parent_operation: z.literal("inspect_erlang_beam"),
@@ -984,6 +1002,7 @@ export const analysisViewResultSchema = z.discriminatedUnion("kind", [
   }),
   z.discriminatedUnion("parent_operation", [
     erlangBeamSummaryViewResultSchema,
+    devicetreeSummaryViewResultSchema,
     pythonPycSummaryViewResultSchema,
     nativeExportsSummaryViewResultSchema,
     byteEntropySummaryViewResultSchema,
@@ -1015,6 +1034,14 @@ export const analysisViewResultSchema = z.discriminatedUnion("kind", [
     nativeFunctionSummaryViewResultSchema,
     sourceToBundleSummaryViewResultSchema,
   ]),
+  z.strictObject({
+    ...viewResultBase,
+    kind: z.literal("devicetree"),
+    parent_operation: z.literal("inspect_devicetree"),
+    view: devicetreeViewRequestSchema,
+    devicetree: devicetreePageContextSchema,
+    items: devicetreeViewItemsSchema,
+  }),
   erlangBeamTableViewResultSchema,
   pythonPycCodeObjectsViewResultSchema,
   z.strictObject({
@@ -1285,6 +1312,7 @@ const parentArtifactPath = (parent: AnalysisViewParent): string => {
 /** Named source owners for views that need no extra decoder or accumulator. */
 const retainedViewProjectors = new Map<string, typeof projectWasmArtifactView>([
   ["inspect_erlang_beam", projectErlangBeamView],
+  ["inspect_devicetree", projectDevicetreeView],
   ["inspect_native_exports", projectNativeExportsView],
   ["inspect_python_pyc", projectPythonPycView],
   ["frida_session_status", projectFridaSessionStatusView],
@@ -1314,12 +1342,46 @@ const retainedViewProjectors = new Map<string, typeof projectWasmArtifactView>([
   ["inventory_artifact", projectArtifactInventoryView],
 ]);
 
-/** Budgets a caller created before admitting the source; each grouping view uses its own. */
+/** Budgets retained across source admission and the selected grouping projection. */
 export interface AnalysisViewAccumulators {
   readonly apiSurface?: WebNetworkApiSurfaceAccumulator | undefined;
   readonly manifest?: EnvironmentManifestAccumulator | undefined;
   readonly state?: EnvironmentStateAccumulator | undefined;
 }
+
+/** Prepare one view's source admission and projection under the same owned budget. */
+export const prepareAnalysisViewProjection = (
+  view: AnalysisViewRequest,
+): {
+  admitInlineEvidence(value: unknown): Result<void, AnalysisError>;
+  project(
+    parent: AnalysisViewParent,
+  ): Result<AnalysisViewResult, AnalysisError>;
+} => {
+  const accumulators: AnalysisViewAccumulators = {
+    apiSurface:
+      view.kind === "api-surface"
+        ? createApiSurfaceAccumulator(view)
+        : undefined,
+    manifest:
+      view.kind === "environment-manifest"
+        ? createEnvironmentManifestAccumulator(view)
+        : undefined,
+    state:
+      view.kind === "environment-state" || view.kind === "environment-coverage"
+        ? createEnvironmentStateAccumulator(view)
+        : undefined,
+  };
+  const accumulator =
+    accumulators.apiSurface ?? accumulators.manifest ?? accumulators.state;
+  return {
+    admitInlineEvidence: (value) =>
+      accumulator === undefined
+        ? admitAnalysisViewData(value, true)
+        : accumulator.admitInlineEvidence(value),
+    project: (parent) => projectAnalysisView(parent, view, accumulators),
+  };
+};
 
 /** Views that group a capture's records into tools. */
 export type GroupingViewKind =
