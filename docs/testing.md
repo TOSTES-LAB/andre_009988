@@ -140,6 +140,12 @@ static tasks. Both lint caches include the website, documentation configuration,
 and experiment code scanned by the checker; a regression compares the actual
 lint inventory with Turbo's resolved inputs.
 
+Static checks locate candidates; they do not establish semantic ownership.
+`jscpd` finds token clones, and Knip counts test references as uses. Module
+boundaries and architecture guards enforce their declared import and source
+rules. Passing them does not prove that two parsers agree, a wrapper is still
+needed at runtime, or cleanup has one owner.
+
 Routine iterations and rebases need focused regressions and relevant checks.
 Before handing off a PR, run `npm run check` and generated-document checks when
 applicable; CI owns the full suite and coverage. Use the full local gate for
@@ -168,6 +174,14 @@ mock cannot replace a consumer that was imported earlier. Check these tests
 with the consumer preloaded as well as alone. For simulated protocol traces,
 use an acknowledged event barrier before asserting complete observations;
 a zero-duration capture does not guarantee queued events have arrived.
+
+Place faults at the semantic boundary under test: the selected read, EOF, hash
+completion, or cleanup attempt. Global call ordinals can shift during setup or
+refactoring without reaching that phase. For controlled asynchronous gates, use
+`awaitAcknowledgement` from `tests/fixtures/lifecycleAcknowledgement.ts` to race
+the acknowledgement against triggering-operation settlement and a bounded
+deadline. Register release gates before launch, then release and join launched
+work in `finally` before restoring mocks, even when the barrier fails.
 
 Focused contract tests should import the named contract family they exercise;
 reserve the full tool catalog for catalog-wide assertions. Resolve contracts by
@@ -199,6 +213,10 @@ and profile a bounded representative case before retrying. Separate production
 work from fixture generation, schema compilation, subprocess startup and cleanup.
 Choose elapsed, CPU and process-family memory limits before the run; a worker
 count or test timeout alone does not enforce those limits.
+
+Keep capacity fixtures intact when diagnosing a test failure. For byte equality
+of large buffers, use `Buffer.equals` or `Buffer.compare`; a generic structural
+diff can allocate far more than the production operation.
 
 Remove demonstrated repeated work while preserving distinct assertions and
 resource ownership. Share immutable fixture preparation where safe; keep fresh
@@ -308,6 +326,13 @@ Trivial helper assertions need no replacement. Remove abandoned production
 scaffolding only after checking runtime and verifier consumers, including
 compiled imports.
 
+After an owner changes, move fault injection and event spies to the path the
+production consumer actually uses, and assert that the intended boundary was
+reached. Keep independent expectations from authored input, producer output, or
+an external oracle; comparing two paths through the same replacement algorithm
+does not preserve the old oracle. A negative probe inside a conditional or loop
+must assert that it ran.
+
 Use representative scenarios rather than Cartesian matrices of equivalent
 cases. Share setup without hiding inputs or expected evidence. For successful
 `Result` values, throw the typed error before asserting the value; a preceding
@@ -334,6 +359,34 @@ reports. A fixture accepted by QORVEX proves its reader behavior; it does not pr
 that a real loader accepts the artifact. If multiple producer revisions share a
 format identifier but differ in behavior, record that ambiguity rather than
 using one installed version as an oracle for all of them.
+
+### Boundary regressions
+
+For parser, inventory, snapshot, or projection fixes, select the applicable
+cases below. Assert the producing boundary's facts and their meaning in affected
+consumers. Add [lifecycle regressions](#lifecycle-regressions) when resource
+ownership or finalization changes; a single malformed fixture cannot establish
+the whole contract.
+
+| Failure class                         | Regression that catches it                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Format assumptions                    | Pair valid padding, offsets, or names containing delimiters with malformed input. Identify the producer revision when behavior varies by version; an unrelated runtime API's range is not an on-disk format limit.                                                                                                                                 |
+| Raw identity and normalization        | Exercise allowed empty or unusual source names/metadata keys and values that normalize to one lookup or display value. Preserve admitted raw spelling under the existing redactions for transport credentials and explicitly marked sensitive values. Distinguish local paths, file URLs and HTTP paths; assert source identity through consumers. |
+| Missing, empty, and unknown values    | Distinguish omitted, null, empty, zero, and false where the format admits them. Pair a malformed optional field with usable sibling facts; assert uncertainty without inventing absence or discarding the row.                                                                                                                                     |
+| Completed work followed by failure    | Complete one input, then fail or cancel a later input. Assert earlier digests, metadata, and parsed facts survive with the later failure reason and accurate processed/unprocessed coverage. For cancellation, assert the exact caller abort reason; where a primary failure was already produced, assert it survives.                             |
+| Independent limits and failures       | Trigger a sample/output limit alongside a read or parse failure. Assert both dimensions survive; reaching a limit does not erase sampling failures or prove complete coverage.                                                                                                                                                                     |
+| Representation expansion and capacity | Keep a valid set near the limit and a large malformed input followed by a valid input. Cover JSON escaping, expanded paths or decoded rows as applicable. Assert serialized bounds, retained identities, later valid results, and unknown omissions without charging discarded interpretations as retained output.                                 |
+| Snapshots, caches, and comparison     | Vary metadata that affects the result while keeping payload bytes equal. Exercise historical records with newly introduced fields omitted, current caller inputs on replay, and reuse across differing selections. Assert correct invalidation or unknown coverage, current request provenance, and unchanged saved Evidence and IDs.              |
+| Public success and error delivery     | Exercise affected public CLI/MCP paths, including partial Evidence on failure. Assert retained facts and named contracts; retrieve partial Evidence when MCP returns a reference. If SDK cancellation suppresses the reply, check server settlement and any retained Evidence. An error-code assertion alone misses lost observations.             |
+
+For partial Evidence delivery, verify that same-session readback preserves
+identity and provenance without rerunning the provider. Include a no-writer
+control that keeps completed Evidence inline and preserves the original failure.
+
+When producer order is unspecified, synchronize fixtures on the observed request
+or completion event. A filename, generated key, or fixed delay does not prove
+which item completed before cancellation. Preserve real producer ordering and
+use a controlled seam for the phase that needs deterministic failure.
 
 Packed bridge validation uses Python's standard-library AST and tar readers
 with `-I -S`: caller-local modules, `PYTHONPATH`, and site startup hooks must
@@ -384,15 +437,16 @@ the affected owners and applicable scenarios below. Include temporary snapshots
 and one-shot commands. Use public CLI/MCP workflows where practical and a
 controlled production seam for interleavings that cannot be reproduced reliably.
 
-| Scenario                                                                                | Assertion and control                                                                                                                                                                                                          |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Target admitted; startup still pending                                                  | Status preserves the readiness distinction and observed startup activity; readiness requires the provider's documented proof.                                                                                                  |
-| First handshake is late, absent, invalid, or recovered during close                     | Initial and recovery paths retain the same authenticated identity facts. Foreign run/token controls cannot authorize cleanup; authenticated idle/native work survives the unauthenticated listener deadline.                   |
-| Launch returns an error with a valid process handle                                     | Cover already-exited and still-live owned processes. Verify observed exit separately from creation; failed termination or unavailable identity remains unresolved.                                                             |
-| Cancellation arrives after workload exit, during result reads or temporary-root removal | Return typed cancellation with available partial observations and actual cleanup status. The non-aborted control succeeds; existing primary/cleanup failures keep their precedence.                                            |
-| Children have mixed health or cleanup outcomes                                          | Missing peer health does not erase an observed failure or activity. Idle plus unknown stays unknown. Retry a failed child without closing a successful peer again, including after a close-option change.                      |
-| Cleanup fails after success or primary failure                                          | Public output retains the completed observation or primary diagnostic, remaining resources, and owner recovery action. Restore the denied resource and verify the owning cleanup retry.                                        |
-| Target exits without an acknowledgement, or transport disappears while it stays alive   | Positive owned exit proof resolves target lifetime; other resources still need cleanup. Lost transport alone does not prove exit. Verify unrelated/attached targets survive and same-connection recovery works when supported. |
+| Scenario                                                                                | Assertion and control                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Target admitted; startup still pending                                                  | Status preserves the readiness distinction and observed startup activity; readiness requires the provider's documented proof.                                                                                                                        |
+| First handshake is late, absent, invalid, or recovered during close                     | Initial and recovery paths retain the same authenticated identity facts. Foreign run/token controls cannot authorize cleanup; authenticated idle/native work survives the unauthenticated listener deadline.                                         |
+| Launch returns an error with a valid process handle                                     | Cover already-exited and still-live owned processes. Verify observed exit separately from creation; failed termination or unavailable identity remains unresolved.                                                                                   |
+| Cancellation arrives after workload exit, during result reads or temporary-root removal | Return typed cancellation with available partial observations and actual cleanup status. The non-aborted control succeeds; existing primary/cleanup failures keep their precedence.                                                                  |
+| Children have mixed health or cleanup outcomes                                          | Missing peer health does not erase an observed failure or activity. Idle plus unknown stays unknown. Retry a failed child without closing a successful peer again, including after a close-option change.                                            |
+| Cleanup fails after success or primary failure                                          | Public output retains the completed observation or primary diagnostic, remaining resources, and owner recovery action. Restore the denied resource and verify the owning cleanup retry.                                                              |
+| Cleanup owners recover after an error was returned                                      | Retain the original child and aggregate errors and project them after each owner releases. A successful peer stays released; the aggregate remains incomplete until all owners release. Preserve the first cause even when rejection is `undefined`. |
+| Target exits without an acknowledgement, or transport disappears while it stays alive   | Positive owned exit proof resolves target lifetime; other resources still need cleanup. Lost transport alone does not prove exit. Verify unrelated/attached targets survive and same-connection recovery works when supported.                       |
 
 Shared process-supervision controls separate leader exit from output closure.
 Cover output during held or failed cleanup, bounded retention and drain timeout,
@@ -559,7 +613,11 @@ creation outside the workspace seam and its narrowly documented boundary/package
 exceptions.
 
 The shared temporary-directory and workspace helpers preserve caller labels
-under an owned `qorvex-` prefix when needed. `npm run verify:test-temp-hygiene`
+under an owned `qorvex-` prefix when needed. Their
+[cleanup ownership differs](https://github.com/TOSTES-LAB/andre_009988/blob/main/CONTRIBUTING.md#temporary-files-and-diagnostics):
+`createTestTempDirectory` registers `onTestFinished` deletion, while
+`createTestWorkspace` requires caller cleanup. Close resources before removing
+their directory. `npm run verify:test-temp-hygiene`
 uses the same ownership rule to find retained fixtures under a private temporary
 root. Third-party caches remain outside that ownership rule.
 
