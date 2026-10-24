@@ -1,3 +1,4 @@
+import { javaScriptSemanticQueryInputSchema } from "../../domain/javascript/javascriptSemanticQuerySchemas.js";
 import { expect, it } from "vitest";
 
 import { graphForJavaScript as graphFor } from "../../../tests/fixtures/javascriptSemanticGraph.js";
@@ -6,6 +7,8 @@ import type { JavaScriptArtifactAnalysis } from "./JavaScriptArtifactAnalysisTyp
 import { queryJavaScriptSemanticGraph } from "../../domain/javascript/javascriptSemanticQuery.js";
 import { resolveJavaScriptSemanticEvidence } from "../../domain/javascript/javascriptSemanticGraph.js";
 import { JavaScriptJsonDocuments } from "./JavaScriptJsonDocuments.js";
+import { analyzeJavaScriptArtifactFiles } from "./JavaScriptArtifactAnalysis.js";
+import { JAVASCRIPT_SEMANTIC_RELATION_FAMILIES } from "../../domain/javascript/javascriptSemanticGraphSchemas.js";
 
 const SHA256 = "a".repeat(64);
 const GRAPH_ID = `jag_${"b".repeat(64)}`;
@@ -285,10 +288,13 @@ it("projects literal seeds and static object flow", () => {
         kind === "property-slot" && properties.name === "token",
     ),
   ).toBeDefined();
-  const literal = queryJavaScriptSemanticGraph(graph, {
-    seed: { kind: "literal", value: "TOKEN" },
-    direction: "forward-influence",
-  });
+  const literal = queryJavaScriptSemanticGraph(
+    graph,
+    javaScriptSemanticQueryInputSchema.parse({
+      seed: { kind: "literal", value: "TOKEN" },
+      direction: "forward-influence",
+    }),
+  );
   expect(literal.status).toBe("ambiguous");
   const targetName = (targetId: string): string => {
     const target = graph.nodes.find(({ node_id }) => node_id === targetId);
@@ -318,10 +324,13 @@ it("projects literal seeds and static object flow", () => {
     "token",
   ]);
   expect(literal.summary.total_seed_matches).toBe(literalTargets.length);
-  const property = queryJavaScriptSemanticGraph(graph, {
-    seed: { kind: "property", name: "token" },
-    direction: "forward-influence",
-  });
+  const property = queryJavaScriptSemanticGraph(
+    graph,
+    javaScriptSemanticQueryInputSchema.parse({
+      seed: { kind: "property", name: "token" },
+      direction: "forward-influence",
+    }),
+  );
   expect(property.status).toBe("ambiguous");
   expect(property.seed_node_ids.map(targetName).sort()).toEqual([
     "copy.token",
@@ -364,10 +373,13 @@ it("does not promote transformed return expressions to resolved aliases", () => 
   );
   if (output === undefined || input === undefined)
     throw new Error("Expected caller bindings");
-  const strict = queryJavaScriptSemanticGraph(graph, {
-    seed: { kind: "semantic-node", node_id: output.node_id },
-    direction: "backward-provenance",
-  });
+  const strict = queryJavaScriptSemanticGraph(
+    graph,
+    javaScriptSemanticQueryInputSchema.parse({
+      seed: { kind: "semantic-node", node_id: output.node_id },
+      direction: "backward-provenance",
+    }),
+  );
   expect(strict.nodes.map(({ node_id }) => node_id)).not.toContain(
     input.node_id,
   );
@@ -389,6 +401,56 @@ it("uses unavailable evidence when no source produced semantic IR", () => {
       location: { available: false, reason: "not-observed" },
     },
   );
+});
+
+it("preserves an unparseable source identity and unknown semantic extents", () => {
+  const source = "export const broken = ;";
+  const analysis = analyzeJavaScriptArtifactFiles({
+    files: [
+      {
+        path: "broken.mjs",
+        container_sha256: SHA256,
+        sha256: SHA256,
+        bytes: Buffer.byteLength(source),
+        inventory_artifact_id: `art_${SHA256}`,
+        kind: "javascript",
+        unpacked: false,
+        text: { included: true, value: source },
+      },
+    ],
+    unavailable_relevant_files: [],
+    containers: [],
+    text_bytes_read: Buffer.byteLength(source),
+    invalid_utf8_files: 0,
+  });
+  expect(analysis.files[0]?.javascript?.parse_status).toBe("failed");
+  const graph = buildJavaScriptSemanticGraph({
+    rootArtifactSha256: SHA256,
+    applicationGraph: { graph_id: GRAPH_ID, nodes: [] },
+    analysis,
+  });
+  const module = graph.nodes.find(
+    ({ kind, identity }) =>
+      kind === "module" && identity.module_path === "broken.mjs",
+  );
+  expect(module).toBeDefined();
+  expect(graph.unknowns).toHaveLength(
+    JAVASCRIPT_SEMANTIC_RELATION_FAMILIES.length,
+  );
+  for (const unknown of graph.unknowns) {
+    expect(unknown).toMatchObject({
+      node_id: module?.node_id,
+      reason: "incomplete-module",
+    });
+    expect(unknown.detail).toContain("syntax could not be parsed");
+  }
+  expect(graph.coverage).toMatchObject({
+    status: "partial",
+    truncated: false,
+    omitted_nodes: null,
+    omitted_relations: null,
+    limits: [],
+  });
 });
 
 const emptyAnalysis = (): JavaScriptArtifactAnalysis => ({

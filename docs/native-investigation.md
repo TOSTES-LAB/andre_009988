@@ -265,7 +265,11 @@ Undecodable objects retain native display text with `decoding.available: false`
 and a reason, so one uncertain object does not block unrelated inspections.
 Function dossiers and `trace_feature` string matches retain this same string
 evidence, including decoding uncertainty; procedure matches keep their own
-named observation fields without invented string qualifications. Native call edges retain
+named observation fields without invented string qualifications. Tracing keeps
+same-address search alternatives, including different string encodings, in their
+original search order and shares one reference read per target address within
+the call. Reference rows are emitted once per target address, preserving any
+duplicates in the provider's observation. Native call edges retain
 Hopper's partial `CallReference` classification and exact endpoints; detailed
 reference flags remain unavailable rather than being invented. Caller and callee
 procedure inventories come from independent Hopper APIs; QORVEX retains observed
@@ -422,8 +426,12 @@ Native target admission checks Mach-O slice headers before assigning FAT
 identity. A shared `CAFEBABE` prefix whose declarations do not identify Mach-O
 images receives the generic unsupported-format refusal, including JVM class
 files larger than the bounded admission probe. This does not identify a partial
-prefix as a validated JVM class. Malformed recognized FAT declarations retain
-their format-specific reasons.
+prefix as a validated JVM class. For files sharing `CAFEBABE`, target admission
+checks complete JVM framing within the same 16 MiB class identity bound as the
+Mach-O image reader. A complete class remains unsupported even if its constant
+pool resembles a known FAT CPU declaration. Above that bound, an ambiguous
+malformed FAT interpretation remains unresolved. Malformed recognized FAT
+declarations retain their format-specific reasons.
 
 `inspect_artifact` and `extract_artifact` retain universal Mach-O slices under
 their exact `lipo` names, including 32-bit ARM implementations such as `armv7`,
@@ -449,17 +457,37 @@ markup, including UTF-8 and BOM-marked UTF-16 sources. Unidentified text and
 OpenStep plists, including a data-only value such as `<deadbeef>`, report
 `unknown` even when plutil decodes their values through an XML conversion.
 
-Binary plist inspection reads the original bytes through an owned file descriptor,
-so conversion cannot erase control characters, fractional dates, negative zero,
-or the high word of a 128-bit integer. It accepts at most 64 MiB of input and
-reserves an estimated 64 MiB decode budget before parsing; this estimate is not
-a hard process-memory bound. A refused input reports non-retryable
-`resource_constraint` with `reported_limits.maximum_input_bytes`,
-`maximum_decoded_bytes` or, for nesting deeper than 128 levels,
-`maximum_nesting_depth`. These are fixed allowances: worker limits and host
-memory do not raise them, and the unchanged request fails the same way.
-Binary-source provenance records the `file` classification without claiming a
-`plutil` conversion.
+Plist inspection reads bounded original bytes through an owned file descriptor.
+Binary and UTF-8/BOM-marked UTF-16 XML sources decode directly, retaining scalar
+facts without a mandatory `plutil` conversion. UTF-8 JSON containers also decode
+directly when their number facts need no further classification; explicitly
+identified JSON sources can have scalar roots. Unidentified primitive text keeps
+its existing conversion route, so OpenStep `123` remains a string. OpenStep,
+unsupported XML encodings such as UTF-32 and declared legacy encodings, and JSON
+numbers requiring XML type facts retain the `plutil` route. Invalid UTF-8 and
+encoding-declaration mismatches remain explicit failures. Direct-source
+provenance records `file` without claiming conversion; conversion limitations
+and invocations appear only when conversion actually ran.
+XML sources must also pass native format validation, with native refusals retaining
+their diagnostics and successful validation recorded in provenance. Original
+unknown scalar text, reasons and limitations survive successful validation;
+output-budget omissions remain omissions.
+
+Source input is limited to 64 MiB. Binary and direct XML decoding reserve an
+estimated 64 MiB decode budget before parsing; this is not a hard process-memory
+bound. JSON decode memory has not been measured and has no equivalent decode
+estimate. A refused input reports non-retryable `resource_constraint` with
+`reported_limits.maximum_input_bytes` or `maximum_decoded_bytes` as applicable.
+Ordinary direct-source decoding has a ceiling of 998 source nesting levels,
+derived from the existing 1000-level JSON result capacity by reserving one level
+for typed scalar fields and one for the result's `value` field. Deeper input reports
+`resource_constraint` with `reported_limits.maximum_nesting_depth: 998` and names
+the fixed nesting allowance. XML admission also requires native validation, which
+can refuse input below this decoding ceiling. Compatibility conversions can
+likewise encounter an earlier native utility refusal; both retain native
+diagnostics. Archive and Interface Builder decoding retain their separate
+128-level allowance. Worker limits and host memory do not raise these fixed
+allowances, and the unchanged request fails the same way.
 
 A plist explicitly selected through the path input or as the active plist target
 reports an unreadable or malformed selection as `invalid_request`. A missing or
@@ -543,7 +571,12 @@ complete observation.
   when either source is incomplete. Resource wrappers retain their serialized
   class and authored runtime class, including AppKit `NSCustomResource` names.
   Invalid producer JSON and subprocess failures retain captured output with
-  their typed failure reason. Catalog-reader cleanup retains the primary
+  their typed failure reason and selected catalog path. A complete normal
+  assetutil exit declaring that exact catalog path `is not a valid AssetCatalog`,
+  or its observed `Undefined error: 0` / `invalid file` rejection, reports an
+  invalid-artifact failure. Other tool failures retain their own
+  classification; unrecognized diagnostics do not establish malformed bytes.
+  Catalog-reader cleanup retains the primary
   integrity, utility or cancellation failure and its cleanup resources; the
   provider retains catalog, Interface Builder and keyed-archive readers until
   cleanup is confirmed. A catalog failure also retains cleanup failures from
@@ -697,9 +730,10 @@ complete observation.
   examined type records and fully decoded declarations. Class vtable recovery
   reads the same descriptors, so an unreadable type record also keeps
   `swift_class_vtable_descriptors` partial.
-  Nominal declarations, conformance type references and class vtables share one
-  snapshot-scoped name/context reader. Conformance `type_name` and dispatch
-  `owner` retain enclosing named types; conformances carry the known module.
+  Nominal declarations, conformance type and protocol references, and class
+  vtables share one snapshot-scoped name/context reader. Conformance `type_name`,
+  `protocol_name`, and dispatch `owner` retain enclosing named types;
+  conformances carry the known module.
   Unresolved parents preserve the leaf name and a partial identity reason,
   while independently readable witness implementations remain available.
   Protocol instance properties use the same property-list reader as classes.

@@ -88,11 +88,11 @@ Setup also retains valid environment overrides in QORVEX's existing server entry
 such as `QORVEX_MCP_INPUT_SCHEMA_PROFILE`, `QORVEX_MCP_OUTPUT_SCHEMA_PROFILE`, and
 `QORVEX_MCP_MAX_RESPONSE_BYTES`.
 Detected provider settings replace only matching environment keys.
-Setup manages QORVEX's launcher, selected provider settings, and supported timeout
-defaults. Client approval policies remain user choices, but the current Codex
-refresh drops those policies inside the QORVEX entry; see the
-[Codex preservation limitation](client-configuration.md#codex-and-devin) before
-refreshing a customized registration.
+Setup manages QORVEX's launcher, selected provider settings, and recommended timeout
+defaults. Codex approval policies, tool selections, and other caller-owned server
+settings are preserved. Known malformed policy values block setup before it
+writes the configuration or a backup; see
+[Codex settings preservation](client-configuration.md#codex-and-devin).
 Setup and doctor report a malformed QORVEX environment map or invalid runtime
 setting before setup writes files. Repair the named setting in the client
 configuration; setup does not silently discard the rest of the map.
