@@ -166,10 +166,21 @@ operation names, schemas or types; display-only selection remains allowed.
 `qorvex/no-fixture-root-cleanup` follows `const` fixture-root aliases into teardown
 deletion; mutable bindings and mixed root arrays remain outside its scope.
 
+`qorvex/no-shared-module-mock` resolves Vitest import bindings before rejecting
+module mocks in projects without per-file isolation. The test-project definitions
+own isolation for Vitest and lint; the executable gate checks the resolved policy
+and runs the same collector. Aliases and namespace imports count; comments,
+shadowed locals, ordinary methods and `spyOn` do not. Negative CLI probes use an
+external temporary project so concurrent repository checks cannot discover them.
+
 Focused `.only` declarations, broken assertion promise chains, and unused disable
 directives are errors. `vitest/valid-expect` warns (`maxArgs: 2`) because valid stored and
 collected assertions can be awaited later. `import/no-duplicates` warns with
 `preferInline: false`.
+
+`no-useless-escape` keeps intentional `\-` regex escapes because advertised
+patterns must also compile in `v` mode; the catalog regression checks every
+advertised pattern.
 
 Fast lint stays syntax-based. `npm run lint:typed` runs serially with pinned
 `oxlint-tsgolint` 7.0.2005 and records native plus typed diagnostics in
@@ -375,6 +386,16 @@ Trivial helper assertions need no replacement. Remove abandoned production
 scaffolding only after checking runtime and verifier consumers, including
 compiled imports.
 
+Assert error codes, structured limit facts, source provenance, and observed
+recovery behavior instead of freezing explanatory sentences or banning obsolete
+phrases. Keep exact checks for protocol values, setting and parameter names,
+caller data, and diagnostic provenance. To verify guidance delivery, compare the
+consumer with the owning formatter or constant, alongside independent assertions
+for the behavior and facts; shared text alone is not a correctness oracle.
+Documentation wording belongs in review, not substring tests of source files.
+When replacing prose assertions, verify that a harmless wording change passes
+and an incorrect budget or lost fact still fails.
+
 After an owner changes, move fault injection and event spies to the path the
 production consumer actually uses, and assert that the intended boundary was
 reached. Keep independent expectations from authored input, producer output, or
@@ -453,6 +474,19 @@ When a matrix already holds a named tool definition from live `tools/list`,
 pass that definition through the SDK's `toolDefinition` call option. This keeps
 the selected output-schema validation without eagerly compiling unrelated
 catalog schemas. Re-read definitions if the server advertises a changed list.
+
+For exact nested input constraints, select the full profile explicitly or use
+the full-SDK conformance suite that owns the field. Compact workflow tests
+should assert canonical failure categories and provider-call controls where
+rejection before provider work matters. Do not make today's omission of a
+constraint a compact-profile invariant.
+
+When a file repeatedly validates the same MCP schemas, use
+`createMcpSchemaValidation` for file-owned preparation and clear it in
+`afterAll`. Its content keys include the complete schema, and the SDK provider
+keeps dialect and format validation. Keep sessions and connections scoped to
+each test; share immutable schema preparation through the fixture's validator
+dependency.
 
 Artifact verification uses `artifactMcpCall` for both lifecycle and analysis
 calls. A fresh SDK client has no held tool listing, so a bare `callTool` can

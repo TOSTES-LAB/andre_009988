@@ -67,12 +67,17 @@ describe("MCP tool deadline allowance for a Ghidra decompile limit", () => {
     expect(recommendedMcpToolTimeoutSeconds(timeoutInputs)).toBe(1050);
   });
 
-  it("forwards an explicit decompile limit into setup registrations", () => {
+  it("forwards curated launch limits without copying transport or unrelated settings", () => {
     expect(
       explicitSetupRegistrationEnvironment({
         QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: "600",
+        QORVEX_ASAR_MAX_HEADER_BYTES: "33554432",
+        QORVEX_MCP_MAX_RESPONSE_BYTES: "20971520",
         UNRELATED: "dropped",
       }),
-    ).toEqual({ QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: "600" });
+    ).toEqual({
+      QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: "600",
+      QORVEX_ASAR_MAX_HEADER_BYTES: "33554432",
+    });
   });
 });
