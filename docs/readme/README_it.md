@@ -20,7 +20,7 @@
 
 **[Sito web](https://qorvex.tools/it/) · [Guide](https://qorvex.tools/it/guides/) · [Showcase](https://qorvex.tools/it/showcase/)**
 
-[Avvio rapido](#avvio-rapido) · [Come funziona QORVEX](#come-funziona-qorvex) · [Cosa puoi analizzare](#cosa-puoi-analizzare) · [Creare ambienti RL](#build-rl-environments) · [Showcase](#showcase) · [FAQ](#faq) · [Strumenti GNU objdump e Rizin](../reverse-engineering-tools.md) · [Documentazione](#documentazione)
+[Avvio rapido](#avvio-rapido) · [Come funziona QORVEX](#come-funziona-qorvex) · [Cosa puoi analizzare](#cosa-puoi-analizzare) · [Showcase](#showcase) · [Creare ambienti RL](#build-rl-environments) · [FAQ](#faq) · [Strumenti GNU objdump e Rizin](../reverse-engineering-tools.md) · [Documentazione](#documentazione)
 
 <code>npx qorvex-agents setup</code>
 
@@ -193,28 +193,6 @@ L'ispezione statica di JavaScript e .NET legge i file forniti senza eseguire l'a
 
 I formati nativi e il supporto host variano in base al provider. Vedi la [configurazione di Hopper e Ghidra](../installation.md#hopper), la [guida IDA](../ida-provider.md), [Kuna](../kuna-provider.md) e il [supporto sperimentale Windows Ghidra](../windows-ghidra-p0.md). Ghidra supporta anche l'[analisi DOS a 16 bit](../ghidra-dos.md). Per binari di grandi dimensioni, aumenta il timeout di avvio con `QORVEX_GHIDRA_STARTUP_TIMEOUT_MS` / `QORVEX_HOPPER_STARTUP_TIMEOUT_MS`. Per la selezione del provider, vedi la [guida CLI](../cli.md#choose-a-provider). Controlla la [disponibilità delle release](../installation.md#released-package-and-main) per le funzionalità aggiunte dall'ultima release npm.
 
-<a id="build-rl-environments"></a>
-
-## Creare ambienti RL
-
-Crea un ambiente locale in cui un agente IA possa esercitarsi in attività come cercare una issue o creare una cartella, senza eseguire l’app originale. Usalo per l’apprendimento per rinforzo (RL) o per verificare come l’agente completa le attività.
-
-QORVEX trasforma le richieste e le risposte API registrate in strumenti che l’agente può chiamare. L’ambiente usa i dati registrati e supporta modifiche solo quando la registrazione ne conferma gli effetti.
-
-Chiedi all’agente di usare QORVEX per registrare una sessione su un’istanza di prova in cui possa creare, modificare ed eliminare dati. Puoi anche partire da un file HAR, che registra le richieste e le risposte di rete del browser.
-
-Crea con QORVEX, poi esegui con il framework AgentEnv e Docker, installati separatamente:
-
-```sh
-qorvex environment-build ./session.har ./my-env --name my-env --json
-agent-env run ./my-env
-```
-
-QORVEX esporta un ambiente eseguibile con un test di base che ne verifica l’avvio e le risposte. Usalo con il tuo framework RL per definire gli obiettivi, aggiungere controlli sulle ricompense ed eseguire l’addestramento.
-
-[Guida alla creazione di un ambiente](../agent-environments-quickstart.md) ·
-[Riferimento degli ambienti](../agent-environments.md)
-
 ## Showcase
 
 <a href="https://qorvex.tools/it/showcase/">
@@ -242,7 +220,50 @@ Ispeziona le istruzioni a 16 bit del gioco PC-98 originale, recupera i calcoli d
 
 [Leggi il case study](https://qorvex.tools/it/showcase/th04/) · [Repository di ricostruzione](https://github.com/N0zoM1z0/th04)
 
+### Creare ambienti RL con QORVEX
+
+Registra una sessione di un’app web, trasforma la sua API in strumenti ed esporta un ambiente utilizzabile da un agente IA. Eseguilo con AgentEnv, poi aggiungi attività e controlli sulle ricompense per l’addestramento RL o la valutazione.
+
+[Guida alla creazione di un ambiente](https://qorvex.tools/guides/rl-environments/) ·
+[Guarda la demo su X](https://x.com/reatools/status/2112574822584918075?s=20)
+
 Se hai usato QORVEX su qualcosa di interessante, ci piacerebbe vederlo. Condividi il tuo caso in una [issue](https://github.com/TOSTES-LAB/andre_009988/issues) o in una [pull request](https://github.com/TOSTES-LAB/andre_009988/pulls), includendo il bersaglio, la tua domanda, come QORVEX ti ha aiutato e cosa hai scoperto.
+
+<a id="build-rl-environments"></a>
+
+## Creare ambienti RL
+
+Crea un ambiente locale in cui un agente IA possa esercitarsi in attività come cercare una issue o creare una cartella, senza eseguire l’app originale. Usalo per l’apprendimento per rinforzo (RL) o per verificare come l’agente completa le attività.
+
+QORVEX trasforma le richieste e le risposte API registrate in strumenti che l’agente può chiamare. L’ambiente usa i dati registrati e supporta modifiche solo quando la registrazione ne conferma gli effetti.
+
+Configura QORVEX nel tuo agente, poi sostituisci l’URL e le attività sulle cartelle dell’esempio con i tuoi:
+
+```text
+Usa QORVEX per creare un ambiente RL dalla mia app web di prova su
+http://127.0.0.1:3000.
+Includi elenco, creazione, rinomina ed eliminazione delle cartelle. Puoi creare
+e rimuovere cartelle di prova, ma non modificare i dati esistenti.
+Salvalo in una cartella chiamata my-env, verifica le operazioni disponibili e spiegami come eseguirlo.
+```
+
+<details>
+<summary>Usare la riga di comando</summary>
+
+Usa questi comandi se hai già un file con le richieste e le risposte dell’app registrate nel browser. Per eseguire il risultato servono anche AgentEnv e Docker.
+
+```sh
+qorvex environment-build ./session.har ./my-env --name my-env --json
+agent-env run ./my-env
+```
+
+</details>
+
+QORVEX esporta un ambiente eseguibile con un test di base che ne verifica l’avvio e le risposte. Usalo con il tuo framework RL per definire gli obiettivi, aggiungere controlli sulle ricompense ed eseguire l’addestramento.
+
+[Guida alla creazione di un ambiente](https://qorvex.tools/guides/rl-environments/) ·
+[Riferimento degli ambienti](../agent-environments.md) ·
+[Guarda la demo su X](https://x.com/reatools/status/2112574822584918075?s=20)
 
 ## FAQ
 

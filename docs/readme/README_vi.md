@@ -20,7 +20,7 @@
 
 **[Trang web](https://qorvex.tools/vi/) · [Hướng dẫn](https://qorvex.tools/vi/guides/) · [Các nghiên cứu điển hình](https://qorvex.tools/vi/showcase/)**
 
-[Bắt đầu nhanh](#bắt-đầu-nhanh) · [Cách QORVEX hoạt động](#cách-qorvex-hoạt-động) · [Những gì bạn có thể phân tích](#những-gì-bạn-có-thể-phân-tích) · [Xây dựng môi trường RL](#build-rl-environments) · [Các nghiên cứu điển hình](#các-nghiên-cứu-điển-hình) · [Câu hỏi thường gặp](#câu-hỏi-thường-gặp) · [Công cụ GNU objdump và Rizin](../reverse-engineering-tools.md) · [Tài liệu](#tài-liệu)
+[Bắt đầu nhanh](#bắt-đầu-nhanh) · [Cách QORVEX hoạt động](#cách-qorvex-hoạt-động) · [Những gì bạn có thể phân tích](#những-gì-bạn-có-thể-phân-tích) · [Các nghiên cứu điển hình](#các-nghiên-cứu-điển-hình) · [Xây dựng môi trường RL](#build-rl-environments) · [Câu hỏi thường gặp](#câu-hỏi-thường-gặp) · [Công cụ GNU objdump và Rizin](../reverse-engineering-tools.md) · [Tài liệu](#tài-liệu)
 
 <code>npx qorvex-agents setup</code>
 
@@ -196,28 +196,6 @@ Với tệp nhị phân lớn, tăng hạn khởi động bằng `QORVEX_GHIDRA_
 
 Định dạng mã máy và nền tảng chạy QORVEX được hỗ trợ khác nhau tùy trình phân tích. Xem [thiết lập Hopper và Ghidra](../installation.md#hopper), [hướng dẫn IDA](../ida-provider.md), [Kuna](../kuna-provider.md) và [hỗ trợ Ghidra thử nghiệm trên Windows](../windows-ghidra-p0.md). Ghidra cũng hỗ trợ [phân tích DOS 16 bit](../ghidra-dos.md). Để chọn trình phân tích, xem [hướng dẫn CLI](../cli.md#choose-a-provider). Kiểm tra [khả năng sử dụng theo bản phát hành](../installation.md#released-package-and-main) đối với tính năng được bổ sung sau phiên bản npm mới nhất.
 
-<a id="build-rl-environments"></a>
-
-## Xây dựng môi trường RL
-
-Tạo môi trường cục bộ để tác tử AI luyện các tác vụ như tìm issue hoặc tạo thư mục mà không cần chạy ứng dụng gốc. Dùng môi trường này cho học tăng cường (RL) hoặc để kiểm tra khả năng hoàn thành tác vụ của tác tử.
-
-QORVEX biến các yêu cầu và phản hồi API đã ghi thành công cụ mà tác tử có thể gọi. Môi trường dùng dữ liệu đã ghi và chỉ hỗ trợ thay đổi khi bản ghi xác nhận tác động của thay đổi đó.
-
-Yêu cầu tác tử dùng QORVEX ghi một phiên trên bản thử nghiệm mà tác tử được phép tạo, sửa và xóa dữ liệu. Bạn cũng có thể bắt đầu với tệp HAR, bản ghi các yêu cầu và phản hồi mạng của trình duyệt.
-
-Xây dựng bằng QORVEX, sau đó chạy với AgentEnv và Docker được cài riêng:
-
-```sh
-qorvex environment-build ./session.har ./my-env --name my-env --json
-agent-env run ./my-env
-```
-
-QORVEX xuất môi trường chạy được cùng bài kiểm tra cơ bản để xác nhận môi trường khởi động và phản hồi. Kết nối với framework RL để đặt mục tiêu tác vụ, thêm kiểm tra phần thưởng và chạy huấn luyện.
-
-[Hướng dẫn xây dựng môi trường](../agent-environments-quickstart.md) ·
-[Tài liệu tham chiếu môi trường](../agent-environments.md)
-
 ## Các nghiên cứu điển hình
 
 <a href="https://qorvex.tools/vi/showcase/">
@@ -245,7 +223,50 @@ Kiểm tra các lệnh 16 bit của trò chơi PC-98 gốc, khôi phục phép t
 
 [Đọc nghiên cứu điển hình](https://qorvex.tools/vi/showcase/th04/) · [Kho mã tái tạo](https://github.com/N0zoM1z0/th04)
 
+### Xây dựng môi trường RL bằng QORVEX
+
+Ghi phiên ứng dụng web, chuyển API thành công cụ và xuất môi trường mà tác tử AI có thể dùng. Chạy bằng AgentEnv, rồi thêm tác vụ và kiểm tra phần thưởng để huấn luyện RL hoặc đánh giá.
+
+[Hướng dẫn xây dựng môi trường](https://qorvex.tools/guides/rl-environments/) ·
+[Xem bản demo trên X](https://x.com/reatools/status/2112574822584918075?s=20)
+
 Nếu bạn dùng QORVEX cho một mục tiêu thú vị, chúng tôi muốn biết. Chia sẻ trường hợp của bạn qua [issue](https://github.com/TOSTES-LAB/andre_009988/issues) hoặc [pull request](https://github.com/TOSTES-LAB/andre_009988/pulls), nêu mục tiêu, câu hỏi, cách QORVEX giúp bạn và những gì tìm được.
+
+<a id="build-rl-environments"></a>
+
+## Xây dựng môi trường RL
+
+Tạo môi trường cục bộ để tác tử AI luyện các tác vụ như tìm issue hoặc tạo thư mục mà không cần chạy ứng dụng gốc. Dùng môi trường này cho học tăng cường (RL) hoặc để kiểm tra khả năng hoàn thành tác vụ của tác tử.
+
+QORVEX biến các yêu cầu và phản hồi API đã ghi thành công cụ mà tác tử có thể gọi. Môi trường dùng dữ liệu đã ghi và chỉ hỗ trợ thay đổi khi bản ghi xác nhận tác động của thay đổi đó.
+
+Sau khi thiết lập QORVEX trong tác tử, thay URL và các tác vụ thư mục bên dưới bằng thông tin của bạn:
+
+```text
+Dùng QORVEX xây dựng môi trường RL từ ứng dụng web thử nghiệm của tôi tại
+http://127.0.0.1:3000.
+Bao gồm liệt kê, tạo, đổi tên và xóa thư mục. Có thể tạo và xóa
+thư mục thử nghiệm nhưng không thay đổi dữ liệu có sẵn.
+Lưu vào thư mục my-env, kiểm tra thao tác nào hoạt động và cho tôi biết cách chạy.
+```
+
+<details>
+<summary>Dùng dòng lệnh</summary>
+
+Dùng các lệnh này nếu đã có tệp ghi lại yêu cầu và phản hồi của ứng dụng trong trình duyệt. Để chạy môi trường tạo ra, bạn cũng cần AgentEnv và Docker.
+
+```sh
+qorvex environment-build ./session.har ./my-env --name my-env --json
+agent-env run ./my-env
+```
+
+</details>
+
+QORVEX xuất môi trường chạy được cùng bài kiểm tra cơ bản để xác nhận môi trường khởi động và phản hồi. Kết nối với framework RL để đặt mục tiêu tác vụ, thêm kiểm tra phần thưởng và chạy huấn luyện.
+
+[Hướng dẫn xây dựng môi trường](https://qorvex.tools/guides/rl-environments/) ·
+[Tài liệu tham chiếu môi trường](../agent-environments.md) ·
+[Xem bản demo trên X](https://x.com/reatools/status/2112574822584918075?s=20)
 
 ## Câu hỏi thường gặp
 

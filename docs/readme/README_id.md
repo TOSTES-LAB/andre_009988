@@ -20,7 +20,7 @@
 
 **[Situs Web](https://qorvex.tools/id/) · [Panduan](https://qorvex.tools/id/guides/) · [Contoh Penggunaan](https://qorvex.tools/id/showcase/)**
 
-[Mulai Cepat](#mulai-cepat) · [Cara Kerja QORVEX](#cara-kerja-qorvex) · [Hal yang Dapat Anda Analisis](#hal-yang-dapat-anda-analisis) · [Membangun lingkungan RL](#build-rl-environments) · [Contoh Penggunaan](#contoh-penggunaan) · [FAQ](#faq) · [Alat GNU objdump dan Rizin](../reverse-engineering-tools.md) · [Dokumentasi](#dokumentasi)
+[Mulai Cepat](#mulai-cepat) · [Cara Kerja QORVEX](#cara-kerja-qorvex) · [Hal yang Dapat Anda Analisis](#hal-yang-dapat-anda-analisis) · [Contoh Penggunaan](#contoh-penggunaan) · [Membangun lingkungan RL](#build-rl-environments) · [FAQ](#faq) · [Alat GNU objdump dan Rizin](../reverse-engineering-tools.md) · [Dokumentasi](#dokumentasi)
 
 <code>npx qorvex-agents setup</code>
 
@@ -204,28 +204,6 @@ Untuk memilih penyedia, lihat [panduan CLI](../cli.md#choose-a-provider).
 
 Periksa [ketersediaan rilis](../installation.md#released-package-and-main) untuk mengetahui fitur yang ditambahkan setelah rilis npm terbaru.
 
-<a id="build-rl-environments"></a>
-
-## Membangun lingkungan RL
-
-Buat lingkungan lokal agar agen AI dapat berlatih tugas seperti mencari issue atau membuat folder tanpa menjalankan aplikasi aslinya. Gunakan untuk pembelajaran penguatan (RL) atau menguji kemampuan agen menyelesaikan tugas.
-
-QORVEX mengubah permintaan dan respons API yang direkam menjadi alat yang dapat dipanggil agen. Lingkungan memakai data rekaman dan hanya mendukung perubahan yang dampaknya dikonfirmasi oleh rekaman.
-
-Minta agen menggunakan QORVEX untuk merekam sesi pada instans uji yang mengizinkannya membuat, mengedit, dan menghapus data. Anda juga dapat mulai dari file HAR, rekaman permintaan dan respons jaringan browser.
-
-Bangun dengan QORVEX, lalu jalankan dengan framework AgentEnv dan Docker yang diinstal terpisah:
-
-```sh
-qorvex environment-build ./session.har ./my-env --name my-env --json
-agent-env run ./my-env
-```
-
-QORVEX mengekspor lingkungan yang dapat dijalankan dengan uji dasar untuk memeriksa bahwa lingkungan mulai dan merespons. Hubungkan ke framework RL untuk menetapkan tujuan tugas, menambahkan pemeriksaan reward, dan menjalankan pelatihan.
-
-[Panduan membangun lingkungan](../agent-environments-quickstart.md) ·
-[Referensi lingkungan](../agent-environments.md)
-
 ## Contoh Penggunaan
 
 <a href="https://qorvex.tools/id/showcase/">
@@ -253,7 +231,50 @@ Periksa instruksi 16-bit dari gim PC-98 asli, pulihkan perhitungan sudut tetap d
 
 [Baca studi kasus](https://qorvex.tools/id/showcase/th04/) · [Repositori rekonstruksi](https://github.com/N0zoM1z0/th04)
 
+### Bangun lingkungan RL dengan QORVEX
+
+Rekam sesi aplikasi web, ubah API menjadi alat, lalu ekspor lingkungan yang dapat digunakan agen AI. Jalankan dengan AgentEnv dan tambahkan tugas serta pemeriksaan reward untuk pelatihan RL atau evaluasi.
+
+[Panduan membangun lingkungan](https://qorvex.tools/guides/rl-environments/) ·
+[Tonton demo di X](https://x.com/reatools/status/2112574822584918075?s=20)
+
 Jika Anda telah menggunakan QORVEX untuk menganalisis sesuatu yang menarik, kami ingin melihat hasilnya. Bagikan kasus Anda melalui [issue](https://github.com/TOSTES-LAB/andre_009988/issues) atau [pull request](https://github.com/TOSTES-LAB/andre_009988/pulls), sertakan target, pertanyaan Anda, bagaimana QORVEX membantu, dan apa yang Anda temukan.
+
+<a id="build-rl-environments"></a>
+
+## Membangun lingkungan RL
+
+Buat lingkungan lokal agar agen AI dapat berlatih tugas seperti mencari issue atau membuat folder tanpa menjalankan aplikasi aslinya. Gunakan untuk pembelajaran penguatan (RL) atau menguji kemampuan agen menyelesaikan tugas.
+
+QORVEX mengubah permintaan dan respons API yang direkam menjadi alat yang dapat dipanggil agen. Lingkungan memakai data rekaman dan hanya mendukung perubahan yang dampaknya dikonfirmasi oleh rekaman.
+
+Setelah menyiapkan QORVEX di agen, ganti URL contoh dan tugas folder di bawah sesuai aplikasi Anda:
+
+```text
+Gunakan QORVEX untuk membuat lingkungan RL dari aplikasi web uji saya di
+http://127.0.0.1:3000.
+Cakup daftar, pembuatan, penggantian nama, dan penghapusan folder. Boleh membuat
+dan menghapus folder uji, tetapi jangan ubah data yang sudah ada.
+Simpan dalam folder bernama my-env, periksa operasi yang berfungsi, dan beri tahu cara menjalankannya.
+```
+
+<details>
+<summary>Gunakan baris perintah</summary>
+
+Gunakan perintah ini jika Anda sudah punya file rekaman permintaan dan respons aplikasi di browser. Untuk menjalankan hasilnya, Anda juga perlu AgentEnv dan Docker.
+
+```sh
+qorvex environment-build ./session.har ./my-env --name my-env --json
+agent-env run ./my-env
+```
+
+</details>
+
+QORVEX mengekspor lingkungan yang dapat dijalankan dengan uji dasar untuk memeriksa bahwa lingkungan mulai dan merespons. Hubungkan ke framework RL untuk menetapkan tujuan tugas, menambahkan pemeriksaan reward, dan menjalankan pelatihan.
+
+[Panduan membangun lingkungan](https://qorvex.tools/guides/rl-environments/) ·
+[Referensi lingkungan](../agent-environments.md) ·
+[Tonton demo di X](https://x.com/reatools/status/2112574822584918075?s=20)
 
 ## FAQ
 

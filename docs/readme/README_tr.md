@@ -20,7 +20,7 @@
 
 **[Web sitesi](https://qorvex.tools/tr/) · [Rehberler](https://qorvex.tools/tr/guides/) · [Örnek çalışmalar](https://qorvex.tools/tr/showcase/)**
 
-[Hızlı başlangıç](#hızlı-başlangıç) · [QORVEX nasıl çalışır](#qorvex-nasıl-çalışır) · [Neleri analiz edebilirsiniz](#neleri-analiz-edebilirsiniz) · [RL ortamları oluşturun](#build-rl-environments) · [Örnek çalışmalar](#örnek-çalışmalar) · [Sık sorulan sorular](#sık-sorulan-sorular) · [GNU objdump ve Rizin araçları](../reverse-engineering-tools.md) · [Belgeler](#belgeler)
+[Hızlı başlangıç](#hızlı-başlangıç) · [QORVEX nasıl çalışır](#qorvex-nasıl-çalışır) · [Neleri analiz edebilirsiniz](#neleri-analiz-edebilirsiniz) · [Örnek çalışmalar](#örnek-çalışmalar) · [RL ortamları oluşturun](#build-rl-environments) · [Sık sorulan sorular](#sık-sorulan-sorular) · [GNU objdump ve Rizin araçları](../reverse-engineering-tools.md) · [Belgeler](#belgeler)
 
 <code>npx qorvex-agents setup</code>
 
@@ -192,28 +192,6 @@ Statik JavaScript ve .NET incelemesi, uygulamayı çalıştırmadan sağlanan do
 
 Yerel makine kodu içeren ikili dosya biçimleri ve ana bilgisayar desteği sağlayıcıya göre değişir. [Hopper ve Ghidra kurulumu](../installation.md#hopper), isteğe bağlı native MCP bridge'i de açıklayan [IDA rehberi](../ida-provider.md), [Kuna](../kuna-provider.md) ve [Windows için deneysel Ghidra desteği](../windows-ghidra-p0.md) belgelerine bakın. Ghidra ayrıca [16 bit DOS analizini](../ghidra-dos.md) destekler. Büyük ikili dosyalar için sağlayıcının başlatma zaman aşımını `QORVEX_GHIDRA_STARTUP_TIMEOUT_MS` veya `QORVEX_HOPPER_STARTUP_TIMEOUT_MS` ile artırın. Sağlayıcı seçimi için [CLI rehberine](../cli.md#choose-a-provider) bakın. En son npm sürümünden sonra eklenen özellikler için [sürümlerde kullanılabilirliği](../installation.md#released-package-and-main) kontrol edin.
 
-<a id="build-rl-environments"></a>
-
-## RL ortamları oluşturun
-
-Asıl uygulamayı çalıştırmadan, yapay zekâ ajanının sorun bulma veya klasör oluşturma gibi görevleri deneyeceği yerel bir ortam oluşturun. Bunu pekiştirmeli öğrenme (RL) veya ajanın görevleri ne kadar iyi tamamladığını test etmek için kullanın.
-
-QORVEX, kaydedilmiş API isteklerini ve yanıtlarını ajanın çağırabileceği araçlara dönüştürür. Ortam kayıtlı verileri kullanır ve yalnızca etkisi kayıtla doğrulanan değişiklikleri destekler.
-
-Ajanınızdan, veri oluşturma, düzenleme ve silme izni verdiğiniz bir test ortamında QORVEX ile bir oturum kaydetmesini isteyin. Tarayıcının ağ isteklerini ve yanıtlarını kaydeden bir HAR dosyasıyla da başlayabilirsiniz.
-
-QORVEX ile oluşturun, ardından ayrıca kurulan AgentEnv çerçevesi ve Docker ile çalıştırın:
-
-```sh
-qorvex environment-build ./session.har ./my-env --name my-env --json
-agent-env run ./my-env
-```
-
-QORVEX, çalıştırılabilir bir ortamı ve başlayıp yanıt verdiğini kontrol eden temel bir testi dışa aktarır. Görev hedeflerini ve ödül kontrollerini tanımlamak, ardından eğitim çalıştırmak için RL çerçevenizle kullanın.
-
-[Ortam oluşturma rehberi](../agent-environments-quickstart.md) ·
-[Ortam referansı](../agent-environments.md)
-
 ## Örnek çalışmalar
 
 <a href="https://qorvex.tools/tr/showcase/">
@@ -241,7 +219,50 @@ Bir ses çağrısından konumu stereo konumlandırmaya dönüştüren yardımcı
 
 [Örnek çalışmayı okuyun](https://qorvex.tools/tr/showcase/th04/) · [Yeniden oluşturma deposu](https://github.com/N0zoM1z0/th04)
 
+### QORVEX ile RL ortamları oluşturun
+
+Bir web uygulaması oturumunu kaydedin, API’sini araçlara dönüştürün ve bir yapay zekâ ajanının kullanabileceği ortamı dışa aktarın. AgentEnv ile çalıştırın, ardından RL eğitimi veya değerlendirmesi için görevler ve ödül kontrolleri ekleyin.
+
+[Ortam oluşturma rehberi](https://qorvex.tools/guides/rl-environments/) ·
+[Demoyu X’te izleyin](https://x.com/reatools/status/2112574822584918075?s=20)
+
 QORVEX'yı ilginç bir konuda kullandıysanız görmek isteriz. Hedefi, sorunuzu, QORVEX'nın nasıl yardımcı olduğunu ve bulgularınızı bir [issue](https://github.com/TOSTES-LAB/andre_009988/issues) veya [pull request](https://github.com/TOSTES-LAB/andre_009988/pulls) ile paylaşın.
+
+<a id="build-rl-environments"></a>
+
+## RL ortamları oluşturun
+
+Asıl uygulamayı çalıştırmadan, yapay zekâ ajanının sorun bulma veya klasör oluşturma gibi görevleri deneyeceği yerel bir ortam oluşturun. Bunu pekiştirmeli öğrenme (RL) veya ajanın görevleri ne kadar iyi tamamladığını test etmek için kullanın.
+
+QORVEX, kaydedilmiş API isteklerini ve yanıtlarını ajanın çağırabileceği araçlara dönüştürür. Ortam kayıtlı verileri kullanır ve yalnızca etkisi kayıtla doğrulanan değişiklikleri destekler.
+
+Ajanınızda QORVEX’yı kurduktan sonra aşağıdaki örnek URL’yi ve klasör görevlerini kendinize göre değiştirin:
+
+```text
+QORVEX ile şu test web uygulamamdan bir RL ortamı oluştur:
+http://127.0.0.1:3000
+Klasör listeleme, oluşturma, yeniden adlandırma ve silme işlemlerini kapsa.
+Test klasörleri oluşturup silebilirsin. Mevcut verileri değiştirme.
+my-env adlı klasöre kaydet, hangi işlemlerin çalıştığını kontrol et ve nasıl çalıştıracağımı anlat.
+```
+
+<details>
+<summary>Komut satırını kullanın</summary>
+
+Uygulamanın tarayıcı isteklerini ve yanıtlarını kaydettiğiniz bir dosya varsa bu komutları kullanabilirsiniz. Oluşan ortamı çalıştırmak için AgentEnv ve Docker da gerekir.
+
+```sh
+qorvex environment-build ./session.har ./my-env --name my-env --json
+agent-env run ./my-env
+```
+
+</details>
+
+QORVEX, çalıştırılabilir bir ortamı ve başlayıp yanıt verdiğini kontrol eden temel bir testi dışa aktarır. Görev hedeflerini ve ödül kontrollerini tanımlamak, ardından eğitim çalıştırmak için RL çerçevenizle kullanın.
+
+[Ortam oluşturma rehberi](https://qorvex.tools/guides/rl-environments/) ·
+[Ortam referansı](../agent-environments.md) ·
+[Demoyu X’te izleyin](https://x.com/reatools/status/2112574822584918075?s=20)
 
 ## Sık sorulan sorular
 

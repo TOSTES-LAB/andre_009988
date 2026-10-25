@@ -54,14 +54,8 @@ cliTest(
       mcpServers: {
         other: { command: "other-server" },
         qorvex: {
-          command:
-            process.platform === "win32"
-              ? process.execPath
-              : resolve("scripts/qorvex.mjs"),
-          args:
-            process.platform === "win32"
-              ? [resolve("scripts/qorvex.mjs"), "mcp"]
-              : ["mcp"],
+          command: process.execPath,
+          args: [resolve("scripts/qorvex.mjs"), "mcp"],
         },
       },
     });

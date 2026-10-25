@@ -390,13 +390,7 @@ cliTest(
         mcp: {
           qorvex: clientRegistrationEntry(
             "opencode",
-            // Windows launches JavaScript through Node; otherwise setup repairs
-            // the command before this test can exercise layered environment data.
-            [
-              ...(process.platform === "win32" ? [process.execPath] : []),
-              resolve("scripts/qorvex.mjs"),
-              "mcp",
-            ],
+            [process.execPath, resolve("scripts/qorvex.mjs"), "mcp"],
             env,
           ),
         },
