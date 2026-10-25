@@ -8,13 +8,13 @@
     "url": "https://github.com/TOSTES-LAB/andre_009988",
     "source": "github"
   },
-  "version": "6.7.0",
+  "version": "6.8.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "qorvex-agents",
-      "version": "6.7.0",
+      "version": "6.8.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
