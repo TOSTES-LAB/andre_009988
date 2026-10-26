@@ -181,13 +181,14 @@ it("waits for an aborted pre-session hash before retrying its late close owner",
 });
 
 it("commits the observed Kuna release and digest to the analysis profile", async () => {
-  const { profile } = await session("qorvex-kuna-profile-");
+  const { profile, kuna } = await session("qorvex-kuna-profile-");
 
   expect(profile).toMatchObject({
     provider: { id: "kuna", name: "Kuna", version: "1.833" },
     parameters: {
       kuna_version: "1.833",
       kuna_sha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      kuna_command: kuna,
       verified_release: true,
       jobs: 1,
       cache_policy: "live",

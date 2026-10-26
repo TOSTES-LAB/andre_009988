@@ -1,3 +1,7 @@
+import {
+  ghidraProjectPathSchema,
+  ghidraProgramNameSchema,
+} from "./ghidraExistingProject.js";
 import { z } from "zod";
 import { isAbsolute } from "node:path";
 
@@ -83,6 +87,8 @@ const environmentSchema = z.object({
     DEFAULT_SWIFTC_COMPILE_TIMEOUT_MS,
   ),
   QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: ghidraDecompileTimeoutSchema.optional(),
+  QORVEX_GHIDRA_PROJECT_PATH: ghidraProjectPathSchema.optional(),
+  QORVEX_GHIDRA_PROGRAM_NAME: ghidraProgramNameSchema.optional(),
   QORVEX_GHIDRA_LANGUAGE_ID: ghidraLanguageIdSchema.optional(),
   QORVEX_GHIDRA_COMPILER_SPEC_ID: ghidraCompilerSpecIdSchema.optional(),
   QORVEX_GHIDRA_DISABLED_ANALYZERS: ghidraDisabledAnalyzersSchema.optional(),
@@ -202,6 +208,32 @@ export const parseEnvironment = (
   const parsed = parseEnvironmentValues(environment, unresolvedSettings);
   if (!parsed.ok) return parsed;
   const env = parsed.value;
+  const project = env.QORVEX_GHIDRA_PROJECT_PATH;
+  const incompatible =
+    project === undefined
+      ? env.QORVEX_GHIDRA_PROGRAM_NAME === undefined ||
+        unresolvedSettings.has("QORVEX_GHIDRA_PROJECT_PATH")
+        ? []
+        : ["QORVEX_GHIDRA_PROGRAM_NAME"]
+      : [
+          "QORVEX_GHIDRA_LANGUAGE_ID",
+          "QORVEX_GHIDRA_COMPILER_SPEC_ID",
+          "QORVEX_GHIDRA_SEED_FILE",
+          "QORVEX_GHIDRA_DISABLED_ANALYZERS",
+          "QORVEX_GHIDRA_NATIVEAOT_JAR",
+        ].filter((setting) => environment[setting] !== undefined);
+  if (incompatible.length > 0)
+    return err(
+      new ConfigurationError("Invalid existing Ghidra project configuration", {
+        settings: incompatible.map((setting) => ({
+          setting,
+          constraint:
+            project === undefined
+              ? "requires QORVEX_GHIDRA_PROJECT_PATH"
+              : "Import and analysis overrides cannot be combined with an existing project",
+        })),
+      }),
+    );
   // Ghidra's analyzeHeadless accepts -cspec only together with -processor.
   if (
     env.QORVEX_GHIDRA_COMPILER_SPEC_ID !== undefined &&

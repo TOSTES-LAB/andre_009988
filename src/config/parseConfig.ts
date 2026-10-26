@@ -116,6 +116,16 @@ export const parseConfig = (
     ...(env.QORVEX_IDA_MCP_CONFIG === undefined
       ? {}
       : { idaMcpConfigPath: env.QORVEX_IDA_MCP_CONFIG }),
+    ...(env.QORVEX_GHIDRA_PROJECT_PATH === undefined
+      ? {}
+      : {
+          ghidraExistingProject: {
+            path: env.QORVEX_GHIDRA_PROJECT_PATH,
+            ...(env.QORVEX_GHIDRA_PROGRAM_NAME === undefined
+              ? {}
+              : { programName: env.QORVEX_GHIDRA_PROGRAM_NAME }),
+          },
+        }),
     ghidraInstallDir: env.GHIDRA_INSTALL_DIR,
     ghidraJavaHome: env.JAVA_HOME,
     ghidraStartupTimeoutMs: env.QORVEX_GHIDRA_STARTUP_TIMEOUT_MS,

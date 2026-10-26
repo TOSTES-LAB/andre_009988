@@ -1,3 +1,4 @@
+import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
 import { artifactFileCancellationCause } from "../artifacts/ArtifactFileOperation.js";
 import {
   type InspectSignalDecodersInput,
@@ -128,6 +129,7 @@ export class SigrokRecordingProvider implements SignalRecordingPort {
     input: DecodeSignalRecordingInput | InspectSignalDecodersInput,
     options?: ExecutionOptions,
   ): Promise<Result<AnalysisExecution, AnalysisError>> {
+    const environment = snapshotEnvironment(this.environment, this.platform);
     const operation = "path" in input ? OPERATION : "inspect_signal_decoders";
     let phase: "configuration" | "workspace" | "producer" | "integrity" =
       "configuration";
@@ -146,7 +148,7 @@ export class SigrokRecordingProvider implements SignalRecordingPort {
         throw new Error(
           "Signal decoding requires Linux with util-linux prlimit and QORVEX_SIGROK_COMMAND so expanded recordings are processed under an enforced address-space limit.",
         );
-      const configured = this.environment.QORVEX_SIGROK_COMMAND ?? "";
+      const configured = environment.QORVEX_SIGROK_COMMAND ?? "";
       if (!isAbsolute(configured))
         throw new Error(
           "Supply absolute QORVEX_SIGROK_COMMAND for sigrok-cli 0.7.2 with libsigrokdecode.",
@@ -163,7 +165,7 @@ export class SigrokRecordingProvider implements SignalRecordingPort {
         options?.signal,
       );
       const configuredLimiter =
-        this.environment.QORVEX_SIGROK_PRLIMIT_COMMAND ?? "/usr/bin/prlimit";
+        environment.QORVEX_SIGROK_PRLIMIT_COMMAND ?? "/usr/bin/prlimit";
       if (!isAbsolute(configuredLimiter))
         throw new Error("QORVEX_SIGROK_PRLIMIT_COMMAND must be absolute.");
       const selectedLimiter = await selectArtifactCommandPath(
@@ -208,7 +210,7 @@ export class SigrokRecordingProvider implements SignalRecordingPort {
             ...(root === undefined ? {} : { cwd: root.path }),
             expectedCommand: null,
             runId: `qorvex-sigrok-${randomUUID()}`,
-            hostEnvironment: this.environment,
+            hostEnvironment: environment,
           },
           {
             timeoutMs: LIMITS.command_timeout_ms,
