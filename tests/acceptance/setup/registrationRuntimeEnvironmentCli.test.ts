@@ -31,6 +31,42 @@ cliTest(
       QORVEX_IDA_MCP_CONFIG: join(home, "offline-ida.json"),
       QORVEX_JADX_MCP_JAR: join(home, "offline-jadx.jar"),
       QORVEX_KUNA_COMMAND: join(home, "offline-kuna"),
+      QORVEX_ADB_PATH: join(home, "offline-adb"),
+      QORVEX_APKTOOL_COMMAND: join(home, "offline-apktool"),
+      QORVEX_TSHARK_COMMAND: join(home, "offline-tshark"),
+      QORVEX_CAPINFOS_COMMAND: join(home, "offline-capinfos"),
+      QORVEX_TSHARK_PRLIMIT_COMMAND: join(home, "offline-prlimit"),
+      QORVEX_OBJDUMP_COMMAND: join(home, "offline-objdump"),
+      QORVEX_GDB_COMMAND: join(home, "offline-gdb"),
+      QORVEX_RIZIN_COMMAND: join(home, "offline-rizin"),
+      QORVEX_CUTTER_BRIDGE_DIR: join(home, "cutter-bridge"),
+      QORVEX_WABT_BIN_DIRECTORY: join(home, "wabt"),
+      QORVEX_WAKARU_COMMAND: join(home, "offline-wakaru"),
+      QORVEX_JAVASCRIPT_PRLIMIT_COMMAND: join(home, "javascript-prlimit"),
+      QORVEX_BINWALK_COMMAND: join(home, "offline-binwalk"),
+      QORVEX_UNBLOB_COMMAND: join(home, "offline-unblob"),
+      QORVEX_FIRMWARE_PRLIMIT_COMMAND: join(home, "firmware-prlimit"),
+      QORVEX_EVM_PRLIMIT_COMMAND: join(home, "evm-prlimit"),
+      QORVEX_SIGROK_COMMAND: join(home, "offline-sigrok"),
+      QORVEX_SIGROK_PRLIMIT_COMMAND: join(home, "sigrok-prlimit"),
+      QORVEX_MITMDUMP_COMMAND: join(home, "offline-mitmdump"),
+      QORVEX_BROWSER_EXECUTABLE: join(home, "offline-chromium"),
+      QORVEX_BROWSER_NO_SANDBOX: "false",
+      QORVEX_PWNTOOLS_PYTHON: join(home, "offline-python"),
+      QORVEX_PWNTOOLS_MAX_INPUT_BYTES: "67108864",
+      QORVEX_PWNDBG_GDB: join(home, "pwndbg-gdb"),
+      QORVEX_PWNDBG_GDBINIT: join(home, "pwndbg-gdbinit"),
+      QORVEX_PWNDBG_VENV_PATH: join(home, "pwndbg-venv"),
+      ...(process.platform === "darwin"
+        ? {}
+        : {
+            QORVEX_DARWIN_SWIFTC_PATH: join(home, "offline-swiftc"),
+            QORVEX_DARWIN_MODULE_CACHE_PATH: join(home, "swift-module-cache"),
+            SDKROOT: join(home, "macos-sdk"),
+          }),
+      QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: "180000",
+      QORVEX_LOG_LEVEL: "warn",
+      QORVEX_REFERENCE_SECRET_PATTERNS_JSON: '["explicit-private-value"]',
       QORVEX_ANALYSIS_PROVIDER: "ghidra",
       QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
       QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "off",
@@ -43,6 +79,9 @@ cliTest(
       ...selected,
       CALLER_UNRELATED_SETTING: "do not copy",
       QORVEX_UNKNOWN_SETTING: "do not copy",
+      QORVEX_PROCESS_RUN_ID: "do not copy",
+      QORVEX_TOKEN: "do not copy",
+      HOPPER_TARGET_PATH: "do not copy",
     };
     const run = () =>
       cli.run({
@@ -64,13 +103,91 @@ cliTest(
       mcpServers: { qorvex: { env: selected } },
     });
     expect(configured).not.toContain("do not copy");
+    // A later setup must update a selection rather than retaining the first value.
+    selected.QORVEX_OBJDUMP_COMMAND = join(home, "replacement-objdump");
+    environment.QORVEX_OBJDUMP_COMMAND = selected.QORVEX_OBJDUMP_COMMAND;
+    const updated = await run();
+    expect(updated.exitCode, updated.stdout).toBe(0);
+    const updatedConfiguration = await readFile(config, "utf8");
+    expect(JSON.parse(updatedConfiguration)).toMatchObject({
+      mcpServers: { qorvex: { env: selected } },
+    });
+    expect(updatedConfiguration).not.toContain("do not copy");
     const repeated = await run();
     expect(repeated.exitCode, repeated.stdout).toBe(0);
     expect(repeated.json).toMatchObject({
       plannedActions: [],
       appliedActions: [],
     });
-    expect(await readFile(config, "utf8")).toBe(configured);
+    expect(await readFile(config, "utf8")).toBe(updatedConfiguration);
+  },
+);
+
+cliTest(
+  "persists, updates and validates tool-family scopes without losing client configuration",
+  async ({ cli }) => {
+    const home = await createTestTempDirectory("qorvex-family-registration-");
+    const config = join(home, ".qwen/settings.json");
+    const foreign = { command: "foreign-tool", args: ["keep"] };
+    const original = JSON.stringify({ mcpServers: { foreign } });
+    await mkdir(dirname(config), { recursive: true });
+    await writeFile(config, original);
+    const environment = {
+      HOME: home,
+      USERPROFILE: home,
+      QWEN_HOME: join(home, ".qwen"),
+      ...missingHopperAndGhidraEnvironment(home),
+      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
+    };
+    const run = (families: string) =>
+      cli.run({
+        arguments: [
+          "setup",
+          "--client",
+          "qwen_code",
+          "--tool-families",
+          families,
+          "--skill=false",
+          "--yes",
+          "--json",
+        ],
+        cwd: home,
+        environment,
+      });
+    const first = await run("session");
+    expect(first.exitCode, first.stdout).toBe(0);
+    expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(original);
+    const scope = "native,application,session";
+    const updated = await run(scope);
+    expect(updated.exitCode, updated.stdout).toBe(0);
+    const selected = await readFile(config, "utf8");
+    expect(JSON.parse(selected)).toMatchObject({
+      mcpServers: {
+        foreign,
+        qorvex: {
+          env: {
+            QORVEX_MCP_TOOL_FAMILIES: scope,
+            QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+            QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
+          },
+        },
+      },
+    });
+    const backup = await readFile(`${config}.qorvex.backup`, "utf8");
+    const repeated = await run(scope);
+    expect(repeated.exitCode, repeated.stdout).toBe(0);
+    expect(repeated.json).toMatchObject({
+      plannedActions: [],
+      appliedActions: [],
+    });
+    const rejected = await run("session,typo");
+    expect(rejected.exitCode).not.toBe(0);
+    expect(rejected.stdout + rejected.stderr).toContain(
+      "QORVEX_MCP_TOOL_FAMILIES",
+    );
+    expect(await readFile(config, "utf8")).toBe(selected);
+    expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(backup);
   },
 );
 

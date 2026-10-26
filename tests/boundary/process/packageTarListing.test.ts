@@ -43,7 +43,7 @@ const exec = async (command, args) => {
   else if (command === "tar" && args[0] === "-xOf" && args[2] === "package/package.json")
     stdout = JSON.stringify({ bin: { qorvex: "scripts/qorvex.mjs", "qorvex-agents": "scripts/qorvex.mjs" }, mcpName: "io.github.TOSTES-LAB/andre_009988", dependencies: { "@lydell/node-pty": "1.1.0" } });
   else if (command === "tar" && args[0] === "-xOf" && args[2] === "package/skills/reverse-engineer-anything/SKILL.md")
-    stdout = "  tool_count: " + FULL_CATALOG_IDENTITY.counts.mcp_tools + "\\n";
+    stdout = '---\\nname: reverse-engineer-anything\\nmetadata:\\n  version: "fixture"\\n  tool_count: ' + FULL_CATALOG_IDENTITY.counts.mcp_tools + "\\n---\\n";
   else if (command === "tar" && args[0] === "-xf") stdout = "";
   else if (command === "python3") { bridgeParsed = true; stdout = ""; }
   else throw new Error("Unexpected command: " + command + " " + JSON.stringify(args));

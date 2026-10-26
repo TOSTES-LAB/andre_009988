@@ -96,3 +96,52 @@ describe("CLI selected environment", () => {
     expect(serialized).not.toContain("value-must-not-be-captured");
   });
 });
+
+// Real owned probes exercise CLI environment admission; these scripts do not
+// establish native Wireshark behavior.
+it.skipIf(process.platform === "win32").each([
+  { name: "missing", selected: {}, expected: "absent" },
+  {
+    name: "unset",
+    selected: { QORVEX_PCAP_ENV_PROFILE: undefined },
+    expected: "absent",
+  },
+  { name: "empty", selected: { QORVEX_PCAP_ENV_PROFILE: "" }, expected: "" },
+  {
+    name: "selected",
+    selected: { QORVEX_PCAP_ENV_PROFILE: "selected-profile" },
+    expected: "selected-profile",
+  },
+])(
+  "preserves $name PCAP settings after the ambient environment changes",
+  async ({ selected, expected }) => {
+    const root = await createTestTempDirectory("qorvex-cli-pcap-environment-");
+    const tshark = join(root, "tshark"),
+      capinfos = join(root, "capinfos");
+    for (const [path, label] of [
+      [tshark, "TShark"],
+      [capinfos, "Capinfos"],
+    ] as const)
+      await writeFile(
+        path,
+        `#!/bin/sh\nprintf '${label} (Wireshark) 4.6.6-%s\\n' "` +
+          "${QORVEX_PCAP_ENV_PROFILE-absent}" +
+          '"\n',
+        { mode: 0o755 },
+      );
+    const cli = createCli({
+      QORVEX_TSHARK_COMMAND: tshark,
+      QORVEX_CAPINFOS_COMMAND: capinfos,
+      ...selected,
+    });
+    vi.stubEnv("QORVEX_PCAP_ENV_PROFILE", "late-ambient-profile");
+    const evidence = parseEvidence(await serve(cli, ["inspect-pcap-client"]));
+    expect(evidence.normalized_result).toMatchObject({
+      client: {
+        tshark_version: `TShark (Wireshark) 4.6.6-${expected}`,
+        capinfos_version: `Capinfos (Wireshark) 4.6.6-${expected}`,
+      },
+    });
+    expect(evidence.environment).toBeNull();
+  },
+);
