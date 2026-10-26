@@ -39,6 +39,7 @@ import {
 import { mcpToolFamiliesSchema } from "./mcpToolFamilies.js";
 import { parseLoaderArgs, parseStringArray } from "./parsers.js";
 import { processStartConfigurationSchema } from "./processStart.js";
+import { parseJebMcpEndpoint } from "./jebMcpEndpoint.js";
 
 const environmentSchema = z.object({
   QORVEX_ANALYSIS_PROVIDER: analysisProviderSelectorSchema.default("auto"),
@@ -62,6 +63,20 @@ const environmentSchema = z.object({
     .refine(isAbsolute, "QORVEX_IDA_MCP_CONFIG must be absolute")
     .optional(),
   QORVEX_JEB_MCP_TIMEOUT_MS: providerStartupTimeoutSchema.optional(),
+  QORVEX_JEB_MCP_URL: z
+    .string()
+    .superRefine((value, context) => {
+      const parsed = parseJebMcpEndpoint(value);
+      if (!parsed.ok)
+        context.addIssue({
+          code: "custom",
+          message:
+            typeof parsed.error.cause === "string"
+              ? parsed.error.cause
+              : parsed.error.message,
+        });
+    })
+    .optional(),
   GHIDRA_INSTALL_DIR: z
     .string()
     .min(1)

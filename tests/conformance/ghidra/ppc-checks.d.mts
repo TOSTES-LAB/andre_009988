@@ -1,7 +1,7 @@
-import type { PowerPcElfMetadata } from "../../../src/domain/binaryTargetTypes.js";
+import type { ElfFamilyMetadata } from "../../../src/domain/binaryTargetTypes.js";
 
 export interface PowerPcReadelfFacts {
-  powerpc: PowerPcElfMetadata;
+  powerpc: ElfFamilyMetadata;
   symbols: Record<
     | "qorvex_ppc_entry"
     | "qorvex_ppc_leaf"

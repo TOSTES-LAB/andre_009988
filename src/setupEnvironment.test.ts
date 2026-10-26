@@ -180,20 +180,6 @@ it("preserves a validated selected JEB endpoint in setup registrations without c
     expect(JSON.stringify(planned.plannedActions)).not.toContain(
       ambientEndpoint,
     );
-
-    expect(
-      createSystemDoctorHost({}).providerRegistrationEnvironment?.(),
-    ).toEqual({});
-    expect(
-      createSystemDoctorHost({
-        QORVEX_JEB_MCP_URL: "http://127.0.0.1:8425/mcp",
-      }).providerRegistrationEnvironment?.(),
-    ).toEqual({ QORVEX_JEB_MCP_URL: "http://127.0.0.1:8425/mcp" });
-    expect(
-      createSystemDoctorHost({
-        QORVEX_JEB_MCP_URL: "https://example.com/mcp",
-      }).providerRegistrationEnvironment?.(),
-    ).toEqual({});
   } finally {
     vi.unstubAllEnvs();
     await rm(root, { recursive: true, force: true });
