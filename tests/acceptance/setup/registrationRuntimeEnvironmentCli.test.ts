@@ -19,6 +19,61 @@ const missingHopperAndGhidraEnvironment = (home: string) => ({
   JAVA_HOME: join(home, "missing-java"),
 });
 
+cliTest(
+  "retains selected MCP settings and unavailable provider paths in a new registration",
+  async ({ cli }) => {
+    const home = await createTestTempDirectory("qorvex-selected-registration-");
+    const config = join(home, ".qwen/settings.json");
+    const selected = {
+      HOPPER_LAUNCHER_PATH: join(home, "missing-hopper"),
+      GHIDRA_INSTALL_DIR: join(home, "offline-ghidra"),
+      JAVA_HOME: join(home, "offline-jdk"),
+      QORVEX_IDA_MCP_CONFIG: join(home, "offline-ida.json"),
+      QORVEX_JADX_MCP_JAR: join(home, "offline-jadx.jar"),
+      QORVEX_KUNA_COMMAND: join(home, "offline-kuna"),
+      QORVEX_ANALYSIS_PROVIDER: "ghidra",
+      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "off",
+      QORVEX_MCP_MAX_RESPONSE_BYTES: "20971520",
+    };
+    const environment = {
+      HOME: home,
+      USERPROFILE: home,
+      QWEN_HOME: join(home, ".qwen"),
+      ...selected,
+      CALLER_UNRELATED_SETTING: "do not copy",
+      QORVEX_UNKNOWN_SETTING: "do not copy",
+    };
+    const run = () =>
+      cli.run({
+        arguments: [
+          "setup",
+          "--client",
+          "qwen_code",
+          "--skill=false",
+          "--yes",
+          "--json",
+        ],
+        cwd: home,
+        environment,
+      });
+    const setup = await run();
+    expect(setup.exitCode, setup.stdout).toBe(0);
+    const configured = await readFile(config, "utf8");
+    expect(JSON.parse(configured)).toMatchObject({
+      mcpServers: { qorvex: { env: selected } },
+    });
+    expect(configured).not.toContain("do not copy");
+    const repeated = await run();
+    expect(repeated.exitCode, repeated.stdout).toBe(0);
+    expect(repeated.json).toMatchObject({
+      plannedActions: [],
+      appliedActions: [],
+    });
+    expect(await readFile(config, "utf8")).toBe(configured);
+  },
+);
+
 cliTest.skipIf(process.platform !== "win32")(
   "rejects lowercase Windows provider settings in doctor and setup without writing",
   async ({ cli }) => {
@@ -398,7 +453,10 @@ cliTest(
     const lowerContent = content({
       QORVEX_GHIDRA_LANGUAGE_ID: "x86:LE:32:default",
     });
-    const upperContent = content({ QORVEX_GHIDRA_COMPILER_SPEC_ID: "borlandcpp" });
+    const upperContent = content({
+      ...missingHopperAndGhidraEnvironment(home),
+      QORVEX_GHIDRA_COMPILER_SPEC_ID: "borlandcpp",
+    });
     await writeFile(lower, lowerContent);
     await writeFile(upper, upperContent);
     const environment = {

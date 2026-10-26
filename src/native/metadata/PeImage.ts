@@ -1,5 +1,5 @@
 import { readPeOptionalHeader } from "../../domain/peMachine.js";
-import { readPeSectionHeader } from "./NativeSectionDirectory.js";
+import { readPeSectionHeader } from "../../domain/peSectionHeader.js";
 import {
   mzWindowsHeaderLayoutLimitation,
   parseMzHeaderEvidence,
@@ -82,9 +82,14 @@ export const readPeImage = (bytes: Buffer): PeImage => {
   );
   if (!facts.ok)
     throw new BinaryFormatFailure(facts.error.kind, facts.error.message);
-  const { bits, dataDirectories, sizeOfHeaders } = facts.value;
-  const imageBase = reader.word(optional + (bits === 64 ? 24 : 28), bits);
-  const fileAlignment = reader.u32(optional + 36);
+  const {
+    bits,
+    dataDirectories,
+    sizeOfHeaders,
+    imageBase,
+    sectionAlignment,
+    fileAlignment,
+  } = facts.value;
   const headerMapping: FileMapping = {
     address: imageBase,
     offset: 0,
@@ -103,6 +108,11 @@ export const readPeImage = (bytes: Buffer): PeImage => {
   const sections: PeImageSection[] = [];
   for (let index = 0; index < count; index++) {
     const entry = start + index * 40;
+    const section = readPeSectionHeader(
+      reader.range(entry, 40, "PE section header"),
+    );
+    if (!section.ok)
+      throw new BinaryFormatFailure(section.error.kind, section.error.message);
     const {
       name: sectionName,
       virtual_size: virtualSize,
@@ -111,7 +121,7 @@ export const readPeImage = (bytes: Buffer): PeImage => {
       offset,
       characteristics,
       size: contentSize,
-    } = readPeSectionHeader(reader.range(entry, 40, "PE section header"));
+    } = section.value;
     sections.push(
       peImageSection({
         reader,
@@ -153,7 +163,7 @@ export const readPeImage = (bytes: Buffer): PeImage => {
     format: "pe",
     image_base: imageBase,
     pe_machine: machine,
-    pe_section_alignment: reader.u32(optional + 32),
+    pe_section_alignment: sectionAlignment,
     pe_file_alignment: fileAlignment,
     pe_data_directories: dataDirectories,
     pe_header_mapping: headerMapping,

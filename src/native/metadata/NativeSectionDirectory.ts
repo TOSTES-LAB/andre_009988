@@ -1,3 +1,4 @@
+import { readPeSectionHeader } from "../../domain/peSectionHeader.js";
 import { readElfTableDeclarations } from "../../domain/elfDeclaredRanges.js";
 import { readPeOptionalHeaderStructure } from "../../domain/peOptionalHeader.js";
 import {
@@ -52,6 +53,11 @@ export interface NativeSectionDirectory {
   readonly programs: readonly ElfProgramDeclaration[];
   readonly sections: readonly NativeSection[];
 }
+type ElfSectionDirectory = NativeSectionDirectory & {
+  readonly format: "elf";
+  readonly elf_type: number;
+};
+
 const STRUCTURE_BYTES = 16 * 1024 * 1024;
 const reject = (message: string): never => {
   throw new BinaryFormatFailure("malformed", message);
@@ -85,7 +91,7 @@ const request = (
 /** One ELF interpretation for in-memory images and bounded descriptor-backed inspections. */
 export function* readElfSectionDirectory(
   fileSize: number,
-): Generator<NativeReadRequest, NativeSectionDirectory, Buffer> {
+): Generator<NativeReadRequest, ElfSectionDirectory, Buffer> {
   const prefix = yield request(fileSize, 0n, 16n);
   const headerSize = prefix[4] === 1 ? 52 : 64;
   const bytes = yield request(fileSize, 0n, BigInt(headerSize));
@@ -95,7 +101,6 @@ export function* readElfSectionDirectory(
   const { elfClass: bits, byteOrder, machine } = header;
   const little = byteOrder === "little";
   const wide = bits === 64;
-  const r = new BinaryReader(bytes, little);
   const {
     offset: program_offset,
     width: program_width,
@@ -247,10 +252,11 @@ export function* readElfSectionDirectory(
   return {
     format: "elf",
     elf_os_abi: header.osAbi,
+    elf_type: header.type,
     bits,
     little,
     machine,
-    flags: r.u32(wide ? 48 : 36),
+    flags: header.flags,
     ...(section_names_limitation === undefined
       ? {}
       : { section_names_limitation }),
@@ -258,24 +264,6 @@ export function* readElfSectionDirectory(
     sections,
   };
 }
-
-/** Shared COFF section fields; content extent excludes file-alignment padding. */
-export const readPeSectionHeader = (bytes: Buffer) => {
-  const r = new BinaryReader(bytes, true);
-  const name = r.range(0, 8, "PE section name");
-  const nul = name.indexOf(0);
-  const virtual_size = r.u32(8);
-  const raw_size = r.u32(16);
-  return {
-    name: name.toString("latin1", 0, nul < 0 ? name.length : nul),
-    virtual_size,
-    virtual_address: r.u32(12),
-    raw_size,
-    offset: r.u32(20),
-    characteristics: r.u32(36),
-    size: virtual_size === 0 ? raw_size : Math.min(virtual_size, raw_size),
-  };
-};
 
 export function* readPeSectionDirectory(
   fileSize: number,
@@ -310,9 +298,11 @@ export function* readPeSectionDirectory(
   const table = yield request(fileSize, BigInt(start), BigInt(count) * 40n);
   const sections: NativeSection[] = [];
   for (let index = 0; index < count; index++) {
-    const row = readPeSectionHeader(
+    const parsed = readPeSectionHeader(
       table.subarray(index * 40, (index + 1) * 40),
     );
+    if (!parsed.ok) return reject(parsed.error.message);
+    const row = parsed.value;
     sections.push({
       index,
       name: row.name,
@@ -348,7 +338,7 @@ export function* readPeSectionDirectory(
 /** Borrow ELF bytes; file drivers satisfy the identical requests without loading payloads. */
 export const readElfDirectoryFromBuffer = (
   bytes: Buffer,
-): NativeSectionDirectory => {
+): ElfSectionDirectory => {
   const steps = readElfSectionDirectory(bytes.length);
   let next = steps.next();
   while (!next.done) {
