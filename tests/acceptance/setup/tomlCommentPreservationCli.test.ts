@@ -32,7 +32,8 @@ const scenarios = [
       "# about qorvex",
       "[mcp_servers.qorvex]",
       "# inside the qorvex table",
-      'command = "old"',
+      'command = "npx"',
+      'args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
       "",
       "# between qorvex and its environment",
       "[mcp_servers.qorvex.env]",
@@ -63,7 +64,8 @@ const scenarios = [
     original: [
       "# about qorvex",
       "[mcp_servers.qorvex]",
-      'command = "old"',
+      'command = "npx"',
+      'args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
       "# trailing note without a line break",
     ].join("\n"),
     comments: ["# about qorvex", "# trailing note without a line break"],
@@ -121,7 +123,7 @@ for (const scenario of scenarios)
         configured.push(text);
         for (const comment of scenario.comments)
           expect(text, path).toContain(comment);
-        expect(text, path).not.toContain('command = "old"');
+        expect(text, path).not.toContain("qorvex-agents@6.1.0");
         expect(unrelatedValues(text), path).toEqual(
           unrelatedValues(scenario.original),
         );

@@ -7,6 +7,254 @@ import {
   stringifyHermesConfigurationYaml,
 } from "./HermesConfigurationYaml.js";
 
+it("refreshes an anchored entry without changing another server's resolved value", () => {
+  const source =
+    "mcp_servers:\n  qorvex: &server\n    command: old\n    enabled: false\n  other: *server # Independent server\n";
+  const updated = editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], {
+    command: "qorvex",
+    enabled: true,
+  });
+  expect(parseHermesConfigurationYaml(updated)).toEqual({
+    mcp_servers: {
+      qorvex: { command: "qorvex", enabled: true },
+      other: { command: "old", enabled: false },
+    },
+  });
+  expect(updated).toContain("# Independent server");
+});
+
+describe("Hermes surviving anchor definitions", () => {
+  for (const shadowed of [false, true]) {
+    it.each([undefined, { command: "qorvex" }])(
+      `retains surviving shared target identity with shadowed=${shadowed} when writing %j`,
+      (entry) => {
+        const source =
+          "defaults: &settings {MODE: 'off'}\nmcp_servers:\n  qorvex: &server\n    command: old\n    env: *settings\n" +
+          (shadowed ? "later: &settings {MODE: 'later'}\n" : "") +
+          "observer: *server\npeer: *settings\n";
+        const result = parse(
+          editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], entry),
+        );
+        expect(result.defaults).toEqual({ MODE: "off" });
+        expect(result.observer.env).toBe(result.defaults);
+        expect(result.peer).toBe(shadowed ? result.later : result.defaults);
+        if (shadowed) expect(result.peer).not.toBe(result.defaults);
+      },
+    );
+  }
+
+  it.each(["settings", "missing"])(
+    "still refuses a surviving %s dependency that cannot be retained",
+    (reference) => {
+      const source = `defaults: &settings {dependency: *${reference}}\nmcp_servers:\n  qorvex: &server {env: *settings}\nobserver: *server\n`;
+      expect(() =>
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], undefined),
+      ).toThrow();
+    },
+  );
+});
+
+describe("Hermes copied anchor comments", () => {
+  it("retains the removed anchor definition comment at its surviving consumer", () => {
+    const source =
+      "mcp_servers:\n  qorvex: &server {command: old} # Keep definition explanation\n  other: *server\n";
+    const updated = editHermesConfigurationYaml(
+      source,
+      ["mcp_servers", "qorvex"],
+      undefined,
+    );
+    expect(parseHermesConfigurationYaml(updated)).toEqual({
+      mcp_servers: { other: { command: "old" } },
+    });
+    expect(updated).toContain("# Keep definition explanation");
+  });
+
+  it.each([undefined, { command: "qorvex" }])(
+    "combines definition and consumer comments without copying shared definitions twice when writing %j",
+    (entry) => {
+      const source =
+        "mcp_servers:\n  qorvex:\n    # Definition leading note\n    &server {command: old} # Definition trailing note\n  other:\n    # Consumer leading note\n    *server # Consumer trailing note\nobserver: *server # Later consumer note\n";
+      const updated = editHermesConfigurationYaml(
+        source,
+        ["mcp_servers", "qorvex"],
+        entry,
+      );
+      const result = parse(updated);
+      expect(result).toEqual({
+        mcp_servers: {
+          ...(entry === undefined ? {} : { qorvex: entry }),
+          other: { command: "old" },
+        },
+        observer: { command: "old" },
+      });
+      expect(result.observer).toBe(result.mcp_servers.other);
+      for (const comment of [
+        "Definition leading note",
+        "Definition trailing note",
+        "Consumer leading note",
+        "Consumer trailing note",
+        "Later consumer note",
+      ])
+        expect(updated.split(comment)).toHaveLength(2);
+    },
+  );
+});
+
+describe("Hermes anchored-entry consumers", () => {
+  it.each([undefined, { command: "qorvex" }])(
+    "preserves an anchored registration key when writing %j",
+    (entry) => {
+      const source =
+        "mcp_servers:\n  &server_name qorvex: {command: old}\nobserver: *server_name # Keep registration name\n";
+      const updated = editHermesConfigurationYaml(
+        source,
+        ["mcp_servers", "qorvex"],
+        entry,
+      );
+      expect(parseHermesConfigurationYaml(updated)).toEqual({
+        mcp_servers: entry === undefined ? {} : { qorvex: entry },
+        observer: "qorvex",
+      });
+      expect(updated).toContain("# Keep registration name");
+      if (entry !== undefined) {
+        expect(updated).toContain("&server_name qorvex:");
+        expect(updated).toContain("*server_name");
+      }
+    },
+  );
+
+  it("preserves both key and value consumers of a removed pair", () => {
+    const source =
+      "mcp_servers:\n  &server_name qorvex: &server {command: old}\n  other: *server\nobserver: *server_name\nlater: &server_name later\nlater_observer: *server_name\n";
+    expect(
+      parseHermesConfigurationYaml(
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], undefined),
+      ),
+    ).toEqual({
+      mcp_servers: { other: { command: "old" } },
+      observer: "qorvex",
+      later: "later",
+      later_observer: "later",
+    });
+  });
+
+  it.each([undefined, { command: "qorvex" }])(
+    "preserves references to an anchored child when writing %j",
+    (entry) => {
+      const source =
+        "mcp_servers:\n  qorvex:\n    command: old\n    env: &settings\n      MODE: 'off'\n  other:\n    command: other\n    env: *settings\n";
+      const result = parseHermesConfigurationYaml(
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], entry),
+      );
+      expect(result).toEqual({
+        mcp_servers: {
+          ...(entry === undefined ? {} : { qorvex: entry }),
+          other: { command: "other", env: { MODE: "off" } },
+        },
+      });
+    },
+  );
+
+  it.each([undefined, { command: "qorvex" }])(
+    "retains nested alias comments when writing %j",
+    (entry) => {
+      const source =
+        "defaults: &settings {MODE: 'old'}\nmcp_servers:\n  qorvex: &entry\n    command: old\n    env:\n      # Keep nested leading comment\n      *settings # Keep nested reference comment\n  other: *entry # Keep external reference comment\n";
+      const updated = editHermesConfigurationYaml(
+        source,
+        ["mcp_servers", "qorvex"],
+        entry,
+      );
+      expect(parseHermesConfigurationYaml(updated)).toEqual({
+        defaults: { MODE: "old" },
+        mcp_servers: {
+          ...(entry === undefined ? {} : { qorvex: entry }),
+          other: { command: "old", env: { MODE: "old" } },
+        },
+      });
+      expect(updated).toContain("# Keep nested leading comment");
+      expect(updated).toContain("# Keep nested reference comment");
+      expect(updated).toContain("# Keep external reference comment");
+    },
+  );
+
+  it("binds copied nested aliases before a later anchor reuses their name", () => {
+    const source =
+      "defaults: &settings {MODE: 'old'}\nmcp_servers:\n  qorvex: &entry\n    command: old\n    env: *settings\nlater: &settings {MODE: 'later'}\nobserver: *entry\n";
+    const result = parseHermesConfigurationYaml(
+      editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], {
+        command: "qorvex",
+      }),
+    );
+    expect(result).toEqual({
+      defaults: { MODE: "old" },
+      mcp_servers: { qorvex: { command: "qorvex" } },
+      later: { MODE: "later" },
+      observer: { command: "old", env: { MODE: "old" } },
+    });
+  });
+
+  it("changes only consumers of the removed definition when an anchor name repeats", () => {
+    const source =
+      "mcp_servers:\n  qorvex: &server {command: old}\n  other: *server\nlater: &server {command: later}\nobserver: *server\n";
+    expect(
+      parseHermesConfigurationYaml(
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], undefined),
+      ),
+    ).toEqual({
+      mcp_servers: { other: { command: "old" } },
+      later: { command: "later" },
+      observer: { command: "later" },
+    });
+  });
+
+  it.each([true, false])(
+    "keeps shared child identity with child first=%s",
+    (childFirst) => {
+      const child = "child: *settings\n";
+      const parent = "parent: *entry\n";
+      const source =
+        "mcp_servers:\n  qorvex: &entry\n    command: old\n    env: &settings {MODE: 'off'}\n" +
+        (childFirst ? child + parent : parent + child);
+      const result = parse(
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], undefined),
+      );
+      expect(result).toEqual({
+        mcp_servers: {},
+        child: { MODE: "off" },
+        parent: { command: "old", env: { MODE: "off" } },
+      });
+      expect(result.child).toBe(result.parent.env);
+    },
+  );
+
+  it("retains one source copy for repeated consumers instead of expanding every alias", () => {
+    const source =
+      "mcp_servers:\n  qorvex: &server {command: old}\nobservers:\n" +
+      "  - *server\n".repeat(50);
+    const updated = editHermesConfigurationYaml(
+      source,
+      ["mcp_servers", "qorvex"],
+      undefined,
+    );
+    expect(parseHermesConfigurationYaml(updated)).toEqual({
+      mcp_servers: {},
+      observers: Array.from({ length: 50 }, () => ({ command: "old" })),
+    });
+    expect(updated.match(/command: old/gu)).toHaveLength(1);
+  });
+
+  it.each(["server", "missing"])(
+    "still refuses a copied %s dependency that cannot be retained",
+    (reference) => {
+      const source = `mcp_servers:\n  qorvex: &server\n    command: old\n    dependency: *${reference}\nobserver: *server\n`;
+      expect(() =>
+        editHermesConfigurationYaml(source, ["mcp_servers", "qorvex"], undefined),
+      ).toThrow();
+    },
+  );
+});
+
 for (const version of ["1.1", "1.2"] as const)
   it.each(["refresh", "remove"] as const)(
     `preserves YAML ${version} consumers of a replaced QORVEX anchor during %s`,

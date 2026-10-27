@@ -16,7 +16,7 @@ it("validates selected and existing JEB endpoints without losing caller selectio
     JSON.stringify({
       mcpServers: {
         qorvex: {
-          command: "qorvex-agents",
+          command: "qorvex",
           args: ["mcp"],
           env: { QORVEX_JEB_MCP_URL: endpoint },
         },

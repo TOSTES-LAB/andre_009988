@@ -175,7 +175,7 @@ describe("Codex MCP tool deadlines", () => {
     await mkdir(dirname(configPath), { recursive: true });
     await writeFile(
       configPath,
-      '[mcp_servers.qorvex]\ncommand = "old-qorvex"\nargs = ["mcp"]\nstartup_timeout_sec = 5\ntool_timeout_sec = 10\n',
+      '[mcp_servers.qorvex]\ncommand = "npx"\nargs = ["-y", "qorvex-agents@6.1.0", "mcp"]\nstartup_timeout_sec = 5\ntool_timeout_sec = 10\n',
     );
     expect(
       await configureClientConfiguration(
@@ -250,8 +250,8 @@ describe("Grok Build server table edits", () => {
       "",
       "# about qorvex",
       "[mcp_servers.qorvex]",
-      'command = "old"',
-      'args = ["mcp"]',
+      'command = "npx"',
+      'args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
       "",
       "# qorvex environment",
       "[mcp_servers.qorvex.env]",
@@ -302,7 +302,7 @@ describe("Grok Build server table edits", () => {
     expect(configured).toContain("[mcp_servers.qorvex]");
     expect(configured).toContain("startup_timeout_sec = 30");
     expect(configured).toContain('OLD = "1"');
-    expect(configured).not.toContain('command = "old"');
+    expect(configured).not.toContain("qorvex-agents@6.1.0");
     expect(parseToml(configured)).toMatchObject({
       mcp_servers: {
         blender: { command: "blender", args: ["--mcp"] },
@@ -469,8 +469,8 @@ describe("Grok Build text that resembles a server table", () => {
       "'''",
       "",
       "[mcp_servers.qorvex]",
-      'command = "old"',
-      'args = ["mcp"]',
+      'command = "npx"',
+      'args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
       "",
       "# Production server: preserve this configuration",
       '[mcp_servers."qorvex.env"]',
@@ -501,7 +501,7 @@ describe("Grok Build text that resembles a server table", () => {
     expect(configured).toContain('[mcp_servers."qorvex.env"]');
     expect(configured).toContain('[mcp_servers."other[prod]"]');
     expect(configured).toContain('[[marketplace."sources[prod]"]]');
-    expect(configured).not.toContain('command = "old"');
+    expect(configured).not.toContain("qorvex-agents@6.1.0");
     expect(parseToml(configured)).toMatchObject({
       banner: "welcome\n[mcp_servers.qorvex]\nkeep this text\n[privacy]\n",
       mcp_servers: {
@@ -545,8 +545,8 @@ describe("Grok Build text that resembles a server table", () => {
       configPath,
       [
         "[ mcp_servers . qorvex ]",
-        'command = "old"',
-        'args = ["mcp"]',
+        'command = "npx"',
+        'args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
         "",
         '[mcp_servers."\\u0072ea".env]',
         'OLD = "1"',
@@ -714,9 +714,33 @@ describe("Grok Build inline and dotted assignments", () => {
         undefined,
         ["qorvex", "mcp"],
       ),
+    ).toMatchObject({ status: "failed", reason: "registration_ownership" });
+    expect(await readFile(configPath, "utf8")).toBe(inline);
+    await expect(readFile(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+    await writeFile(
+      configPath,
+      [
+        "[mcp_servers]",
+        'qorvex = { command = "npx", args = ["-y", "qorvex-agents@6.1.0", "mcp"] }',
+        'other = { command = "other" }',
+        "",
+        "# next table",
+        "[privacy]",
+        "share = false",
+        "",
+      ].join("\n"),
+    );
+    expect(
+      await configureClientConfiguration(
+        { name: "grok_build", configPath, format: "grok" },
+        undefined,
+        ["qorvex", "mcp"],
+      ),
     ).toMatchObject({ status: "configured" });
     const configuredInline = await readFile(configPath, "utf8");
-    expect(configuredInline).not.toContain("keep? no, this is the old value");
+    expect(configuredInline).not.toContain("qorvex-agents@6.1.0");
     expect(configuredInline).toContain('other = { command = "other" }');
     expect(configuredInline).toContain("# next table");
     expect(configuredInline).toContain("[privacy]");
@@ -769,8 +793,8 @@ describe("Grok Build inline and dotted assignments", () => {
       configPath,
       [
         "[mcp_servers]",
-        'qorvex.command = "old"',
-        'qorvex.args = ["old"]',
+        'qorvex.command = "npx"',
+        'qorvex.args = ["-y", "qorvex-agents@6.1.0", "mcp"]',
         'other.command = "other"',
         "",
       ].join("\n"),
@@ -784,7 +808,7 @@ describe("Grok Build inline and dotted assignments", () => {
     ).toMatchObject({ status: "configured" });
     const configuredDotted = await readFile(configPath, "utf8");
     expect(configuredDotted).toContain('other.command = "other"');
-    expect(configuredDotted).not.toContain('qorvex.command = "old"');
+    expect(configuredDotted).not.toContain("qorvex-agents@6.1.0");
     expect(parseToml(configuredDotted)).toMatchObject({
       mcp_servers: {
         other: { command: "other" },
@@ -801,7 +825,7 @@ describe("Grok Build closed inline tables", () => {
     await mkdir(dirname(configPath), { recursive: true });
     const original = [
       "# preamble",
-      'mcp_servers = { other = { command = "other" }, "\\x72ea" = { command = "old", args = ["old"] } }',
+      'mcp_servers = { other = { command = "other" }, "\\x72ea" = { command = "npx", args = ["-y", "qorvex-agents@6.1.0", "mcp"] } }',
       "",
       "# next table",
       "[privacy]",
@@ -950,7 +974,7 @@ describe("Grok Build scalar and nested values", () => {
     await mkdir(dirname(configPath), { recursive: true });
     await writeFile(
       configPath,
-      'mcp_servers = { qorvex.command = "old-qorvex", qorvex.args = ["mcp"], qorvex.startup_timeout_sec = 10 }\n',
+      'mcp_servers = { qorvex.command = "npx", qorvex.args = ["-y", "qorvex-agents@6.1.0", "mcp"], qorvex.startup_timeout_sec = 10 }\n',
     );
     expect(
       await configureClientConfiguration(

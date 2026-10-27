@@ -177,7 +177,7 @@ describe("ZCode .agents fallback preservation", () => {
             mcpServers: {
               other: { command: "other-server", env: { TOKEN: "x" } },
               qorvex: {
-                command: "old-qorvex",
+                command: "qorvex",
                 args: ["mcp"],
                 env: {
                   QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
@@ -365,7 +365,7 @@ describe("ZCode fallback admission", () => {
       const { home, client } = await zcodeClient();
       await mkdir(join(home, ".agents"), { recursive: true });
       const original = JSON.stringify({
-        mcpServers: { qorvex: { command: "old-qorvex", env } },
+        mcpServers: { qorvex: { command: "qorvex", args: ["mcp"], env } },
       });
       await writeFile(fallbackPath(home), original);
       expect(

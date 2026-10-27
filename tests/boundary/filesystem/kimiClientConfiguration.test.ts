@@ -13,12 +13,10 @@ import {
 import { systemUninstallHost } from "../../../src/application/Uninstall.js";
 import { MCP_STARTUP_POLICY } from "../../../src/mcpStartupPolicy.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
-import {
-  clearClientLocationEnvironment,
-  NPX_REGISTRATION_COMMAND,
-} from "../../fixtures/clientEnvironment.js";
+import { clearClientLocationEnvironment } from "../../fixtures/clientEnvironment.js";
+import { npxRegistrationCommand } from "../../../src/application/ClientRegistrationIdentity.js";
 
-const command = NPX_REGISTRATION_COMMAND;
+const command = npxRegistrationCommand();
 
 beforeEach(clearClientLocationEnvironment);
 afterEach(() => vi.unstubAllEnvs());
@@ -94,7 +92,7 @@ describe("Kimi Code registration lifecycle", () => {
       client.configPath,
       JSON.stringify({
         mcpServers: {
-          qorvex: { command: "old-qorvex", args: ["mcp"], enabledTools },
+          qorvex: { command: "qorvex", args: ["mcp"], enabledTools },
         },
       }),
     );
@@ -117,7 +115,7 @@ describe("Kimi Code registration lifecycle", () => {
     const original = JSON.stringify({
       mcpServers: {
         qorvex: {
-          ...expectedRegistration(["old-qorvex", "mcp"]),
+          ...expectedRegistration(["qorvex", "mcp"]),
           startupTimeoutMs: 90_000,
           toolTimeoutMs: 300_000,
         },
@@ -243,7 +241,7 @@ describe("Kimi Code input-schema profile selection", () => {
       JSON.stringify({
         mcpServers: {
           qorvex: {
-            command: "old-qorvex",
+            command: "qorvex",
             args: ["mcp"],
             env: { QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full" },
           },
@@ -297,7 +295,7 @@ describe("Kimi Code input-schema profile selection", () => {
         JSON.stringify({
           mcpServers: {
             qorvex: {
-              command: "old-qorvex",
+              command: "qorvex",
               args: ["mcp"],
               env: { QORVEX_MCP_INPUT_SCHEMA_PROFILE: storedProfile },
             },

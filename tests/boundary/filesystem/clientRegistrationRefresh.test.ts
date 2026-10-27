@@ -10,7 +10,7 @@ it.each([90, 120])(
   async (timeout) => {
     const directory = await createTestTempDirectory("qorvex-grok-refresh-");
     const configPath = join(directory, "config.toml");
-    const source = `[mcp_servers.qorvex]\ncommand = "old-qorvex"\nargs = ["mcp"]\nstartup_timeout_sec = ${timeout}\ncustom_policy = "caller"\n\n[mcp_servers.qorvex.env]\nPATH = "/caller/bin:/usr/bin"\nCUSTOM = "preserved"\n`;
+    const source = `[mcp_servers.qorvex]\ncommand = "npx"\nargs = ["-y", "qorvex-agents@6.1.0", "mcp"]\nstartup_timeout_sec = ${timeout}\ncustom_policy = "caller"\n\n[mcp_servers.qorvex.env]\nPATH = "/caller/bin:/usr/bin"\nCUSTOM = "preserved"\n`;
     await writeFile(configPath, source);
     const client = { name: "grok_build", configPath, format: "grok" } as const;
     expect(

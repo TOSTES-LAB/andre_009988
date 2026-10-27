@@ -26,6 +26,8 @@ import { npxRegistrationCommand } from "../../../src/application/ClientRegistrat
 import { ok } from "../../../src/domain/result.js";
 import { MCP_STARTUP_POLICY } from "../../../src/mcpStartupPolicy.js";
 
+const staleOwnedCommand = ["npx", "-y", "qorvex-agents@6.6.0", "mcp"] as const;
+
 it("awaits the owner-parsed provider request budget without changing caller strings", async () => {
   const parsed = parseClientConfiguration(
     JSON.stringify({
@@ -211,8 +213,8 @@ it.skipIf(process.platform !== "win32")(
       JSON.stringify({
         mcpServers: {
           qorvex: {
-            command: "old-qorvex",
-            args: ["mcp"],
+            command: staleOwnedCommand[0],
+            args: staleOwnedCommand.slice(1),
             env: { qorvex_mcp_input_schema_profile: "full" },
           },
         },
@@ -378,7 +380,7 @@ it.each([
       {
         ["__proto__"]: { caller: "retain root value" },
         [serversKey]: {
-          qorvex: clientRegistrationEntry(format, ["qorvex-old", "mcp"], custom),
+          qorvex: clientRegistrationEntry(format, staleOwnedCommand, custom),
           other: clientRegistrationEntry(format, ["other"], { OTHER: "keep" }),
           ["__proto__"]: clientRegistrationEntry(format, ["peer"], {}),
         },
@@ -651,7 +653,7 @@ it("rejects a non-string caller environment key before editing configuration", a
   const root = await createTestTempDirectory("qorvex-invalid-own-environment-");
   const configPath = join(root, "config.json");
   const source =
-    '{"mcpServers":{"qorvex":{"command":"old-qorvex","args":["mcp"],"env":{"__proto__":123}}}}';
+    '{"mcpServers":{"qorvex":{"command":"qorvex","args":["mcp"],"env":{"__proto__":123}}}}';
   await writeFile(configPath, source);
   const details = clientRegistrationEnvironmentDetails(
     parseClientConfiguration(source, "json"),
@@ -666,7 +668,7 @@ it("rejects a non-string caller environment key before editing configuration", a
       {},
       ["qorvex", "mcp"],
     ),
-  ).toMatchObject({ status: "failed" });
+  ).toEqual({ status: "failed", reason: "readback" });
   expect(await readFile(configPath, "utf8")).toBe(source);
   await expect(access(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
     code: "ENOENT",
@@ -712,7 +714,7 @@ it("retains legacy OpenCode environment when migrating into a native server tabl
     configPath,
     JSON.stringify({
       mcp: {
-        qorvex: clientRegistrationEntry("opencode", ["old", "mcp"], custom),
+        qorvex: clientRegistrationEntry("opencode", staleOwnedCommand, custom),
         servers: {
           other: clientRegistrationEntry("opencode_v2", ["other"], {}),
         },
