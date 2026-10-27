@@ -40,7 +40,7 @@ for (const [version, keyStyle] of [
         "timestamp: 2026-10-14T00:00:00.123456+08:00\n";
       const original =
         settings +
-        "mcp_servers:\n  qorvex:\n    command: qorvex-old\n    args: [mcp]\n    env:\n" +
+        "mcp_servers:\n  qorvex:\n    command: qorvex\n    args: [mcp]\n    env:\n" +
         Object.entries(environment)
           .map(
             ([key, value]) =>
@@ -114,7 +114,7 @@ cliTest(
       "# Caller configuration",
       "mcp_servers:",
       "  qorvex:",
-      "    command: qorvex-old",
+      "    command: qorvex",
       "    args: [mcp]",
       "    env:",
       "      CALLER_SETTING: keep exactly",
@@ -173,7 +173,7 @@ cliTest(
       },
     });
     expect(parse(configured)).not.toMatchObject({
-      mcp_servers: { qorvex: { command: "qorvex-old" } },
+      mcp_servers: { qorvex: { command: "qorvex" } },
     });
     expect(configured).toContain("# Curated for this client.");
     expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(original);
