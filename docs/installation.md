@@ -84,6 +84,13 @@ For an existing configuration, setup and uninstall recovery refuse a detected
 replacement or edit and name the recovery backup. Quit clients before editing their configuration;
 these checks do not lock out another writer modifying the same file in place,
 or exclude pathname changes between the final check and publication.
+Setup refreshes an existing `qorvex` registration only when its launcher proves QORVEX
+ownership. Foreign or unresolved launcher identity blocks setup before any
+backup or write, including an OpenCode legacy entry that migration would remove.
+Review the existing launcher and manually rename or remove that registration to
+approve replacing it. A different existing installation path is foreign to the
+current entrypoint; a path that cannot be resolved remains unknown. Cordis uses
+its stable QORVEX entry ID instead of launcher identity.
 Setup also retains valid environment overrides in QORVEX's existing server entry,
 such as `QORVEX_MCP_INPUT_SCHEMA_PROFILE`, `QORVEX_MCP_OUTPUT_SCHEMA_PROFILE`, and
 `QORVEX_MCP_MAX_RESPONSE_BYTES`, and `QORVEX_MCP_TOOL_FAMILIES`.

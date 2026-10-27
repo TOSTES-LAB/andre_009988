@@ -77,3 +77,111 @@ it.each(["inspect", "configure"] as const)(
     }
   },
 );
+
+it("rechecks registration ownership after preflight before creating any backup", async () => {
+  const home = await createTestTempDirectory("qorvex-setup-ownership-recheck-");
+  const configPath = join(home, "settings.json");
+  const client: SetupClient = { name: "test", configPath, format: "json" };
+  await writeFile(
+    configPath,
+    '{"mcpServers":{"qorvex":{"command":"qorvex","args":["mcp"]}}}',
+  );
+  expect(
+    await inspectClientConfiguration(client, {}, [
+      "npx",
+      "-y",
+      "qorvex-agents@6.8.0",
+      "mcp",
+    ]),
+  ).toMatchObject({ status: "update" });
+  const replacement =
+    '{"mcpServers":{"qorvex":{"command":"other","args":["mcp"]}}}';
+  // Change after layered discovery, so only the transaction's physical snapshot sees it.
+  refresh.afterDiscovery = () => writeFile(configPath, replacement);
+  expect(
+    await configureClientConfiguration(client, {}, ["qorvex", "mcp"]),
+  ).toMatchObject({
+    status: "failed",
+    reason: "registration_ownership",
+    detail: expect.stringContaining("foreign ownership"),
+  });
+  expect(await readFile(configPath, "utf8")).toBe(replacement);
+  await expect(readFile(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+});
+
+it("blocks an inherited foreign row before planning creation of a missing write target", async () => {
+  const home = await createTestTempDirectory("qorvex-setup-inherited-ownership-");
+  const lower = join(home, "config.json");
+  const configPath = join(home, "opencode.json");
+  await writeFile(
+    lower,
+    '{"mcp":{"qorvex":{"type":"local","command":["other"]}}}',
+  );
+  const client: SetupClient = {
+    name: "opencode",
+    format: "opencode",
+    configPath,
+    configPaths: [lower, configPath],
+  };
+  expect(
+    await inspectClientConfiguration(client, {}, ["qorvex", "mcp"]),
+  ).toMatchObject({
+    status: "invalid",
+    remediation: expect.stringContaining("foreign ownership"),
+  });
+  await expect(readFile(configPath)).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(readFile(`${lower}.qorvex.backup`)).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+});
+
+it.each(["other", "qorvex"])(
+  "rechecks an inherited %s launcher after preflight for a policy fragment",
+  async (command) => {
+    const home = await createTestTempDirectory("qorvex-setup-layer-recheck-");
+    const lower = join(home, "config.json");
+    const configPath = join(home, "opencode.json");
+    const client: SetupClient = {
+      name: "opencode",
+      format: "opencode",
+      configPath,
+      configPaths: [lower, configPath],
+    };
+    await writeFile(
+      lower,
+      '{"mcp":{"qorvex":{"type":"local","command":["qorvex","mcp"]}}}',
+    );
+    const original = '{"mcp":{"qorvex":{"environment":{"CUSTOM":"keep"}}}}';
+    await writeFile(configPath, original);
+    expect(
+      await inspectClientConfiguration(client, {}, ["qorvex", "mcp"]),
+    ).toMatchObject({ status: "update" });
+    // The write transaction must use a fresh source discovery after preflight.
+    await writeFile(
+      lower,
+      JSON.stringify({
+        mcp: { qorvex: { type: "local", command: [command, "mcp"] } },
+      }),
+    );
+    const result = await configureClientConfiguration(client, {}, [
+      "qorvex",
+      "mcp",
+    ]);
+    if (command === "other") {
+      expect(result).toMatchObject({
+        status: "failed",
+        reason: "registration_ownership",
+        detail: expect.stringContaining("foreign ownership"),
+      });
+      expect(await readFile(configPath, "utf8")).toBe(original);
+      await expect(readFile(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    } else {
+      expect(result).toMatchObject({ status: "configured" });
+      expect(await readFile(`${configPath}.qorvex.backup`, "utf8")).toBe(original);
+    }
+  },
+);
