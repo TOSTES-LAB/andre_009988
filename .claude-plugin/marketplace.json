@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "qorvex",
+  "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
+  "owner": {
+    "name": "TOSTES-LAB",
+    "url": "https://github.com/TOSTES-LAB"
+  },
+  "plugins": [
+    {
+      "name": "qorvex",
+      "description": "Reverse engineer anything from your terminal or agent with one CLI and MCP server.",
+      "source": {
+        "source": "npm",
+        "package": "qorvex-agents",
+        "version": "6.8.0"
+      },
+      "category": "development"
+    }
+  ]
+}
