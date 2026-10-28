@@ -1,7 +1,7 @@
 {
   "name": "qorvex",
   "version": "6.8.0",
-  "description": "Reverse engineer anything from your terminal or agent with one CLI and MCP server.",
+  "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
   "author": {
     "name": "TOSTES-LAB",
     "url": "https://github.com/TOSTES-LAB"
@@ -24,5 +24,6 @@
         "6.8.0"
       ]
     }
-  }
+  },
+  "icon": "./assets/qorvex-plugin.png"
 }

@@ -1,7 +1,7 @@
 {
   "name": "qorvex",
   "version": "6.8.0",
-  "description": "Reverse engineer anything from your terminal or agent with one CLI and MCP server.",
+  "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
   "author": {
     "name": "TOSTES-LAB",
     "url": "https://github.com/TOSTES-LAB"
@@ -19,8 +19,8 @@
   "mcpServers": "./.codex-plugin/mcp.json",
   "interface": {
     "displayName": "QORVEX",
-    "shortDescription": "Reverse engineer anything with agents",
-    "longDescription": "Use QORVEX to explain shipped behavior from native binaries, managed assemblies, Electron and JavaScript bundles, packages, firmware, and browser targets, with evidence that separates observations from inferences.",
+    "shortDescription": "Reverse engineer anything",
+    "longDescription": "Reverse engineer anything with agents, from app behavior down to native binaries.",
     "developerName": "TOSTES-LAB",
     "category": "Developer Tools",
     "capabilities": [
@@ -33,6 +33,8 @@
       "Use QORVEX to explain how this binary implements a feature.",
       "Use QORVEX to compare two versions of this application.",
       "Use QORVEX to recover the sources from this JavaScript bundle."
-    ]
+    ],
+    "composerIcon": "./assets/qorvex-plugin.png",
+    "logo": "./assets/qorvex-plugin.png"
   }
 }
