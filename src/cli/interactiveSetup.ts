@@ -100,8 +100,6 @@ export const renderInteractiveSetupResult = (
       .map(([client]) => clientDisplayNames.get(client) ?? client);
     const readyClients = readyAgentClients(result, changedClients);
     renderReadyCapabilities(result, readyClients, environment);
-    if (result.prewarm?.status === "failed")
-      writeLine(`!  ${result.prewarm.reason}`);
     outro(
       changedClients.length === 0
         ? "QORVEX is ready for local app analysis."

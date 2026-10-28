@@ -250,6 +250,28 @@ Formats 2, 3 and 4 retain header, directory and integrity facts. Compact deliver
 keeps complete Evidence in the requested bundle. See [Godot PCK](godot-pck.md)
 for embedded packs, batch queries and unknown encrypted coverage.
 
+Inspect a UnityFS AssetBundle without running Unity:
+
+```sh
+qorvex inspect-artifact content.bundle --detail summary --evidence_output evidence.json --json
+qorvex extract-artifact content.bundle --json
+```
+
+Format versions 6 through 8 retain header, block and directory facts with
+none/LZ4/LZ4HC block decompression. See [UnityFS](unityfs.md) for encryption
+and LZMA coverage boundaries.
+
+Inspect an ESP32-family app or bootloader image without esptool:
+
+```sh
+qorvex inspect-artifact firmware.bin --json
+qorvex extract-artifact firmware.bin --json
+```
+
+The inventory lists each segment with its ESP-IDF load classification, the
+checksum and SHA-256 results, the descriptor and any Secure Boot v2 signature
+blocks. See [ESP images](esp-image.md) for recognition, coverage and refusals.
+
 Inspect a Node.js SEA carrier without running it:
 
 ```sh
@@ -269,6 +291,16 @@ qorvex extract-artifact ./firmware.hex --json
 
 See [Intel HEX and S-record images](hex-records.md) for recognition, region
 names, metadata and limits.
+
+Inspect and extract stored U-Boot legacy uImage payloads and components:
+
+```sh
+qorvex inspect-artifact ./firmware.bin --detail summary --evidence_output firmware.json --json
+qorvex extract-artifact ./firmware.bin --json
+```
+
+See [U-Boot uImage](uimage.md) for verified CRCs, physical component ranges,
+unknown names, resource limits and retained views. Compressed bytes stay stored.
 
 Inspect local model declarations without loading weights:
 
