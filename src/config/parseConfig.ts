@@ -109,6 +109,9 @@ export const parseConfig = (
     ...(env.QORVEX_MCP_MAX_RESPONSE_BYTES === undefined
       ? {}
       : { mcpMaxResponseBytes: env.QORVEX_MCP_MAX_RESPONSE_BYTES }),
+    ...(env.QORVEX_MCP_MAX_INPUT_ELEMENTS === undefined
+      ? {}
+      : { mcpMaxInputElements: env.QORVEX_MCP_MAX_INPUT_ELEMENTS }),
     ...(env.QORVEX_MCP_INPUT_SCHEMA_PROFILE === undefined
       ? {}
       : { mcpInputSchemaProfile: env.QORVEX_MCP_INPUT_SCHEMA_PROFILE }),

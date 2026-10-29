@@ -3,6 +3,7 @@ import {
   ghidraProgramNameSchema,
 } from "./ghidraExistingProject.js";
 import { z } from "zod";
+import { mcpInputBudgetSchema } from "./mcpInputBudget.js";
 import { isAbsolute } from "node:path";
 
 import { ConfigurationError } from "../domain/configurationErrors.js";
@@ -45,6 +46,7 @@ const environmentSchema = z.object({
   QORVEX_ANALYSIS_PROVIDER: analysisProviderSelectorSchema.default("auto"),
   QORVEX_BRIDGE_MAX_REQUEST_BYTES: bridgeMaxRequestBytesSchema.optional(),
   QORVEX_MCP_MAX_RESPONSE_BYTES: mcpResponseBudgetSchema.optional(),
+  QORVEX_MCP_MAX_INPUT_ELEMENTS: mcpInputBudgetSchema.optional(),
   QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema.optional(),
   QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB:
     captureDecoderOldGenerationMiBSchema.optional(),

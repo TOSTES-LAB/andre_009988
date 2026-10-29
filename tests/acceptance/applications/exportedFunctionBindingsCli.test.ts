@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { INLINE_EVIDENCE_MCP_ENVIRONMENT } from "../../../scripts/lib/mcp-verification-environment.mjs";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -1310,7 +1311,11 @@ const getMcpClient = async (): Promise<Client> => {
       command: process.execPath,
       args: [resolve("scripts/qorvex.mjs"), "mcp"],
       cwd: process.cwd(),
-      env: { PATH: process.env.PATH ?? "", QORVEX_LOG_LEVEL: "silent" },
+      env: {
+        PATH: process.env.PATH ?? "",
+        QORVEX_LOG_LEVEL: "silent",
+        ...INLINE_EVIDENCE_MCP_ENVIRONMENT,
+      },
       stderr: "pipe",
     });
     transport.stderr?.on("data", () => undefined);

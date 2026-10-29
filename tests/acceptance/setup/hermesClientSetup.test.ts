@@ -120,8 +120,8 @@ cliTest(
     const original = [
       "# Caller configuration",
       "mcp_servers:",
-      "  qorvex:",
-      "    command: qorvex",
+      "  qorvex: # Registration explanation",
+      "    command: qorvex # Launcher explanation",
       "    args: [mcp]",
       "    env:",
       "      CALLER_SETTING: keep exactly",
@@ -183,6 +183,8 @@ cliTest(
       mcp_servers: { qorvex: { command: "qorvex" } },
     });
     expect(configured).toContain("# Curated for this client.");
+    expect(configured).toContain("# Registration explanation");
+    expect(configured).toContain("# Launcher explanation");
     expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(original);
     expect(
       (await run(["doctor", "--client", "hermes", "--skill=false", "--json"]))

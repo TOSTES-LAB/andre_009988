@@ -20,7 +20,7 @@
 
 **[Website](https://qorvex.tools/de/) · [Anleitungen](https://qorvex.tools/de/guides/) · [Fallstudien](https://qorvex.tools/de/showcase/)**
 
-[Schnellstart](#schnellstart) · [So funktioniert QORVEX](#so-funktioniert-qorvex) · [Was du analysieren kannst](#was-du-analysieren-kannst) · [Fallstudien](#fallstudien) · [RL-Umgebungen erstellen](#build-rl-environments) · [Häufige Fragen](#häufige-fragen) · [GNU-objdump- und Rizin-Tools](../reverse-engineering-tools.md) · [Dokumentation](#dokumentation)
+[Schnellstart](#schnellstart) · [So funktioniert QORVEX](#so-funktioniert-qorvex) · [Was du analysieren kannst](#was-du-analysieren-kannst) · [Fallstudien](#fallstudien) · [RL-Umgebungen erstellen](#build-rl-environments) · [Häufige Fragen](#häufige-fragen) · [Dokumentation](#dokumentation)
 
 <code>npx qorvex-agents setup</code>
 
@@ -189,6 +189,8 @@ QORVEX benötigt Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) oder 26+ (>=26.12.1)
 | APK-Signaturen                      | v1/v2/v3/v3.1-Signer, Zertifikatfingerabdrücke, Schlüsselrotation und Digest-Selbstkonsistenz                   | Integrierte statische Prüfung; `inspect_apk_signature`                                                                                                               |
 
 Statische JavaScript- und .NET-Untersuchungen lesen die bereitgestellten Dateien, ohne die Anwendung auszuführen. Laufzeitaufzeichnungen führen das gewählte Ziel mit deinen Benutzerrechten aus oder interagieren damit; die jeweiligen Anleitungen beschreiben die Auswirkungen.
+
+Für die Offline-Untersuchung nativer Binärdateien unterstützt QORVEX auch GNU objdump und Rizin, die du selbst bereitstellst. Der [Leitfaden zu Reverse-Engineering-Tools](../reverse-engineering-tools.md) beschreibt die Einrichtung der Provider, CLI-Befehle und Einschränkungen der Evidence. QORVEX installiert oder aktualisiert keinen der beiden Provider.
 
 <a id="choosing-a-deep-analysis-provider"></a>
 

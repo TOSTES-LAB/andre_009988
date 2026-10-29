@@ -20,7 +20,7 @@
 
 **[Trang web](https://qorvex.tools/vi/) · [Hướng dẫn](https://qorvex.tools/vi/guides/) · [Các nghiên cứu điển hình](https://qorvex.tools/vi/showcase/)**
 
-[Bắt đầu nhanh](#bắt-đầu-nhanh) · [Cách QORVEX hoạt động](#cách-qorvex-hoạt-động) · [Những gì bạn có thể phân tích](#những-gì-bạn-có-thể-phân-tích) · [Các nghiên cứu điển hình](#các-nghiên-cứu-điển-hình) · [Xây dựng môi trường RL](#build-rl-environments) · [Câu hỏi thường gặp](#câu-hỏi-thường-gặp) · [Công cụ GNU objdump và Rizin](../reverse-engineering-tools.md) · [Tài liệu](#tài-liệu)
+[Bắt đầu nhanh](#bắt-đầu-nhanh) · [Cách QORVEX hoạt động](#cách-qorvex-hoạt-động) · [Những gì bạn có thể phân tích](#những-gì-bạn-có-thể-phân-tích) · [Các nghiên cứu điển hình](#các-nghiên-cứu-điển-hình) · [Xây dựng môi trường RL](#build-rl-environments) · [Câu hỏi thường gặp](#câu-hỏi-thường-gặp) · [Tài liệu](#tài-liệu)
 
 <code>npx qorvex-agents setup</code>
 
@@ -189,6 +189,8 @@ QORVEX yêu cầu Node.js 22.x (>=22.23.4), 24.x (>=24.22.1) hoặc 26+ (>=26.12
 | Chữ ký APK                        | Bên ký v1/v2/v3/v3.1, dấu vân tay chứng chỉ, xoay vòng khóa và tính nhất quán nội bộ của digest                 | Kiểm tra tĩnh tích hợp; `inspect_apk_signature`                                                                                                 |
 
 Kiểm tra tĩnh JavaScript và .NET đọc các tệp được cung cấp mà không chạy ứng dụng. Ghi lại khi chạy sẽ khởi chạy hoặc tương tác với mục tiêu đã chọn bằng quyền người dùng của bạn; từng hướng dẫn mô tả tác động của nó.
+
+Để kiểm tra tệp nhị phân native ngoại tuyến, QORVEX cũng hỗ trợ GNU objdump và Rizin do bạn tự cung cấp. [Hướng dẫn công cụ dịch ngược](../reverse-engineering-tools.md) trình bày cách thiết lập nhà cung cấp, các lệnh CLI và giới hạn của Evidence. QORVEX không cài đặt hoặc cập nhật hai nhà cung cấp này.
 
 <a id="choosing-a-deep-analysis-provider"></a>
 
