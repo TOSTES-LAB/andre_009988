@@ -74,6 +74,7 @@ export const createSessionMcpHarness = async (
   provider: (closed: string[]) => AnalysisProvider,
   resources: Array<{ close(): Promise<unknown> }>,
   maximumInputElements?: number,
+  outputSchemaProfile?: "off",
 ): Promise<SessionMcpHarness> => {
   const first = join(root, "first.hop");
   const second = join(root, "second.hop");
@@ -90,12 +91,18 @@ export const createSessionMcpHarness = async (
       adbDeviceAnalysis,
       apktoolAnalysis,
       logger: silentLogger,
-      ...(maximumInputElements === undefined
+      ...(maximumInputElements === undefined &&
+      outputSchemaProfile === undefined
         ? {}
         : {
             environment: {
               ...process.env,
-              QORVEX_MCP_MAX_INPUT_ELEMENTS: String(maximumInputElements),
+              ...(maximumInputElements === undefined
+                ? {}
+                : { QORVEX_MCP_MAX_INPUT_ELEMENTS: String(maximumInputElements) }),
+              ...(outputSchemaProfile === undefined
+                ? {}
+                : { QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: outputSchemaProfile }),
             },
           }),
     },

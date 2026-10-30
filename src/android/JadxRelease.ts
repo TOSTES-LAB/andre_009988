@@ -10,7 +10,7 @@ export const JADX_RELEASE = Object.freeze({
 /** Identity of QORVEX's metadata bridge, distinct from the producing engine. */
 export const JADX_BRIDGE_IDENTITY = Object.freeze({
   name: "qorvex-jadx-bridge",
-  version: "9",
+  version: "10",
 });
 
 /** Remediation when `QORVEX_JADX_MCP_JAR` is missing or not an absolute path. */
