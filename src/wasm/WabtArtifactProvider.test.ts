@@ -436,7 +436,12 @@ it("returns actionable unavailable without creating a workspace when tools are a
     ok: false,
     error: {
       _tag: "AnalysisCapabilityUnavailableError",
-      userMessage: expect.stringContaining("QORVEX_WABT_BIN_DIRECTORY"),
+      reason: "directory_not_absolute",
+      userMessage: "WABT configuration cannot be used",
+      diagnostics: {
+        code: "directory_not_absolute",
+        setting: "QORVEX_WABT_BIN_DIRECTORY",
+      },
     },
   });
 });
