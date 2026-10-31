@@ -204,6 +204,22 @@ it.each([
   },
 );
 
+it("purges the Darwin ownership-helper cache with the default Kuna namespace", async () => {
+  const home = await createTestTempDirectory("qorvex-managed-helper-cache-");
+  const helper = join(home, "Library/Caches/qorvex/process-helper");
+  await mkdir(join(helper, "a".repeat(64)), { recursive: true });
+  await writeFile(join(helper, "a".repeat(64), "reader"), "QORVEX helper");
+  const host = systemUninstallHost(home, undefined, {}, "darwin");
+  try {
+    expect(await host.purgeData()).toContainEqual(
+      expect.objectContaining({ name: "process-helper", status: "removed" }),
+    );
+    await expect(lstat(helper)).rejects.toMatchObject({ code: "ENOENT" });
+  } finally {
+    await host.close?.();
+  }
+});
+
 it("reports the Hopper producer's invalid cache selection rather than silently falling back", async () => {
   const home = await createTestTempDirectory("qorvex-managed-cache-invalid-");
   const fallback = join(home, ".cache", "qorvex", "hopper-releases");
