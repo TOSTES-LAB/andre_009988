@@ -1117,6 +1117,19 @@ unpaired Unicode surrogate; a rejection identifies the field and UTF-16 index
 and leaves every annotation unchanged. CRLF, supplementary Unicode characters,
 and combining characters are preserved. Windows P0 remains read-only. Ghidra has no
 GUI authority, and QORVEX never falls back automatically to Hopper.
+For a before-and-after `compare_functions` in MCP, call `analyze_function`
+before and after the edit while the session remains open; the annotation Evidence
+itself is not an `analyze_function` input. If comparing after close, export the
+needed Evidence before closing and import it into the later session. A one-shot
+CLI annotation returns its edited dossier before its temporary session is
+discarded; a later CLI invocation with the same fresh-import settings starts from
+the original executable. Comparison preserves correspondence across renames
+when authenticated artifact identity, architecture and provider-owned mapping
+and slice commitments establish the same canonical entry. The result reports
+`matched`, `method: "same-entry"` and `entry_address`; name and exact-text changes
+remain separate dimensions. Equal numeric addresses without applicable coordinate
+commitments do not establish same-entry correspondence. Inspect the retained
+source Evidence and coverage when correspondence remains ambiguous.
 `set_address_name` and `set_addresses_names` give Ghidra sessions the same
 compact naming results as Hopper: a local function entry renames that function,
 and any other mapped address, such as a global, receives a new or renamed primary
