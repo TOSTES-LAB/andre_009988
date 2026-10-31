@@ -1,6 +1,6 @@
 # Kuna provider
 
-[Kuna](https://github.com/Noelo-Lab/kuna) is an Apache-2.0 decompiler distributed as one `kuna` executable. QORVEX uses a `kuna` you supply. It does not download, install, update or bundle Kuna. QORVEX verified this provider with Kuna 1.833; it accepts other releases and reports them as unverified in `qorvex doctor` and in each analysis profile.
+[Kuna](https://github.com/Noelo-Lab/kuna) is an Apache-2.0 decompiler distributed as one `kuna` executable. For a new installation, use Kuna 1.986, QORVEX's recommended verified release. QORVEX uses a `kuna` you supply; it does not download, install, update or bundle Kuna. QORVEX accepts other releases, which it reports as unverified in `qorvex doctor` and in each analysis profile. The 1.986 real-provider checks ran on macOS arm64; Linux and other hosts have not been verified with that release.
 
 Kuna is static: it reads the selected image and never executes it.
 

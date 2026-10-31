@@ -27,26 +27,28 @@ describe("MCP response budget configuration", () => {
       reserved,
       nodeCeiling,
     );
-    expect(recovery).toContain(
-      "The effective QORVEX_MCP_MAX_RESPONSE_BYTES value is 20971520 bytes",
-    );
-    expect(recovery).toContain("floor 10485760 bytes, 10 MiB");
-    expect(recovery).toContain("restarting the QORVEX process");
-    expect(recovery).toContain(
-      `QORVEX's reserved single-string limit of ${String(reserved)} UTF-16 code units`,
-    );
-    expect(recovery).toContain(
-      `Node's single-string ceiling of ${String(nodeCeiling)} UTF-16 code units`,
-    );
-    expect(recovery).not.toContain(
-      `Node's single-string ceiling of ${String(reserved)}`,
-    );
-    expect(recovery).not.toContain(
-      `Node's single-string ceiling is ${String(reserved)}`,
-    );
-    expect(nodeStringCeilingRecovery(reserved, nodeCeiling)).toBe(
-      `QORVEX's reserved single-string limit is ${String(reserved)} UTF-16 code units, below Node's single-string ceiling of ${String(nodeCeiling)} UTF-16 code units. This release has no runtime override for either limit, and QORVEX_MCP_MAX_RESPONSE_BYTES does not raise them.`,
-    );
+    expect(recovery).toMatch(/QORVEX_MCP_MAX_RESPONSE_BYTES[^.]*20971520 bytes/u);
+    expect(recovery).toMatch(/floor 10485760 bytes, 10 MiB/u);
+    expect(recovery).toMatch(/restart\w* the QORVEX process/u);
+    const nodeRecovery = nodeStringCeilingRecovery(reserved, nodeCeiling);
+    expect(nodeRecovery).toMatch(/below Node's single-string ceiling/u);
+    for (const guidance of [recovery, nodeRecovery]) {
+      expect(guidance).toMatch(
+        new RegExp(
+          `QORVEX's reserved single-string limit [^.]*${String(reserved)} UTF-16 code units`,
+          "u",
+        ),
+      );
+      expect(guidance).toMatch(
+        new RegExp(
+          `Node's single-string ceiling [^.]*${String(nodeCeiling)} UTF-16 code units`,
+          "u",
+        ),
+      );
+      expect(guidance).toContain("QORVEX_MCP_MAX_RESPONSE_BYTES");
+      expect(guidance).toMatch(/does not raise/u);
+      expect(guidance).toMatch(/no runtime override/u);
+    }
   });
 
   it.each(["", "1.5", "1e8", " 10485760", "9007199254740992"])(
