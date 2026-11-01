@@ -28,6 +28,7 @@ const inventory = (
     ]),
   );
 const parent = (): AnalysisViewParent => ({
+  predicateType: "qorvex.javascript-application-analysis",
   evidenceId: `ev_${"b".repeat(64)}`,
   operation: "analyze_javascript_application",
   limitations: [],

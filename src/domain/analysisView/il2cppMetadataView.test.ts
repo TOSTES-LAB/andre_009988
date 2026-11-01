@@ -67,6 +67,7 @@ const report: Il2cppMetadata = {
 };
 
 const parent = (normalizedResult: unknown, sealedResult: boolean) => ({
+  predicateType: "qorvex.analysis",
   evidenceId: `ev_${"b".repeat(64)}`,
   operation: "inspect_il2cpp_metadata",
   normalizedResult,

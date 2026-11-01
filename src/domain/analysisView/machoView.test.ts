@@ -194,6 +194,7 @@ const parent = (
     local_path: "/bin/tool",
   },
 ): AnalysisViewParent => ({
+  predicateType: "qorvex.analysis",
   evidenceId: `ev_${"c".repeat(64)}`,
   operation: "inspect_macho",
   normalizedResult,
