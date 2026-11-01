@@ -36,3 +36,19 @@ export interface AnalysisSettingLimit {
   readonly required_value?: number;
   readonly parameter?: string;
 }
+
+/**
+ * The same limit for a caller whose QORVEX runtime ended with one invocation. No
+ * runtime override can reach it; a new invocation reads the launch
+ * environment seed or the per-call argument. The caller can still choose that
+ * value, and no running QORVEX process needs a restart.
+ */
+export interface AnalysisInvocationSettingLimit extends Omit<
+  AnalysisSettingLimit,
+  "applies_at" | "scope"
+> {
+  readonly applies_at: "next_invocation";
+  readonly scope: "qorvex-invocation";
+  /** Launch-environment seed that a new invocation reads, when one exists. */
+  readonly environment?: string;
+}

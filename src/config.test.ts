@@ -360,6 +360,12 @@ describe("configuration failure diagnostics", () => {
     "accepts Swift compile deadline %s without changing Hopper's deadline",
     (value) => {
       expect(
+        parseEnvironmentValues({ QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: value }),
+      ).toMatchObject({
+        ok: true,
+        value: { QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: Number(value) },
+      });
+      expect(
         parseConfig({ QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: value }),
       ).toMatchObject({
         ok: true,

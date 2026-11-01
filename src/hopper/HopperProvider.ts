@@ -106,6 +106,8 @@ export class HopperProvider implements AnalysisProviderCandidate {
         status: "unavailable",
         code: "unsupported_host",
         reason: `Hopper integration is not supported on ${this.platform}.`,
+        remediation:
+          "Run Hopper analysis on macOS or Linux, or select another analysis provider with QORVEX_ANALYSIS_PROVIDER.",
         diagnostics,
       };
     try {
@@ -126,6 +128,8 @@ export class HopperProvider implements AnalysisProviderCandidate {
         status: "unavailable",
         code: "executable_missing",
         reason: `Hopper launcher is missing or not executable: ${this.config.hopperLauncherPath}`,
+        remediation:
+          "Run qorvex setup to install Hopper, or set HOPPER_LAUNCHER_PATH to an executable Hopper launcher in the environment that starts QORVEX, then restart QORVEX.",
         diagnostics,
       };
     }

@@ -158,6 +158,10 @@ it("rejects a directory or a command that does not identify as util-linux prlimi
         ),
       ).rejects.toMatchObject({
         _tag: "AnalysisCapabilityUnavailableError",
+        // The limiter owns the repair; readiness keeps it over Wireshark advice.
+        remediationAction: expect.stringContaining(
+          "QORVEX_TSHARK_PRLIMIT_COMMAND",
+        ) as unknown,
         diagnostics: {
           configuration_key: "QORVEX_TSHARK_PRLIMIT_COMMAND",
           configured: path,
