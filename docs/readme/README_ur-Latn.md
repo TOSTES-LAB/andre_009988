@@ -20,6 +20,8 @@
 
 **[Website](https://qorvex.tools/) · [Guides](https://qorvex.tools/guides/) · [Showcases](https://qorvex.tools/showcase/)**
 
+<a href="https://discord.com/invite/GkcryMnJDM"><img alt="Discord par QORVEX community mein shamil hon" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 [Jaldi shuru karein](#jaldi-shuru-karein) · [QORVEX kaise kaam karta hai](#qorvex-kaise-kaam-karta-hai) · [Kya kuch analyze kar sakte hain](#kya-kuch-analyze-kar-sakte-hain) · [Amli misaalein](#amli-misaalein) · [RL environments banayein](#build-rl-environments) · [FAQ](#faq) · [Documentation](#documentation)
 
 <code>npx qorvex-agents setup</code>

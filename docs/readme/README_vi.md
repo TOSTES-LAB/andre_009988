@@ -20,6 +20,8 @@
 
 **[Trang web](https://qorvex.tools/vi/) · [Hướng dẫn](https://qorvex.tools/vi/guides/) · [Các nghiên cứu điển hình](https://qorvex.tools/vi/showcase/)**
 
+<a href="https://discord.com/invite/GkcryMnJDM"><img alt="Tham gia cộng đồng QORVEX trên Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 [Bắt đầu nhanh](#bắt-đầu-nhanh) · [Cách QORVEX hoạt động](#cách-qorvex-hoạt-động) · [Những gì bạn có thể phân tích](#những-gì-bạn-có-thể-phân-tích) · [Các nghiên cứu điển hình](#các-nghiên-cứu-điển-hình) · [Xây dựng môi trường RL](#build-rl-environments) · [Câu hỏi thường gặp](#câu-hỏi-thường-gặp) · [Tài liệu](#tài-liệu)
 
 <code>npx qorvex-agents setup</code>

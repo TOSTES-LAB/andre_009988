@@ -19,6 +19,8 @@
 
 **[Ιστότοπος](https://qorvex.tools/) · [Οδηγοί](https://qorvex.tools/guides/) · [Μελέτες περίπτωσης](https://qorvex.tools/showcase/)**
 
+<a href="https://discord.com/invite/GkcryMnJDM"><img alt="Έλα στην κοινότητα QORVEX στο Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 [Γρήγορη εκκίνηση](#γρήγορη-εκκίνηση) · [Πώς λειτουργεί το QORVEX](#πώς-λειτουργεί-το-qorvex) · [Τι μπορείς να αναλύσεις](#τι-μπορείς-να-αναλύσεις) · [Μελέτες περίπτωσης](#μελέτες-περίπτωσης) · [Δημιουργία περιβαλλόντων RL](#build-rl-environments) · [Συχνές ερωτήσεις](#συχνές-ερωτήσεις) · [Τεκμηρίωση](#τεκμηρίωση)
 
 <code>npx qorvex-agents setup</code>

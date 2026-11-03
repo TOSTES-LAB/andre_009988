@@ -20,6 +20,8 @@
 
 **[Sitio web](https://qorvex.tools/es/) · [Guías](https://qorvex.tools/es/guides/) · [Casos prácticos](https://qorvex.tools/es/showcase/)**
 
+<a href="https://discord.com/invite/GkcryMnJDM"><img alt="Únete a la comunidad de QORVEX en Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 [Inicio rápido](#inicio-rápido) · [Cómo funciona QORVEX](#cómo-funciona-qorvex) · [Qué puedes analizar](#qué-puedes-analizar) · [Casos prácticos](#casos-prácticos) · [Crear entornos de RL](#build-rl-environments) · [Preguntas frecuentes](#preguntas-frecuentes) · [Documentación](#documentación)
 
 <code>npx qorvex-agents setup</code>
