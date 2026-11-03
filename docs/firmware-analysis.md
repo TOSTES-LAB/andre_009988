@@ -26,6 +26,9 @@ QORVEX does not install these tools, their dependencies or system packages. It
 checks the tool's `--version` banner when executing a request. Binwalk must
 print `binwalk <version>` and Unblob must print the version alone. Inspection and
 extraction have independent prerequisites; one does not require the other.
+Capability discovery recommends `QORVEX_BINWALK_COMMAND` for missing inspection
+and `QORVEX_UNBLOB_COMMAND` for missing extraction. Configuring the other engine
+does not enable the unavailable operation.
 Both require util-linux `prlimit`, normally `/usr/bin/prlimit`; override its
 absolute path with `QORVEX_FIRMWARE_PRLIMIT_COMMAND` if needed. `qorvex doctor` does
 not currently inspect firmware readiness. Engine selection/version checks run

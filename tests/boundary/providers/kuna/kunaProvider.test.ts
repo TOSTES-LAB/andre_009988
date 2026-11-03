@@ -899,7 +899,7 @@ it.each([
     behavior: { project: "hang" } as const,
     environment: { QORVEX_KUNA_PROJECT_TIMEOUT_MS: "300" },
     cause: "AnalysisTimeoutError",
-    next: "To retry, set QORVEX_KUNA_PROJECT_TIMEOUT_MS above 300 ms or raise QORVEX_KUNA_JOBS in the environment that starts QORVEX. QORVEX reads Kuna settings when it starts, so restart QORVEX, then reopen the target.",
+    next: "To retry, set QORVEX_KUNA_PROJECT_TIMEOUT_MS above 300 ms in the environment that starts QORVEX. QORVEX reads Kuna settings when it starts, so restart QORVEX, then reopen the target.",
     details: {
       timeout_ms: 300,
       captured_output: { truncated: expect.any(Boolean) },
