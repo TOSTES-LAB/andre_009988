@@ -1,6 +1,8 @@
 /* Freestanding, source-owned static-analysis fixture. Never executed by QORVEX. */
 volatile unsigned int qorvex_ppc_global = 7;
 const char qorvex_ppc_marker[] = "qorvex-ppc-source-owned-fixture";
+struct ReaPpcBits { unsigned int first : 3; unsigned int second : 5; };
+volatile struct ReaPpcBits qorvex_ppc_bits = {1, 2};
 
 __attribute__((noinline)) unsigned int qorvex_ppc_leaf(unsigned int value)
 {

@@ -634,6 +634,9 @@ Saved snapshots include only cache entries whose subject identifies the selected
 target. Unbound observations and observations of child artifacts remain available
 in the open session and its Evidence bundle; they are excluded from the target's
 saved replay entries without changing their subjects.
+The snapshot also retains available Evidence linked by selected records, including
+transitive sources with an unbound or different subject. Those sources are not
+replay entries for the selected target. Unrelated records remain excluded.
 
 Snapshots retain eligible target-scoped question histories in full, including
 mutation Evidence recorded while another target was active. Observations and
@@ -705,6 +708,10 @@ results and Evidence. These are cached observations, not a saved provider
 database: only eligible exact queries can reuse a result, and new or live
 queries can still require provider startup. The CLI uses the same snapshot
 format and preserves these records when loading and updating it.
+When an MCP session replays a provider observation, its delivered Evidence identifies
+the original observation through `evidence_links` and reports that the
+provider was not rerun. The original and its available source records remain
+in the investigation bundle.
 
 ## Import, export and compare Evidence
 

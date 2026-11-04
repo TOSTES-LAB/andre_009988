@@ -39,6 +39,12 @@ struct ReaFixtureLayout {
 volatile struct ReaFixtureLayout qorvex_ghidra_inventory_layout = {
     QORVEX_FIXTURE_READY, {.word = 5}, 0};
 
+struct ReaFixtureBits {
+  unsigned int low : 3;
+  unsigned int high : 5;
+};
+volatile struct ReaFixtureBits qorvex_ghidra_inventory_bits = {1, 2};
+
 __attribute__((noinline, used)) int qorvex_ghidra_inventory_leaf(int value) {
   puts("QORVEX_GHIDRA_LEAF_VALUE");
   return value + qorvex_ghidra_inventory_global;
