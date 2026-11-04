@@ -378,12 +378,12 @@ a particular caller-supplied input will be valid. See
 
 Select the part you want to check:
 
-| Task                                | Readiness check                                                          |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| Static JavaScript/Electron analysis | Run `qorvex analyze-javascript-application PATH --json` directly.           |
-| One analysis engine                 | `qorvex doctor --provider ghidra --json` (or `hopper`, `ida`, `kuna`)       |
-| One agent registration              | `qorvex doctor --client codex --json` (see [client IDs](#supported-agents)) |
-| Installed workflow instructions     | `qorvex doctor --skill --json`                                              |
+| Task                                | Readiness check                                                            |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| Static JavaScript/Electron analysis | Run `qorvex analyze-javascript-application PATH --json` directly.             |
+| One analysis engine                 | `qorvex doctor --provider ghidra --json` (or `hopper`, `ida`, `jadx`, `kuna`) |
+| One agent registration              | `qorvex doctor --client codex --json` (see [client IDs](#supported-agents))   |
+| Installed workflow instructions     | `qorvex doctor --skill --json`                                                |
 
 A scoped report has `scope.mode: "explicit"`. Its `scope_checks` determine
 `healthy` and the exit status. Other checks appear in `informational_checks`;
@@ -654,6 +654,7 @@ hosted connector; see [its configuration](client-configuration.md#other-client-s
 | Factory Droid      | `droid`          |
 | Trae               | `trae`           |
 | WorkBuddy          | `workbuddy`      |
+| LM Studio          | `lm_studio`      |
 | ZCode              | `zcode`          |
 | DeepSeek Harness   | `dsh`            |
 | FreeBuff           | `freebuff`       |
@@ -662,6 +663,8 @@ hosted connector; see [its configuration](client-configuration.md#other-client-s
 `qorvex-agents@6.5.0` or later. The 6.4.0 registry check above does not cover them.
 `freebuff` requires `qorvex-agents@6.8.0` or later. Older releases reject
 `qorvex setup --client freebuff` as an unsupported client.
+
+`lm_studio` requires a release after 6.8.0.
 
 See [client configuration and troubleshooting](client-configuration.md) for
 configuration paths, profiles, trust policies, and schema-limit workarounds.
@@ -1447,8 +1450,11 @@ the original database; QORVEX reads selected files only for fingerprinting and c
 This mode does not copy unrelated sibling projects, rerun repair scripts, or
 admit bridge database edits. Cleanup removes the owned copy.
 The bridge checks the program's recorded import SHA-256 against the admitted
-target digest; mismatches and project changes fail explicitly. Reopen the target
-to resolve a new profile after intentionally changing the source project.
+target digest. An unavailable or malformed recorded digest is reported as an
+unverified identity, distinct from a known mismatch; neither admits the program
+or triggers a fresh import. Select a matching target or explicitly configure a
+different project or program. Changes to the source project also fail admission;
+reopen the target to resolve a new profile after intentionally changing it.
 
 The profile records the caller path, resolved project/name, program and content
 fingerprint. Original analysis settings and completeness remain **unknown**;
@@ -1458,6 +1464,13 @@ Saved QORVEX seed/analyzer reports remain historical facts in retained source Ev
 they are not interpreted as overrides applied by this session.
 Project content participates in snapshot identity, so different project states
 cannot reuse the same profile's cached observations.
+
+If a function selector is missing, use `list_procedures` or `search_procedures`
+to inspect the selected project's observed inventory. A missing entry does not
+prove the function is absent from the executable. To explicitly compare with a
+fresh import, start another QORVEX process without `QORVEX_GHIDRA_PROJECT_PATH` and
+`QORVEX_GHIDRA_PROGRAM_NAME`; the fresh analysis will not include the selected
+project's annotations.
 
 To prepare a new project explicitly, use your existing Ghidra installation in a
 new directory you own (this writes that project; QORVEX does not save it for you):
