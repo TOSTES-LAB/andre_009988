@@ -119,6 +119,9 @@ export const parseConfig = (
     ...(env.QORVEX_MCP_OUTPUT_SCHEMA_PROFILE === undefined
       ? {}
       : { mcpOutputSchemaProfile: env.QORVEX_MCP_OUTPUT_SCHEMA_PROFILE }),
+    ...(env.QORVEX_MCP_TOOL_CATALOG_PROFILE === undefined
+      ? {}
+      : { mcpToolCatalogProfile: env.QORVEX_MCP_TOOL_CATALOG_PROFILE }),
     analysisProvider: env.QORVEX_ANALYSIS_PROVIDER,
     ...(env.QORVEX_IDA_MCP_CONFIG === undefined
       ? {}

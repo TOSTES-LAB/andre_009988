@@ -26,6 +26,7 @@ import {
 } from "../domain/analysisResourceLimits.js";
 import { mcpInputSchemaProfileSchema } from "./mcpInputSchemaProfile.js";
 import { mcpOutputSchemaProfileSchema } from "./mcpOutputSchemaProfile.js";
+import { mcpToolCatalogProfileSchema } from "./mcpToolCatalogProfile.js";
 import { mcpResponseBudgetSchema } from "./mcpResponseBudget.js";
 import { asarMaxHeaderBytesSchema } from "./asarHeaderAdmission.js";
 import { bridgeMaxRequestBytesSchema } from "./bridgeMaxRequestBytes.js";
@@ -62,6 +63,7 @@ const environmentSchema = z.object({
   QORVEX_MCP_INPUT_SCHEMA_PROFILE: mcpInputSchemaProfileSchema.optional(),
   QORVEX_MCP_TOOL_FAMILIES: mcpToolFamiliesSchema.optional(),
   QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: mcpOutputSchemaProfileSchema.optional(),
+  QORVEX_MCP_TOOL_CATALOG_PROFILE: mcpToolCatalogProfileSchema.optional(),
   QORVEX_IDA_MCP_CONFIG: z
     .string()
     .min(1)
