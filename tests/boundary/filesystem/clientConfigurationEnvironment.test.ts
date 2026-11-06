@@ -863,6 +863,21 @@ it.each([
     { QORVEX_GHIDRA_COMPILER_SPEC_ID: "borlandcpp" },
     "QORVEX_GHIDRA_COMPILER_SPEC_ID",
   ],
+  [
+    "Windows ChangeTime drift window of zero",
+    { QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS: "0" },
+    "QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS",
+  ],
+  [
+    "Windows ChangeTime poll that is not decimal",
+    { QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS: "1e2" },
+    "QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS",
+  ],
+  [
+    "Windows ChangeTime poll budget above its maximum",
+    { QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS: "1001" },
+    "QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS",
+  ],
 ] as const)(
   "refuses %s before changing the configuration",
   async (_name, env, setting) => {

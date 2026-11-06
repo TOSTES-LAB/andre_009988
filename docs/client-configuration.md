@@ -334,7 +334,7 @@ This headroom is a practical default, not a guarantee for every analysis
 duration. Setup preserves positive timeout values already in the `qorvex` entry.
 
 Setup also forwards explicitly selected input/output schema profiles,
-`QORVEX_MCP_MAX_RESPONSE_BYTES`, `QORVEX_MCP_MAX_INPUT_ELEMENTS`, provider paths and supported Ghidra, JADX and Kuna
+`QORVEX_MCP_MAX_RESPONSE_BYTES`, `QORVEX_MCP_MAX_INPUT_ELEMENTS`, the Windows ChangeTime settle settings `QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS`, `QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS`, and `QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS`, provider paths and supported Ghidra, JADX and Kuna
 settings. It also forwards explicit executable and resource selections for ADB,
 apktool, packet capture, GDB/Rizin/objdump, Cutter, WABT, Wakaru, firmware and
 signal tools, browser inspection, and pwntools/pwndbg. This includes their

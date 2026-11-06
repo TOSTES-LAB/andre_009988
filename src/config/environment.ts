@@ -35,6 +35,11 @@ import { debuggerSessionLimitEnvironmentShape } from "./debuggerSessionLimits.js
 import { regexMatchingDeadlineMsSchema } from "./regexMatchingDeadline.js";
 import { regexWorkerHeapRequestMiBSchema } from "./regexWorkerHeapRequest.js";
 import {
+  windowsChangeTimeDriftMsSchema,
+  windowsChangeTimeSettleMaxPollsSchema,
+  windowsChangeTimeSettlePollMsSchema,
+} from "./windowsChangeTimeSettle.js";
+import {
   mcpDoctorDeadlineMsSchema,
   mcpFirstCatalogBudgetMsSchema,
   mcpInitializeBudgetMsSchema,
@@ -56,6 +61,11 @@ const environmentSchema = z.object({
     captureDecoderOldGenerationMiBSchema.optional(),
   QORVEX_REGEX_MATCHING_DEADLINE_MS: regexMatchingDeadlineMsSchema.optional(),
   QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB: regexWorkerHeapRequestMiBSchema.optional(),
+  QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS: windowsChangeTimeDriftMsSchema.optional(),
+  QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS:
+    windowsChangeTimeSettlePollMsSchema.optional(),
+  QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS:
+    windowsChangeTimeSettleMaxPollsSchema.optional(),
   QORVEX_MCP_INITIALIZE_BUDGET_MS: mcpInitializeBudgetMsSchema.optional(),
   QORVEX_MCP_TOOLS_LIST_BUDGET_MS: mcpToolsListBudgetMsSchema.optional(),
   QORVEX_MCP_FIRST_CATALOG_BUDGET_MS: mcpFirstCatalogBudgetMsSchema.optional(),
