@@ -49,6 +49,7 @@ it("resolves enabled builtin scopes in the same tree as registered commands", ()
 });
 
 it("uses canonical global flag metadata and retains command options and enum hints", () => {
+  expect(complete(["qorvex", "instructions", "--", "--he"])).toEqual([]);
   expect(complete(["qorvex", "instructions", "--he"])).toEqual(["--help"]);
   expect(complete(["qorvex", "instructions", "--for"])).toEqual(["--format"]);
   expect(complete(["qorvex", "instructions", "--tok"])).toEqual(
