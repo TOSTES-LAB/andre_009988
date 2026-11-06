@@ -21,7 +21,7 @@ complete -p qorvex || exit
 qorvex() {
   [[ "$COMPLETE" == bash && "$_COMPLETE_INDEX" == 1 ]] || return 1
   [[ "$1" == -- && "$2" == qorvex && "$3" == ana ]] || return 1
-  printf 'analyze\\013analyze-web-bundle\\013'
+  printf 'analyze\\013analyze-web-bundle\\013*.json\\013'
 }
 COMP_WORDS=(qorvex ana)
 COMP_CWORD=1
@@ -33,7 +33,7 @@ printf '%s\\n' "\${COMPREPLY[@]}"
     );
     expect(stderr).toBe("");
     expect(stdout).toContain("-F _incur_complete_qorvex qorvex");
-    expect(stdout).toContain("\nanalyze\nanalyze-web-bundle\n");
+    expect(stdout).toContain("\nanalyze\nanalyze-web-bundle\n*.json\n");
   },
 );
 
