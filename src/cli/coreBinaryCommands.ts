@@ -295,7 +295,7 @@ const registerXrefsCommand = (
   runDirectAnalysis: DirectAnalysis["runDirectAnalysis"],
 ): void => {
   cli.command(CLI_COMMANDS.xrefs, {
-    description: `List bounded references to an analyzed address. ${namedAddressGuidance} ${equalSelectorGuidance}`,
+    description: `List bounded, untyped references to an analyzed address. For typed incoming references, use inspect-native-instruction at the target address where supported. ${namedAddressGuidance} ${equalSelectorGuidance}`,
     args: z.object({
       path: localPathStringSchema.describe("App or program path"),
       address: z
@@ -452,7 +452,11 @@ const registerFunctionCommand = (
                 "analyze_function",
               ),
             },
-            { ...directAnalysisOptionsFromCli(logger, options), signal },
+            {
+              ...directAnalysisOptionsFromCli(logger, options),
+              signal,
+              includeEvidenceSources: options.evidence_output !== undefined,
+            },
           );
           return publishCliAnalysisEvidence(complete, delivery);
         }),

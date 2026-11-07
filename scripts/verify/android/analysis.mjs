@@ -24,7 +24,7 @@ const apk = process.env.QORVEX_ANDROID_TEST_APK;
 const jar = process.env.QORVEX_JADX_MCP_JAR;
 if (apk === undefined || jar === undefined)
   throw new Error(
-    "verify:android requires QORVEX_ANDROID_TEST_APK and QORVEX_JADX_MCP_JAR. Run npm run fixtures:android and select the downloaded files; see docs/android-analysis.md.",
+    "verify:android requires QORVEX_ANDROID_TEST_APK and QORVEX_JADX_MCP_JAR. Run npm run fixtures:android and select the downloaded files; see docs/guides/android/android-analysis.md.",
   );
 await access(apk);
 await access(jar);

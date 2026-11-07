@@ -200,13 +200,13 @@ export const readIdaConfiguration = (
       if (constraints.length === 0)
         return err(
           idaConfigurationError(
-            "QORVEX_IDA_MCP_CONFIG must contain an IDA MCP command/args or local url registration; see docs/ida-provider.md.",
+            "QORVEX_IDA_MCP_CONFIG must contain an IDA MCP command/args or local url registration; see docs/providers/ida-provider.md.",
             parsed.error,
           ),
         );
       return err(
         new ConfigurationError(
-          `QORVEX_IDA_MCP_CONFIG: ${constraints.join("; ")}. See docs/ida-provider.md.`,
+          `QORVEX_IDA_MCP_CONFIG: ${constraints.join("; ")}. See docs/providers/ida-provider.md.`,
           {
             cause: parsed.error,
             settings: constraints.map((constraint) => ({
