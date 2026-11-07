@@ -11,6 +11,42 @@ import {
 } from "./config/environment.js";
 import { projectAnalysisError } from "./domain/analysisErrorProjection.js";
 
+it("keeps the caller's opt-in Ghidra checkpoint directory and leaves it disabled by default", () => {
+  const selected = parseConfig({
+    QORVEX_GHIDRA_CHECKPOINT_DIR: "/tmp/checkpoints with spaces",
+  });
+  expect(selected.ok && selected.value.ghidraCheckpointDirectory).toBe(
+    "/tmp/checkpoints with spaces",
+  );
+  const defaults = parseConfig({});
+  expect(
+    defaults.ok && defaults.value.ghidraCheckpointDirectory,
+  ).toBeUndefined();
+  expect(parseConfig({ QORVEX_GHIDRA_CHECKPOINT_DIR: "relative" }).ok).toBe(false);
+});
+
+it.each([
+  ["QORVEX_GHIDRA_PROJECT_PATH", "/tmp/selected.gpr"],
+  ["QORVEX_GHIDRA_SEED_FILE", "/tmp/seeds.json"],
+  ["QORVEX_GHIDRA_LANGUAGE_ID", "x86:LE:64:default"],
+  ["QORVEX_GHIDRA_NATIVEAOT_JAR", "/tmp/extension.jar"],
+  ["QORVEX_GHIDRA_DISABLED_ANALYZERS", "Stack"],
+])(
+  "refuses %s with checkpoints rather than silently dropping the selected input",
+  (setting, value) => {
+    const result = parseConfig({
+      QORVEX_GHIDRA_CHECKPOINT_DIR: "/tmp/checkpoints",
+      [setting]: value,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("conflicting inputs accepted");
+    expect(result.error.message).toContain("checkpoints");
+    expect(result.error).toMatchObject({
+      settings: [expect.objectContaining({ setting })],
+    });
+  },
+);
+
 it("reports a configuration failure for a NUL in Hopper loader arguments", () => {
   const result = parseConfig({
     HOPPER_LOADER_ARGS_JSON: JSON.stringify(["--option", "value\0suffix"]),

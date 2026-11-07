@@ -123,6 +123,14 @@ const environmentSchema = z.object({
   ),
   QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: ghidraDecompileTimeoutSchema.optional(),
   QORVEX_GHIDRA_PROJECT_PATH: ghidraProjectPathSchema.optional(),
+  QORVEX_GHIDRA_CHECKPOINT_DIR: z
+    .string()
+    .min(1)
+    .refine(
+      (value) => value.startsWith("/") && !value.includes("\0"),
+      "must be an absolute POSIX directory path",
+    )
+    .optional(),
   QORVEX_GHIDRA_PROGRAM_NAME: ghidraProgramNameSchema.optional(),
   QORVEX_GHIDRA_LANGUAGE_ID: ghidraLanguageIdSchema.optional(),
   QORVEX_GHIDRA_COMPILER_SPEC_ID: ghidraCompilerSpecIdSchema.optional(),
@@ -243,6 +251,27 @@ export const parseEnvironment = (
   const parsed = parseEnvironmentValues(environment, unresolvedSettings);
   if (!parsed.ok) return parsed;
   const env = parsed.value;
+  if (env.QORVEX_GHIDRA_CHECKPOINT_DIR !== undefined) {
+    const conflicts = [
+      "QORVEX_GHIDRA_PROJECT_PATH",
+      "QORVEX_GHIDRA_SEED_FILE",
+      "QORVEX_GHIDRA_NATIVEAOT_JAR",
+      "QORVEX_GHIDRA_LANGUAGE_ID",
+      "QORVEX_GHIDRA_DISABLED_ANALYZERS",
+    ].filter((key) => Reflect.get(env, key) !== undefined);
+    if (conflicts.length > 0)
+      return err(
+        new ConfigurationError(
+          "Ghidra checkpoints currently support stock fresh-import analysis only",
+          {
+            settings: conflicts.map((setting) => ({
+              setting,
+              constraint: "cannot be combined with QORVEX_GHIDRA_CHECKPOINT_DIR",
+            })),
+          },
+        ),
+      );
+  }
   const project = env.QORVEX_GHIDRA_PROJECT_PATH;
   const incompatible =
     project === undefined
