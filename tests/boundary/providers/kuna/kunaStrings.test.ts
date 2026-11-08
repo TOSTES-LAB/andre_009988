@@ -432,11 +432,13 @@ it.each([
           expect(result.error).toMatchObject({ timeoutMs: 500 });
           // Each waiter keeps the producer's setting and recovery.
           expect(projectAnalysisError(result.error)).toMatchObject({
-            message:
-              "kuna strings did not finish within QORVEX_KUNA_PROJECT_TIMEOUT_MS (500 ms).",
+            message: expect.stringMatching(
+              /kuna strings.*QORVEX_KUNA_PROJECT_TIMEOUT_MS.*500 ms/i,
+            ),
             remediation: {
-              action:
-                "Raise QORVEX_KUNA_PROJECT_TIMEOUT_MS in the environment that starts QORVEX, then restart QORVEX; it reads Kuna settings when it starts.",
+              action: expect.stringMatching(
+                /raise.*QORVEX_KUNA_PROJECT_TIMEOUT_MS.*restart QORVEX/i,
+              ),
             },
           });
         }

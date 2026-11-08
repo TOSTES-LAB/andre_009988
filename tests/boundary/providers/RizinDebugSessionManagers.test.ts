@@ -153,9 +153,11 @@ process.stdin.on("data", (chunk) => {
         await chmod(provider, 0o700);
         let stopRejected = false;
         const manager = createRizinTestManager(
-          { QORVEX_RIZIN_COMMAND: provider },
           {
-            frameTimeoutMs: 50,
+            QORVEX_RIZIN_COMMAND: provider,
+            QORVEX_DEBUGGER_COMMAND_DEADLINE_MS: "50",
+          },
+          {
             stopProcess: (session, name, options) => {
               if (stopOutcome !== "stopped" && !stopRejected) {
                 stopRejected = true;

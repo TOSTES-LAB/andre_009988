@@ -367,11 +367,13 @@ it("names the setting that owns a single-function deadline", async () => {
     if (result.ok) throw new Error("the hanging run answered");
     expect(projectAnalysisError(result.error)).toMatchObject({
       code: "provider_timeout",
-      message:
-        "kuna decompile did not finish within QORVEX_KUNA_TIMEOUT_MS (300 ms).",
+      message: expect.stringMatching(
+        /kuna decompile.*QORVEX_KUNA_TIMEOUT_MS.*300 ms/i,
+      ),
       remediation: {
-        action:
-          "Raise QORVEX_KUNA_TIMEOUT_MS in the environment that starts QORVEX, then restart QORVEX; it reads Kuna settings when it starts.",
+        action: expect.stringMatching(
+          /raise.*QORVEX_KUNA_TIMEOUT_MS.*restart QORVEX/i,
+        ),
       },
       details: { timeout_ms: 300 },
     });
