@@ -14,7 +14,9 @@ agent's computer-use actions to it through three MCP tools:
 The tools are MCP-only, like the debugger sessions: the computer lives as long
 as the QORVEX MCP server that started it, or until it is closed. Capturing the
 app, exporting its bundle and witnessing the task on such a computer are in
-[Building and witnessing an environment](desktop-build-witness.md).
+[Building and witnessing an environment](desktop-build-witness.md), and QORVEX's
+skill for doing all of it from a request is
+[desktop builds](https://github.com/TOSTES-LAB/andre_009988/blob/main/.agents/skills/reverse-engineer-anything/references/desktop-build.md).
 
 ## Requirements
 
