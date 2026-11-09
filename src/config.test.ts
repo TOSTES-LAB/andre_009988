@@ -11,6 +11,15 @@ import {
 } from "./config/environment.js";
 import { projectAnalysisError } from "./domain/analysisErrorProjection.js";
 
+it("still rejects a NUL in an unresolved expression", () => {
+  const result = parseEnvironmentValues(
+    { QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "${TIMEOUT}\0private" },
+    new Set(["QORVEX_GHIDRA_STARTUP_TIMEOUT_MS"]),
+  );
+  expect(result.ok).toBe(false);
+  if (!result.ok) expect(JSON.stringify(result.error)).not.toContain("private");
+});
+
 it("keeps the caller's opt-in Ghidra checkpoint directory and leaves it disabled by default", () => {
   const selected = parseConfig({
     QORVEX_GHIDRA_CHECKPOINT_DIR: "/tmp/checkpoints with spaces",

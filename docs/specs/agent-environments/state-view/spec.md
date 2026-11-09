@@ -1,5 +1,9 @@
 # Environment state view from captures
 
+This specification records an implementation increment and its original problem
+statement. For current behavior and limitations, see the
+[current guide](../../../agent-environments.md).
+
 Issue: https://github.com/TOSTES-LAB/andre_009988/issues/4933
 
 ## Outcome

@@ -40,6 +40,13 @@ export const PE_IMPORTS_PROVIDER = Object.freeze({
   version: "1",
 } as const);
 
+/** Provider identity for portable, execution-free Shell Link decoding. */
+export const WINDOWS_SHORTCUT_PROVIDER = Object.freeze({
+  id: "qorvex-windows-shortcut",
+  name: "QORVEX Windows shortcut parser",
+  version: "1",
+} as const);
+
 /** Provider identity for portable, execution-free ELF note-table decoding. */
 export const DEVICETREE_PROVIDER = Object.freeze({
   id: "qorvex-devicetree",
@@ -53,6 +60,13 @@ export const ELF_NOTES_PROVIDER = Object.freeze({
   version: "1",
 } as const);
 
+/** Provider identity for portable, execution-free ELF unwind-table decoding. */
+export const ELF_UNWIND_RANGES_PROVIDER = Object.freeze({
+  id: "qorvex-elf-unwind-ranges",
+  name: "QORVEX ELF unwind range parser",
+  version: "1",
+} as const);
+
 /** Provider identity for portable, execution-free Apple .ips crash-report decoding. */
 export const APPLE_IPS_PROVIDER = Object.freeze({
   id: "qorvex-apple-ips",
@@ -63,6 +77,20 @@ export const APPLE_IPS_PROVIDER = Object.freeze({
 export const KERNEL_MODULE_PROVIDER = Object.freeze({
   id: "qorvex-kernel-module",
   name: "QORVEX kernel module parser",
+  version: "1",
+} as const);
+
+/** Provider identity for portable, execution-free ELF and Mach-O initializer and finalizer tables. */
+export const NATIVE_INITIALIZERS_PROVIDER = Object.freeze({
+  id: "qorvex-native-initializers",
+  name: "QORVEX ELF and Mach-O initializer parser",
+  version: "1",
+} as const);
+
+/** Provider identity for portable, execution-free Linux kernel banner and IKCONFIG decoding. */
+export const KERNEL_BUILD_CONFIG_PROVIDER = Object.freeze({
+  id: "qorvex-kernel-build-config",
+  name: "QORVEX kernel build config parser",
   version: "1",
 } as const);
 

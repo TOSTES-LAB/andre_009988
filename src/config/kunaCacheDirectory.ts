@@ -9,15 +9,23 @@ export const defaultKunaCacheDirectory = (
   home: string,
   environment: Readonly<NodeJS.ProcessEnv>,
   platform: NodeJS.Platform,
+): string => reaCacheDirectory(home, environment, platform, "kuna");
+
+/** A per-user cache directory QORVEX owns on this host: `qorvex/<name>` under the platform's cache root. */
+export const reaCacheDirectory = (
+  home: string,
+  environment: Readonly<NodeJS.ProcessEnv>,
+  platform: NodeJS.Platform,
+  name: string,
 ): string => {
   if (platform === "darwin")
-    return appendCallerPath(home, "Library/Caches/qorvex/kuna", platform);
+    return appendCallerPath(home, `Library/Caches/qorvex/${name}`, platform);
   const xdg = environment.XDG_CACHE_HOME;
   const root =
     xdg !== undefined && isAbsolute(xdg)
       ? xdg
       : appendCallerPath(home, ".cache", platform);
-  return appendCallerPath(root, "qorvex/kuna", platform);
+  return appendCallerPath(root, `qorvex/${name}`, platform);
 };
 
 /**

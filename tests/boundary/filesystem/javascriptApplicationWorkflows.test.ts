@@ -228,6 +228,7 @@ describe("historical native comparison projections", () => {
       "qorvex-historical-native-members-",
     );
     temporary.push(root);
+    await writeFile(join(root, "package.json"), '{"type":"commonjs"}');
     await writeFile(
       join(root, "main.js"),
       'const { open } = require("./addon.node"); open();',

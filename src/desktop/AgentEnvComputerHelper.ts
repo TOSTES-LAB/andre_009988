@@ -28,7 +28,7 @@ const HANDSHAKE_BYTES = 64 * 1024;
 const STDERR_BYTES = 16 * 1024;
 const TEARDOWN_MS = 120_000;
 const RUNNER_REMEDIATION =
-  "Set QORVEX_AGENT_ENV_COMMAND to the absolute path of the agent-env program of an agentenv-framework install (a venv, uv tool or pipx), then restart QORVEX.";
+  "Put agent-env on PATH, or set QORVEX_AGENT_ENV_COMMAND to the absolute path of the agent-env program of an agentenv-framework install (a venv, uv tool or pipx), then restart QORVEX. qorvex doctor --provider desktop_build checks the build host.";
 
 const handshakeSchema = z.union([
   z.strictObject({
@@ -90,7 +90,7 @@ export const agentEnvInterpreter = async (
   if (command === undefined || !isAbsolute(command))
     throw unavailable(
       operation,
-      "Build computers need QORVEX_AGENT_ENV_COMMAND, the absolute path of agentenv's agent-env program; QORVEX runs its helper with that runner's Python.",
+      "Build computers need QORVEX_AGENT_ENV_COMMAND, the absolute path of agentenv's agent-env program, or agent-env on PATH; QORVEX runs its helper with that runner's Python.",
     );
   let program: string;
   let head: string;

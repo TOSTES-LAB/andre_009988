@@ -18,13 +18,66 @@ app, exporting its bundle and witnessing the task on such a computer are in
 skill for doing all of it from a request is
 [desktop builds](https://github.com/TOSTES-LAB/andre_009988/blob/main/.agents/skills/reverse-engineer-anything/references/desktop-build.md).
 
+## Set up a build host
+
+On a Linux host with Node.js and Docker, from a QORVEX
+[checkout](getting-started/installation.md#run-qorvex-from-a-checkout):
+
+```bash
+qorvex setup --client claude_code --desktop-build --install-agentenv
+qorvex doctor --provider desktop_build --client claude_code
+```
+
+Setup shows its plan and asks before it changes anything; `--dry-run` only
+prints it and `--yes` approves it. It packs QORVEX's runtime archive into
+`~/.cache/qorvex/build-computer/qorvex-<version>.tar.xz` (under `$XDG_CACHE_HOME`
+when set, `~/Library/Caches` on macOS), and packs again once QORVEX's version
+changes; an archive `QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE` already names is
+recorded instead. It records `QORVEX_AGENT_ENV_COMMAND`, `QORVEX_DOCKER_COMMAND` and
+`QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE` as absolute paths in that client's QORVEX
+registration, keeping a value the registration already has other than an
+archive setup packed for an earlier QORVEX version, and refreshes the skill.
+`--install-agentenv` runs `uv tool install agentenv-framework==0.9.1464`
+when `uv` is on `PATH`, and otherwise prints the command. Setup never
+installs Docker or Node.js and never runs `sudo`. Restart the client
+afterwards.
+
+Doctor is read-only and checks, in order: a Linux amd64 or arm64 host,
+Node.js, procps `ps`, the Docker CLI, a Docker daemon reachable without
+`sudo`, 20 GB free where Docker keeps images, agentenv-framework 0.9.1464,
+the runtime archive of this QORVEX version, the build settings in the
+registration or the environment, and the skill. Each failure names its fix.
+It also reports, without counting them against `healthy`, whether a model
+endpoint for solver runs is configured and which agentenv containers
+earlier builds left. Pass `--json` for the full report.
+
+When a setting is unset where the server starts, QORVEX uses `agent-env` and
+`docker` on `PATH` and the archive setup packed for this QORVEX version. The
+rest of this page is the same setup by hand.
+
 ## Requirements
 
-- Docker, and an agentenv-framework install whose `agent-env` program is named
-  by the absolute `QORVEX_AGENT_ENV_COMMAND`. Bundles target agentenv
-  0.9.1431. QORVEX runs its helper, `bridge/agentenv/computer.py`, with that
-  runner's Python: the interpreter on the program's `#!` line, or the
-  `python3` beside it in its virtual environment.
+- A Linux host on amd64 or arm64 with about 20 GB of free disk for the
+  images agentenv builds and pulls. amd64 and arm64 hosts both build
+  natively; a host builds only its own architecture.
+- Node.js at the version in `.nvmrc`, installed with
+  [nvm](https://github.com/nvm-sh/nvm) or from
+  [nodejs.org](https://nodejs.org/en/download), and QORVEX
+  [run from a checkout](getting-started/installation.md#run-qorvex-from-a-checkout).
+- [Docker Engine](https://docs.docker.com/engine/install/) and its
+  [post-install steps](https://docs.docker.com/engine/install/linux-postinstall/):
+  add yourself to the `docker` group, then log in again.
+- agentenv-framework 0.9.1464, the version bundles target. Install
+  [uv](https://docs.astral.sh/uv/getting-started/installation/) first, then
+  run `uv tool install agentenv-framework==0.9.1464`. Set
+  `QORVEX_AGENT_ENV_COMMAND` to the absolute path of the resulting `agent-env`
+  program, normally `$HOME/.local/bin/agent-env`; `command -v agent-env`
+  shows the path when its install directory is on your `PATH`. Installing it
+  with pip into a virtual environment instead needs `python3.12-venv` on
+  stock Ubuntu. QORVEX runs its
+  helper, `bridge/agentenv/computer.py`, with that runner's Python: the
+  interpreter on the program's `#!` line, or the `python3` beside it in its
+  virtual environment.
 - `QORVEX_DOCKER_COMMAND`, the absolute path of the Docker CLI, lets QORVEX remove a
   computer whose agentenv teardown was not confirmed. Without it, QORVEX names the
   command to run instead.
@@ -34,10 +87,69 @@ skill for doing all of it from a request is
   checkout, `npm run pack:build-computer-runtime -- /path/to/qorvex-prod.tar.xz`
   writes one: `npm pack`, its package folder as
   `qorvex-prod` with the lockfile, `npm ci --omit=dev --omit=optional`, then
-  `qorvex-prod` as `.tar.xz`.
+  `qorvex-prod` as `.tar.xz`. The archive is a copy of the checkout: pack it
+  again after `git pull` and a rebuild.
 
 Set these where the MCP server starts; a shell export does not reach a server
 that is already running.
+
+## Claude Code
+
+Without `--desktop-build`, `qorvex setup --client claude_code` registers QORVEX
+without these variables. Either
+export them in the shell that starts `claude`, which starts QORVEX's server with
+its environment:
+
+```bash
+export QORVEX_AGENT_ENV_COMMAND="$HOME/.local/bin/agent-env"
+export QORVEX_DOCKER_COMMAND="$(command -v docker)"
+export QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE="$HOME/qorvex-runtime/qorvex-prod.tar.xz"
+claude
+```
+
+or set them, as absolute paths, in the `env` of the `mcpServers.qorvex` entry
+setup wrote, such as in `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "qorvex": {
+      "command": "/absolute/path/to/node",
+      "args": ["/absolute/path/to/qorvex/scripts/qorvex.mjs", "mcp"],
+      "env": {
+        "QORVEX_AGENT_ENV_COMMAND": "/home/ada/.local/bin/agent-env",
+        "QORVEX_DOCKER_COMMAND": "/usr/bin/docker",
+        "QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE": "/home/ada/qorvex-runtime/qorvex-prod.tar.xz"
+      }
+    }
+  }
+}
+```
+
+Solver runs are `agent-env run` commands the agent runs in its shell, and
+agentenv refuses them without a model endpoint: export `LITELLM_BASE_URL` and
+`LITELLM_API_KEY` in the shell that starts `claude`, whose Bash tool inherits
+them, or set `base_url` and `api_key` under `[model]` in
+`.agentenv/config.toml`.
+
+Claude Code asks before each MCP tool call its permission settings do not
+allow, and a build makes dozens of `act_on_build_computer` calls. You can
+allow QORVEX's tools in those settings' `permissions.allow` list:
+`mcp__qorvex__act_on_build_computer` allows that tool, and `mcp__qorvex` allows all
+of QORVEX's.
+
+A headless run, `claude -p`, ends when the skill asks its upfront questions,
+and refuses the tool calls its permission settings do not allow. Put the
+answers in the request: the install source when the app is not in the Ubuntu
+archive, a synthetic seed or the file to start from, whether to review the
+task before solver runs, and the solver runs' count, model and budget, or
+none:
+
+```bash
+claude -p 'Build me a Gnote environment where the agent adds olive oil to the
+shopping list note. Make a synthetic note. Then make 2 solver runs with
+<model>, at most $4 in all, without a review first.'
+```
 
 ## Start a computer
 
@@ -45,9 +157,13 @@ From a request, QORVEX renders a bundle in a private temporary folder: a compute
 app on the `ubuntu-24.04` base with the `reference` driver that installs the
 app, opens it on demand with `gtk-launch <desktop entry>` from the computer
 user's home, so its open and save dialogs start there rather than in the
-framework's folder for the app, and keeps no seed and no data hooks. The app is not open when the computer starts: agentenv lists it
-in the desktop's Applications menu under Other by the environment's name, such
-as `mousepad`, and that entry launches it through the app's server.
+framework's folder for the app, and keeps no seed and no data hooks. The app is not open when the computer starts:
+`start_build_capture` opens it under QORVEX's capture. When no capture is under
+way, open it from the desktop's Applications menu, where agentenv lists it
+under Other by the environment's name, such as `mousepad`; that entry launches
+it through the app's server. The name is the desktop entry's last part when it
+is reverse-DNS (`com.github.xournalpp.xournalpp` gives `xournalpp`), or else
+the whole entry without a trailing version (`glabels-3.0` gives `glabels`).
 
 When the app is Electron, set `electron` to true. The install rewrites that
 desktop entry's command with the same policy an export uses: `--no-sandbox`
@@ -71,16 +187,28 @@ Applications menu entry can open the app.
 
 | `kind`           | Installs                                                                                                   |
 | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| `archive`        | `package` from the Ubuntu 24.04 archive, on amd64 and arm64                                                |
+| `archive`        | `package` from the Ubuntu 24.04 archive, on amd64 and arm64, with its optional `extra_packages` beside it  |
 | `apt_repository` | `package` from the repository at `uri` with `suite` and `components`, trusting the key file `key_file`     |
 | `package_file`   | The `.deb` at `url`, checked against `sha256`, for one `architecture`, after its apt `dependencies` are in |
 
 Build steps run with the network off, so a `.deb`'s dependencies must be
-listed. The bundle adds QORVEX in a build-only layer: Node.js
+listed. `extra_packages` names up to 16 more archive packages, by the same
+name rules as `package`, for a runtime piece the app needs that its package
+does not install: apt here skips Recommends, so MyPaint 2.0.1 exits at launch
+without `librsvg2-common`, GTK's SVG icon loader, and Freeplane 1.7.10 needs
+`openjdk-17-jre`, since its launcher refuses noble's default Java 21. The
+export installs them beside the app too, as it does a `.deb`'s
+`dependencies` when apt offers the `.deb`'s package; see
+[build and witness](desktop-build-witness.md).
+
+The bundle adds QORVEX in a build-only layer: Node.js
 24.22.1, downloaded per architecture and checked against its release checksum,
 and QORVEX from `QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE`, both unpacked into `/opt/qorvex` by
-a root build step, with `node` and `qorvex` on `PATH`. An exported bundle carries
-none of it.
+a root build step, with `node` and `qorvex` on `PATH`. It also installs
+`libgtk-3-bin`, for `gtk-launch`, and `dconf-cli`, so the capture reads the
+app's settings in dconf, such as GnuCash's "Show tips at startup", and the
+seed keeps them. An exported bundle carries none of it but `dconf-cli`, which
+it installs when it loads the app's dconf keys.
 
 From a bundle folder, such as one `export-desktop-application` wrote, QORVEX
 starts that bundle's `tasks/smoke.json` as it is:
@@ -96,6 +224,10 @@ in the folder and its files stay as they were shared.
 QORVEX runs the deploy with `run_bundle(keep=True, emulate=False)` on the local
 sandbox provider, so only the host's own architecture is built. The first start
 of a bundle builds its image and can take minutes; later starts reuse it.
+agentenv makes a start wait while another agentenv run on this host writes its
+bundle's ids, so starts at the same time wait for each other, several minutes
+when a few run together; the progress line then says it is waiting for another
+agent-env run to finish writing this bundle's ids.
 While it waits, QORVEX sends an MCP progress notification every five seconds with
 agentenv's latest line, so a client that resets its request timeout on
 progress keeps waiting. QORVEX then waits until the computer's readiness checks
@@ -105,9 +237,12 @@ while it is one colour throughout. The retries share 10 s, each given only
 what is left of it, and when that runs out QORVEX returns the latest frame;
 progress notifications continue meanwhile. Given `screenshot` with a
 `region`, `format` or `quality`, QORVEX then takes one with them, a `region`
-cropping that frame. The result holds
+cropping that frame rather than capturing the screen again. The result holds
 `computer_id`, agentenv's `sandbox_id`, the environment name or bundle folder,
-and the screenshot's frame as structured content beside its image.
+`extra_packages`, what the request named beside the app for the export to
+install too (an archive install's `extra_packages` or a `.deb`'s
+`dependencies`, empty otherwise), and the screenshot's frame as structured
+content beside its image.
 
 A failed start returns the last 16 KiB of the helper's stderr, where a failing
 build prints its error, and its exit status; a cancelled one stops the helper,
@@ -121,16 +256,16 @@ progress and waits for them before closing every computer.
 `act_on_build_computer` takes `computer_id`, an `action` and the driver's own
 arguments for `computer_<action>`, which QORVEX passes through:
 
-| `action`     | Arguments                                                       |
-| ------------ | --------------------------------------------------------------- |
-| `screenshot` | `region`, `format` (`png` or `jpeg`), `quality`                 |
-| `click`      | `x`, `y`, `button`, `count` (2 double-clicks), `modifiers`      |
-| `drag`       | `path` of `[x, y]` points, `button`, `duration_ms`, `modifiers` |
-| `scroll`     | `direction`, `x`, `y`, `amount`, `modifiers`                    |
-| `type`       | `text`, where `\n` presses Enter and `\t` Tab                   |
-| `key`        | `keys`, one chord pressed in order, and `repeat`                |
-| `wait`       | `ms`                                                            |
-| `reset`      | `screenshot`                                                    |
+| `action`     | Arguments                                                               |
+| ------------ | ----------------------------------------------------------------------- |
+| `screenshot` | `region`, `format` (`png` or `jpeg`), `quality`                         |
+| `click`      | `x`, `y`, `button`, `count` (2 double-clicks), `modifiers`              |
+| `drag`       | `path` of 2 to 50 `[x, y]` points, `button`, `duration_ms`, `modifiers` |
+| `scroll`     | `direction`, `x`, `y`, `amount`, `modifiers`                            |
+| `type`       | `text`, where `\n` presses Enter and `\t` Tab                           |
+| `key`        | `keys`, one chord pressed in order, and `repeat`                        |
+| `wait`       | `ms`                                                                    |
+| `reset`      | `screenshot`                                                            |
 
 `reset` is not a driver tool: QORVEX calls the app's `data/reset`, which restores
 the bundle's seed and relaunches the app, then waits until the computer's
@@ -154,7 +289,9 @@ The result carries the driver's content unchanged, its text and images, after
 QORVEX's own JSON: `action_index` and the driver's structured result. A refusal,
 such as a stale frame, is an error carrying the computer's message. A response
 larger than the MCP budget is refused with how to ask for a smaller image: a
-`region`, or `jpeg` with a lower `quality`. That error keeps QORVEX's own result,
+`region`, or `jpeg` with a lower `quality`. A screenshot with `region` does not
+capture the screen again; it crops the latest frame, so take a full
+screenshot, or a `wait` with `screenshot: true`, first. That error keeps QORVEX's own result,
 `computer_id` included, as `details.result`, since the action or start has
 happened.
 
