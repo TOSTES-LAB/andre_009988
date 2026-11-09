@@ -25,6 +25,5 @@ export const projectAndroidApplicationEvidence = (
     operation: OPERATION,
     predicateType: "qorvex.android-application-graph",
     provider: ANDROID_APPLICATION_PROVIDER,
-    subjectFormat: () => "apk",
   });
 };

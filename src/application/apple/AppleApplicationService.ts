@@ -25,6 +25,5 @@ export const projectAppleApplicationEvidence = (
     operation: OPERATION,
     predicateType: "qorvex.apple-application-graph",
     provider: APPLE_APPLICATION_PROVIDER,
-    subjectFormat: (first) => first.subject?.format ?? "unknown",
   });
 };

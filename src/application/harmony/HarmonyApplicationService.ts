@@ -25,6 +25,5 @@ export const projectHarmonyApplicationEvidence = (
     operation: OPERATION,
     predicateType: "qorvex.harmony-application-graph",
     provider: HARMONY_APPLICATION_PROVIDER,
-    subjectFormat: (first) => first.subject?.format ?? "unknown",
   });
 };

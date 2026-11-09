@@ -213,6 +213,7 @@ def run(arguments: dict) -> int:
     qorvex = shutil.which("qorvex")
     if qorvex is None:
         return _say({"error": "QORVEX is not installed in this computer"})
+    os.makedirs(os.path.dirname(arguments["stdout"]), exist_ok=True)
     for path, text in arguments.get("files", {}).items():
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as handle:
