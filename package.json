@@ -72,6 +72,8 @@
     "bridge/mitmproxy/capture.py",
     "bridge/agentenv/capture.py",
     "bridge/agentenv/computer.py",
+    "bridge/agentenv/solve.py",
+    "bridge/agentenv/solve_cleanup.py",
     "scripts/qorvex.mjs",
     "scripts/lib/cli-process-environment.mjs",
     "scripts/qorvex-android-workspace-guardian.mjs",

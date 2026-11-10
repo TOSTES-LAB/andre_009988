@@ -29,6 +29,11 @@ import { mcpOutputSchemaProfileSchema } from "./mcpOutputSchemaProfile.js";
 import { mcpToolCatalogProfileSchema } from "./mcpToolCatalogProfile.js";
 import { mcpResponseBudgetSchema } from "./mcpResponseBudget.js";
 import { asarMaxHeaderBytesSchema } from "./asarHeaderAdmission.js";
+import { asarMaxListingBytesSchema } from "./asarListingAdmission.js";
+import {
+  ghidraValueFlowCountSchema,
+  ghidraDecompilePayloadMiBSchema,
+} from "./ghidraValueFlowLimits.js";
 import { bridgeMaxRequestBytesSchema } from "./bridgeMaxRequestBytes.js";
 import { captureDecoderOldGenerationMiBSchema } from "./captureDecoderHeap.js";
 import { debuggerSessionLimitEnvironmentShape } from "./debuggerSessionLimits.js";
@@ -57,6 +62,13 @@ const environmentSchema = z.object({
   QORVEX_MCP_MAX_RESPONSE_BYTES: mcpResponseBudgetSchema.optional(),
   QORVEX_MCP_MAX_INPUT_ELEMENTS: mcpInputBudgetSchema.optional(),
   QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema.optional(),
+  QORVEX_ASAR_MAX_LISTING_BYTES: asarMaxListingBytesSchema.optional(),
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS: ghidraValueFlowCountSchema.optional(),
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION:
+    ghidraValueFlowCountSchema.optional(),
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES: ghidraValueFlowCountSchema.optional(),
+  QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB:
+    ghidraDecompilePayloadMiBSchema.optional(),
   QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB:
     captureDecoderOldGenerationMiBSchema.optional(),
   QORVEX_REGEX_MATCHING_DEADLINE_MS: regexMatchingDeadlineMsSchema.optional(),

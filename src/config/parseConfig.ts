@@ -142,6 +142,27 @@ export const parseConfig = (
       : { ghidraCheckpointDirectory: env.QORVEX_GHIDRA_CHECKPOINT_DIR }),
     ghidraJavaHome: env.JAVA_HOME,
     ghidraStartupTimeoutMs: env.QORVEX_GHIDRA_STARTUP_TIMEOUT_MS,
+    ...(env.QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB === undefined
+      ? {}
+      : {
+          ghidraDecompileMaxPayloadMiB:
+            env.QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB,
+        }),
+    ...(env.QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS === undefined
+      ? {}
+      : {
+          ghidraValueFlowMaxOperations:
+            env.QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS,
+        }),
+    ...(env.QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION === undefined
+      ? {}
+      : {
+          ghidraValueFlowMaxInputsPerOperation:
+            env.QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION,
+        }),
+    ...(env.QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES === undefined
+      ? {}
+      : { ghidraValueFlowMaxEdges: env.QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES }),
     ...(env.QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS === undefined
       ? {}
       : {
