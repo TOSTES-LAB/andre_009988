@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
+import {
+  parseClientConfiguration,
+  serializeClientConfiguration,
+  withClientServers,
+} from "./ClientConfigurationDocument.js";
 
 import {
   editHermesConfigurationYaml,
@@ -462,7 +467,7 @@ describe("Hermes configuration YAML", () => {
       parseHermesConfigurationYaml("0600: octal\n600: decimal\n"),
     ).not.toThrow();
     expect(parseHermesConfigurationYaml("value: 9007199254740993\n")).toEqual({
-      value: Number("9007199254740993"),
+      value: 9007199254740993n,
     });
   });
 
@@ -546,6 +551,34 @@ describe("Hermes configuration YAML", () => {
     expect(
       parseHermesConfigurationYaml("%YAML 1.2\n---\ndate: 2026-10-14\n"),
     ).toEqual({ date: new Date("2026-10-14") });
+  });
+});
+
+it("retains exact integer settings through a parsed Hermes launcher refresh", () => {
+  const source =
+    "mcp_servers:\n  qorvex:\n    command: old\n    identifier: 9007199254740993 # caller identifier\n    negative: -9007199254740993\n    safe: 9007199254740991\n    mode: 0600\n";
+  const parsed = parseClientConfiguration(source, "hermes");
+  const previous = parsed.servers.qorvex as Record<string, unknown>;
+  const result = serializeClientConfiguration(
+    withClientServers(parsed, {
+      ...parsed.servers,
+      qorvex: { ...previous, command: "qorvex" },
+    }),
+    "hermes",
+    source,
+  );
+  if (!result.ok) throw new Error("Hermes edit was refused");
+  expect(result.value).toBe(source.replace("command: old", "command: qorvex"));
+  expect(parse(result.value, { version: "1.1", intAsBigInt: true })).toEqual({
+    mcp_servers: {
+      qorvex: {
+        command: "qorvex",
+        identifier: 9007199254740993n,
+        negative: -9007199254740993n,
+        safe: 9007199254740991n,
+        mode: 384n,
+      },
+    },
   });
 });
 

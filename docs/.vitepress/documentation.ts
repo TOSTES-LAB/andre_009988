@@ -364,6 +364,11 @@ export const documentationSections = [
         route: "/design/limits-and-recovery",
       },
       {
+        text: "QORVEX limit inventory",
+        source: "design/qorvex-limit-inventory.md",
+        route: "/design/qorvex-limit-inventory",
+      },
+      {
         text: "MCP tool design",
         source: "development/tool-design.md",
         route: "/tool-design",
@@ -654,6 +659,11 @@ export const documentationSections = [
         text: "Reconstruction coverage",
         source: "reconstruction-coverage.md",
         route: "/reconstruction-coverage",
+      },
+      {
+        text: "Release exposure",
+        source: "release-exposure.md",
+        route: "/release-exposure",
       },
       {
         text: "Reverse-engineering tool integrations",

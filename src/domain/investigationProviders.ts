@@ -212,6 +212,13 @@ export const PE_LOAD_CONFIG_PROVIDER = Object.freeze({
   version: "1",
 } as const);
 
+/** Provider identity for the read-only release exposure audit. */
+export const RELEASE_EXPOSURE_PROVIDER = Object.freeze({
+  id: "qorvex-release-exposure",
+  name: "QORVEX release exposure audit",
+  version: "1",
+} as const);
+
 /** Provider identity for portable ELF, PE, and Mach-O hardening inspection. */
 export const BINARY_HARDENING_PROVIDER = Object.freeze({
   id: "qorvex-binary-hardening",

@@ -36,7 +36,8 @@ it("names QORVEX_JADX_OPERATION_TIMEOUT_MS when the operation deadline elapses",
       applies_at: "next_operation",
       agent_editable: true,
       scope: "qorvex-runtime",
-      qorvex_restart_required: false,
+      update_mode: "runtime",
+      pending_restart: false,
     },
   });
   expect(projected).toMatchObject({

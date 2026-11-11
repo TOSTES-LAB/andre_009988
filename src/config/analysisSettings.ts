@@ -17,6 +17,17 @@ import { regexMatchingDeadlineMsSchema } from "./regexMatchingDeadline.js";
 import { regexWorkerHeapRequestMiBSchema } from "./regexWorkerHeapRequest.js";
 import { captureDecoderOldGenerationMiBSchema } from "./captureDecoderHeap.js";
 import { parseNativeMatchingAllowance } from "./nativeMatchingAllowance.js";
+import { bridgeMaxRequestBytesSchema } from "./bridgeMaxRequestBytes.js";
+import {
+  debuggerCommandDeadlineMsSchema,
+  debuggerMaxCommandOutputBytesSchema,
+} from "./debuggerSessionLimits.js";
+import {
+  windowsChangeTimeDriftMsSchema,
+  windowsChangeTimeSettleMaxPollsSchema,
+  windowsChangeTimeSettlePollMsSchema,
+} from "./windowsChangeTimeSettle.js";
+import { pwntoolsInputBytesSchema } from "../native/pwntools/PwntoolsInputLimit.js";
 const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
   {
     QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema,
@@ -33,6 +44,18 @@ const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
     QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB: regexWorkerHeapRequestMiBSchema,
     QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB:
       captureDecoderOldGenerationMiBSchema,
+    QORVEX_BRIDGE_MAX_REQUEST_BYTES: bridgeMaxRequestBytesSchema,
+    QORVEX_DEBUGGER_COMMAND_DEADLINE_MS: debuggerCommandDeadlineMsSchema,
+    QORVEX_DEBUGGER_MAX_COMMAND_OUTPUT_BYTES: debuggerMaxCommandOutputBytesSchema,
+    QORVEX_HOPPER_CALLER_SCAN_BUDGET_MS: providerStartupTimeoutSchema,
+    QORVEX_JEB_MCP_TIMEOUT_MS: providerStartupTimeoutSchema,
+    QORVEX_KUNA_PROJECT_TIMEOUT_MS: providerStartupTimeoutSchema,
+    QORVEX_KUNA_TIMEOUT_MS: providerStartupTimeoutSchema,
+    QORVEX_PWNTOOLS_MAX_INPUT_BYTES: pwntoolsInputBytesSchema,
+    QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS: windowsChangeTimeDriftMsSchema,
+    QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS: windowsChangeTimeSettlePollMsSchema,
+    QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS:
+      windowsChangeTimeSettleMaxPollsSchema,
   };
 export const launchAnalysisSetting = (
   id: AnalysisSettingId,

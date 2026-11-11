@@ -37,6 +37,7 @@ await buildPortableFixtures();
 if (hostPlatform === "darwin") await buildDarwinFixtures();
 
 const manifest = {
+  schemaVersion: 2,
   platform: hostPlatform,
   architecture,
   generatedAt: new Date(0).toISOString(),
@@ -64,7 +65,7 @@ async function buildPortableFixtures() {
       symbols: ["qorvex_entry", "qorvex_branch", "qorvex_leaf", "qorvex_c_global"].map(
         (name) => `${symbolPrefix}${name}`,
       ),
-      strings: ["QORVEX_C_ENTRY", "QORVEX_C_LEAF"],
+      stringMarkers: ["QORVEX_C_ENTRY", "QORVEX_C_LEAF"],
       hopperOracle: HOPPER_C_ORACLE,
     },
   });
@@ -85,7 +86,7 @@ async function buildPortableFixtures() {
           `${symbolPrefix}qorvex_version_leaf`,
           ...(second ? [`${symbolPrefix}qorvex_added`] : []),
         ],
-        strings: [second ? "QORVEX_VERSION_TWO" : "QORVEX_VERSION_ONE"],
+        stringMarkers: [second ? "QORVEX_VERSION_TWO" : "QORVEX_VERSION_ONE"],
       },
     });
   }
@@ -127,7 +128,11 @@ async function buildDarwinFixtures() {
     ],
     expectations: {
       symbols: ["_OBJC_CLASS_$_REAWidget"],
-      strings: ["REAWidget", "REAWidgetDelegate", "performAction:error:"],
+      stringFragments: [
+        "REAWidget",
+        "REAWidgetDelegate",
+        "performAction:error:",
+      ],
     },
   });
   await build({
@@ -144,7 +149,7 @@ async function buildDarwinFixtures() {
     ],
     expectations: {
       symbols: ["_napi_register_module_v1"],
-      strings: ["reaProbeOne", "reaProbeTwo", "reaProbeThree"],
+      stringMarkers: ["reaProbeOne", "reaProbeTwo", "reaProbeThree"],
     },
   });
   try {
@@ -163,13 +168,8 @@ async function buildDarwinFixtures() {
         join(outputRoot, "swift"),
       ],
       expectations: {
-        strings: [
-          "QORVEX_SWIFT_EXECUTE",
-          "REAService",
-          "REARecord",
-          "REAState",
-          "REAProtocol",
-        ],
+        stringMarkers: ["QORVEX_SWIFT_EXECUTE"],
+        stringFragments: ["REAService", "REARecord", "REAState", "REAProtocol"],
       },
       compiler: swiftc,
       compilerVersion: swiftVersion,

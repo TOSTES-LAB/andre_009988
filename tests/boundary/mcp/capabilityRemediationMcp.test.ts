@@ -74,7 +74,7 @@ it("names the JEB discovery deadline setting instead of repeating the expired de
       reason: "provider_unavailable",
     });
     expect(entry?.remediation).toMatch(
-      /increase QORVEX_JEB_MCP_TIMEOUT_MS.*restart and reconnect QORVEX/iu,
+      /jeb\.mcp_timeout_ms.*update_analysis_settings.*QORVEX_JEB_MCP_TIMEOUT_MS/iu,
     );
     expect(entry?.remediation).toMatch(
       /catalog discovery.*tools\/call.*cleanup.*headroom/iu,

@@ -35,8 +35,10 @@ Catalog discovery and each `tools/call` share `QORVEX_JEB_MCP_TIMEOUT_MS`. Set i
 in QORVEX's launch environment to an integer from 1 to 2147483647 milliseconds,
 for example `QORVEX_JEB_MCP_TIMEOUT_MS=300000` for a five-minute budget. Omitted
 means the pinned MCP client SDK default of 60000 ms (`@modelcontextprotocol/client`
-2.3.1). Restart QORVEX and reconnect to apply a change. Raising the setting raises
-both phases. It does not make one end-to-end deadline across a whole CLI or MCP
+2.3.1). Change the budget for subsequent operations with
+`update_analysis_settings` using `jeb.mcp_timeout_ms`. To change the launch
+value, update QORVEX's environment and restart. Raising the setting raises both
+phases. It does not make one end-to-end deadline across a whole CLI or MCP
 operation: discovery and each `tools/call` each get that budget. A request that
 reaches its budget returns a typed timeout naming the phase and the effective
 milliseconds, while caller cancellation remains a cancellation. Allow execution,
