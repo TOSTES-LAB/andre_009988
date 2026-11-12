@@ -489,6 +489,10 @@ it("runs active Electron scenarios with selected paths and inferred working dire
     { kind: "session", session },
     {
       electronActiveObservation: provider,
+      environment: {
+        ...process.env,
+        QORVEX_MCP_TOOL_FAMILIES: "electron",
+      },
       availabilityPolicy: () => ({
         processCaptureEnabled: false,
         investigationInputRoots: 0,
