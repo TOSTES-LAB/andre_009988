@@ -162,7 +162,7 @@ def main():
 
     bridge["QORVEX_TARGET_PATH"] = "/tmp/qorvex-hopper-facade-fixture"
     bridge["QORVEX_OWNS_PROCESS_LIFETIME"] = False
-    bridge["_configure_hopper_api"](FakeDocumentProvider)
+    bridge["Document"] = FakeDocumentProvider
     bridge["_bind_session_document"]()
     current = bridge["_dispatch"]("current_document", {})
     current_address = bridge["_dispatch"]("current_address", {})
