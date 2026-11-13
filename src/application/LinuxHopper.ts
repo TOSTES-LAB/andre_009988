@@ -511,7 +511,7 @@ export const installLinuxHopper = async (
 };
 
 /** Canonical launcher path for a legacy user-local Linux Hopper installation. */
-export const linuxHopperLauncherPath = (home: string): string =>
+const linuxHopperLauncherPath = (home: string): string =>
   appendCallerPath(home, ".local/share/qorvex/hopper/bin/Hopper", "linux");
 
 /** QORVEX's managed Linux install path, preferred when no explicit launcher is set. */
@@ -796,7 +796,7 @@ const runPackageManagerCommand = async (
 };
 
 /** Preserve argument boundaries in a command shown to the user. */
-export const formatCommandForDisplay = (
+const formatCommandForDisplay = (
   executable: string,
   args: readonly string[],
 ): string =>
@@ -807,7 +807,7 @@ export const formatCommandForDisplay = (
     .join(" ");
 
 /** Select the native package manager and authorization boundary without shell evaluation. */
-export const linuxPackageManagerCommands = (
+const linuxPackageManagerCommands = (
   family: LinuxPackageFamily,
   archive: string,
   isRoot: boolean,
