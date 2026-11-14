@@ -5,8 +5,10 @@ export const BUILD_COMPUTER_SETTINGS = [
   "QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE",
 ] as const;
 
-/** Bundle variable names, excluding the host controls, in the advertised schema too. */
-export const BUNDLE_SETTING_VARIABLE = new RegExp(
-  `^(?!(?:${BUILD_COMPUTER_SETTINGS.join("|")})$)QORVEX_[A-Z0-9_]{1,60}$`,
-  "u",
-);
+/** Bundle variable names; schemas advertise the host-control exclusion with `not`. */
+export const BUNDLE_SETTING_VARIABLE = /^QORVEX_[A-Z0-9_]{1,60}$/u;
+
+/** Whether a bundle setting name is portable and not a host-control name. */
+export const isBundleSettingVariable = (name: string): boolean =>
+  BUNDLE_SETTING_VARIABLE.test(name) &&
+  !(BUILD_COMPUTER_SETTINGS as readonly string[]).includes(name);
