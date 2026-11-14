@@ -44,7 +44,6 @@ cliTest.for([
           QORVEX_FUSE_PROBE_TRACE: tracePath,
           QORVEX_FUSE_PROBE_ALLOW: join(root, "allow"),
         },
-        timeoutMs: 30_000,
       },
     );
     const trace = (await readFile(tracePath, "utf8"))

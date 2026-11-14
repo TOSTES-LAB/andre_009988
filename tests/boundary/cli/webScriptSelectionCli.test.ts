@@ -130,15 +130,12 @@ cliTest.skipIf(process.platform === "win32")(
     const root = await createTestTempDirectory("qorvex-script-selection-cli-");
     const capturePath = join(root, "capture.pipe");
     const outputDirectory = join(root, "export");
-    const created = await processes.run("mkfifo", [capturePath], {
-      timeoutMs: 5_000,
-    });
+    const created = await processes.run("mkfifo", [capturePath]);
     expect(created.exitCode).toBe(0);
 
     const response = await cli.run({
       arguments: ["export-web-scripts", capturePath, outputDirectory, "--json"],
       environment: { QORVEX_LOG_LEVEL: "silent" },
-      timeoutMs: 5_000,
     });
     expect(response.exitCode).toBe(1);
     expect(response.signal).toBeNull();

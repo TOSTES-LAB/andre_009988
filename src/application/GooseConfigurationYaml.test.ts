@@ -18,6 +18,123 @@ const extension = {
   timeout: 300,
 };
 
+describe("Goose YAML source key retention", () => {
+  it("updates and removes an extension selected through aliased path keys", () => {
+    const source =
+      "table: &table extensions\nname: &name qorvex\n? *table\n:\n  ? *name\n  : {cmd: old, type: stdio}\n";
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      cmd: "qorvex",
+      type: "stdio",
+    });
+    expect(updated).toContain("*table");
+    expect(updated).toContain("*name");
+    expect(parseGooseConfigurationYaml(updated)).toMatchObject({
+      extensions: { qorvex: { cmd: "qorvex", type: "stdio" } },
+    });
+    const removed = editGooseConfigurationYaml(
+      updated,
+      ["extensions", "qorvex"],
+      undefined,
+    );
+    expect(removed).not.toContain("*name");
+    expect(parseGooseConfigurationYaml(removed)).toMatchObject({
+      extensions: {},
+    });
+    const ambiguous =
+      "name: &name qorvex\nextensions:\n  ? *name\n  : {cmd: first}\n  qorvex: {cmd: second}\n";
+    expect(() =>
+      editGooseConfigurationYaml(ambiguous, ["extensions", "qorvex"], {
+        cmd: "qorvex",
+      }),
+    ).toThrow(/more than one key resolving to "qorvex"/);
+  });
+
+  it("retains a collection mapping key when an adjacent field changes", () => {
+    const source =
+      "extensions:\n  qorvex:\n    cmd: old\n    ? [one, two]\n    : retained\n";
+    const parsed = parseGooseConfigurationYaml(source) as {
+      extensions: { qorvex: Record<string, unknown> };
+    };
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      ...parsed.extensions.qorvex,
+      cmd: "qorvex",
+    });
+    const document = parseDocument(updated);
+    expect(document.errors).toEqual([]);
+    const native = document.toJS({ mapAsMap: true }) as Map<string, unknown>;
+    const extensions = native.get("extensions") as Map<string, unknown>;
+    const entry = extensions.get("qorvex") as Map<unknown, unknown>;
+    expect([...entry.entries()]).toContainEqual([["one", "two"], "retained"]);
+    expect(entry.get("cmd")).toBe("qorvex");
+  });
+
+  it("retains an aliased mapping key when an adjacent launcher field changes", () => {
+    const source =
+      'label: &label 1\nextensions:\n  qorvex:\n    cmd: old\n    ? *label\n    : numeric\n    "1": string\n';
+    const parsed = parseGooseConfigurationYaml(source) as {
+      extensions: { qorvex: Record<string, unknown> };
+    };
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      ...parsed.extensions.qorvex,
+      cmd: "qorvex",
+    });
+    expect(updated).toContain("*label");
+    expect(updated).toContain("numeric");
+    expect(updated).toContain('"1": string');
+  });
+
+  it("preserves the order of an anchor and a retained non-string key alias", () => {
+    const source =
+      'extensions:\n  qorvex:\n    cmd: old\n    shared: &seed value\n    1: *seed\n    "1": string\n';
+    const parsed = parseGooseConfigurationYaml(source) as {
+      extensions: { qorvex: Record<string, unknown> };
+    };
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      ...parsed.extensions.qorvex,
+      cmd: "qorvex",
+    });
+    expect(updated.indexOf("&seed")).toBeLessThan(updated.indexOf("*seed"));
+    expect(parseGooseConfigurationYaml(updated)).toMatchObject({
+      extensions: { qorvex: { shared: "value", cmd: "qorvex" } },
+    });
+  });
+
+  it("retains distinct keys beside an edited field and rejects an ambiguous edit", () => {
+    const source =
+      'extensions:\n  qorvex:\n    cmd: old\n    1: numeric\n    "1": string\n';
+    const parsed = parseGooseConfigurationYaml(source) as {
+      extensions: { qorvex: Record<string, unknown> };
+    };
+    const entry = parsed.extensions.qorvex;
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      ...entry,
+      cmd: "qorvex",
+    });
+    expect(updated).toContain('    1: numeric\n    "1": string');
+    expect(updated).toContain("cmd: qorvex");
+    expect(() =>
+      editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+        ...entry,
+        "1": "changed",
+      }),
+    ).toThrow(/source identity is not a plain string key/);
+  });
+
+  it("keeps distinct native mapping keys in unchanged extension settings", () => {
+    const source =
+      'extensions:\n  qorvex:\n    cmd: old\n    metadata:\n      1: numeric\n      "1": string\n';
+    const parsed = parseGooseConfigurationYaml(source) as {
+      extensions: { qorvex: Record<string, unknown> };
+    };
+    const updated = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+      ...parsed.extensions.qorvex,
+      cmd: "qorvex",
+    });
+    expect(updated).toContain('      1: numeric\n      "1": string');
+    expect(updated).toContain("cmd: qorvex");
+  });
+});
+
 describe("Goose YAML 1.2 source facts", () => {
   it("keeps native strings and exact large integer facts distinct", () => {
     const source =
@@ -343,4 +460,46 @@ describe("pinned Goose serde_yaml scalar resolution", () => {
       expect(() => parseGooseConfigurationYaml(`value: ${source}\n`)).toThrow();
     },
   );
+});
+
+it("materializes an alias whose sibling anchor the refresh replaces", () => {
+  const source =
+    "extensions:\n  qorvex:\n    cmd: &launcher /old/qorvex\n    envs: {QORVEX_LAUNCHER: *launcher}\n";
+  const out = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+    cmd: "/new/qorvex",
+    envs: { QORVEX_LAUNCHER: "/old/qorvex" },
+  });
+  expect(parseGooseConfigurationYaml(out)).toMatchObject({
+    extensions: {
+      qorvex: { cmd: "/new/qorvex", envs: { QORVEX_LAUNCHER: "/old/qorvex" } },
+    },
+  });
+});
+
+it("edits a field whose key is an alias to a shared string, keeping the alias", () => {
+  const source =
+    "field: &field envs\nextensions:\n  qorvex:\n    cmd: qorvex\n    *field : {A: '1'}\n";
+  const out = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+    cmd: "qorvex",
+    envs: { A: "2" },
+  });
+  expect(out).toContain("*field");
+  expect(parseGooseConfigurationYaml(out)).toMatchObject({
+    field: "envs",
+    extensions: { qorvex: { cmd: "qorvex", envs: { A: "2" } } },
+  });
+});
+
+it("keeps an anchored value with an aliased key ahead of its later aliases", () => {
+  const source =
+    "field: &field envs\nextensions:\n  qorvex:\n    cmd: old\n    *field : &settings {A: '1'}\n    1: *settings\n    \"1\": string\n";
+  const out = editGooseConfigurationYaml(source, ["extensions", "qorvex"], {
+    cmd: "new",
+    envs: { A: "1" },
+    1: "string",
+  });
+  expect(out.indexOf("&settings")).toBeLessThan(out.indexOf("*settings"));
+  expect(parseGooseConfigurationYaml(out)).toMatchObject({
+    extensions: { qorvex: { cmd: "new", envs: { A: "1" } } },
+  });
 });

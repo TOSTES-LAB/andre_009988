@@ -149,7 +149,6 @@ processTest.for(cases)(
           QORVEX_TEST_VERIFIER_CLOSE_FAIL: closeFails ? "1" : "0",
           QORVEX_TEST_VERIFIER_CLOSE_LOG: fixture.closeLog,
         },
-        timeoutMs: 10_000,
       },
     );
 

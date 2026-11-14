@@ -124,7 +124,6 @@ it.each(
       const result = await cli.run({
         arguments: argv,
         environment: { HOME: home, QORVEX_JEB_MCP_URL: fixture.endpoint },
-        timeoutMs: 10_000,
       });
       const output = JSON.parse(result.stdout);
       if (stage === "success") {
