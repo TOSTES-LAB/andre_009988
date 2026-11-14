@@ -6,7 +6,7 @@ export const isolatedFixtureUrl = "qorvex-isolated-fixture.js";
 export async function createRuntimeIsolatedWorld(connection) {
   const tree = await connection.send("Page.getFrameTree");
   const world = await connection.send("Page.createIsolatedWorld", {
-    frameId: tree.frameTree.frame.id,
+    frameId: tree.root.facts.frameId,
     worldName: "qorvex-verifier-isolated",
   });
   const contextId = world.executionContextId;

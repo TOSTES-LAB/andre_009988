@@ -88,6 +88,7 @@
     {
       "files": ["src/**/*.ts"],
       "rules": {
+        "qorvex/typed-resource-refusal": "error",
         "qorvex/no-babel-visitor-keys": "error",
         "typescript/no-misused-promises": "error"
       }
@@ -100,6 +101,7 @@
         "src/**/*.fixture.ts"
       ],
       "rules": {
+        "qorvex/typed-resource-refusal": "off",
         "qorvex/no-babel-visitor-keys": "off",
         "max-lines": "off",
         "max-lines-per-function": [
