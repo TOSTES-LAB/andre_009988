@@ -31,7 +31,10 @@ const connect = async () => {
     { kind: "session", session },
     {
       androidAnalysis: fixture.provider,
-      environment: { QORVEX_MCP_TOOL_FAMILIES: "android,application,session" },
+      environment: {
+        QORVEX_MCP_TOOL_FAMILIES: "android,application,session",
+        QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full",
+      },
     },
   );
   const client = new Client({

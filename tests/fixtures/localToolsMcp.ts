@@ -20,6 +20,8 @@ export const localToolsMcpEnvironment = (
   QORVEX_LOG_LEVEL: "silent",
   HOPPER_LAUNCHER_PATH: "/qorvex-unconfigured-deep-provider/hopper",
   GHIDRA_INSTALL_DIR: process.execPath,
+  // Validate each result against its complete advertised output contract.
+  QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full",
   ...environment,
 });
 

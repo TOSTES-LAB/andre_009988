@@ -19,6 +19,7 @@ import {
 import { regexMatchingDeadlineMsSchema } from "./regexMatchingDeadline.js";
 import { regexWorkerHeapRequestMiBSchema } from "./regexWorkerHeapRequest.js";
 import { captureDecoderOldGenerationMiBSchema } from "./captureDecoderHeap.js";
+import { capturePacketJsonExpansionBytesSchema } from "./capturePacketJsonExpansion.js";
 import { parseNativeMatchingAllowance } from "./nativeMatchingAllowance.js";
 import { bridgeMaxRequestBytesSchema } from "./bridgeMaxRequestBytes.js";
 import {
@@ -47,6 +48,8 @@ const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
     QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB: regexWorkerHeapRequestMiBSchema,
     QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB:
       captureDecoderOldGenerationMiBSchema,
+    QORVEX_CAPTURE_PACKET_JSON_EXPANSION_BYTES:
+      capturePacketJsonExpansionBytesSchema,
     QORVEX_BRIDGE_MAX_REQUEST_BYTES: bridgeMaxRequestBytesSchema,
     QORVEX_DEBUGGER_COMMAND_DEADLINE_MS: debuggerCommandDeadlineMsSchema,
     QORVEX_DEBUGGER_MAX_COMMAND_OUTPUT_BYTES: debuggerMaxCommandOutputBytesSchema,

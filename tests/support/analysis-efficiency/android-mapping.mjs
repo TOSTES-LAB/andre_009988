@@ -71,6 +71,8 @@ const transport = new StdioClientTransport({
     QORVEX_LOG_LEVEL: "silent",
     QORVEX_MCP_TOOL_FAMILIES: values.proof ? "android,session" : "android",
     QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+    // The run validates each result against its advertised output schema.
+    QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full",
   },
   stderr: "pipe",
   maxBufferSize: 16 * 1024 * 1024,

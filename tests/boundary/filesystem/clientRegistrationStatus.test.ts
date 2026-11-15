@@ -872,6 +872,28 @@ it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
   },
 );
 
+it("reports an unresolved client location as unknown and still inspects other clients", async () => {
+  const home = await createTestTempDirectory("qorvex-registration-unknown-path-");
+  await writeFile(
+    join(home, ".claude.json"),
+    JSON.stringify({ mcpServers: { qorvex: { command: "/old/qorvex", args: [] } } }),
+  );
+  const statuses = await readClientRegistrationStatuses(home, "/current/qorvex", {
+    environment: { MCPORTER_CONFIG: "config/mcporter.json" },
+  });
+  expect(statuses.find(({ client }) => client === "mcporter")).toEqual({
+    client: "mcporter",
+    config_path: "config/mcporter.json",
+    command: [],
+    command_identity: "unknown",
+    state: "unknown",
+    remediation: expect.stringContaining("MCPORTER_CONFIG is relative"),
+  });
+  expect(statuses.find(({ client }) => client === "claude_code")).toMatchObject(
+    { state: "stale" },
+  );
+});
+
 it("reports a dangling configuration entry as missing without losing the detected client", async () => {
   const home = await createTestTempDirectory(
     "qorvex-registration-dangling-config-",

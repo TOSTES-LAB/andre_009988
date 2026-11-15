@@ -74,11 +74,14 @@ const fixture = async (
   replyClose.denied = false;
   replyClose.onClose = undefined;
   replyClose.handles = [];
-  const environment = snapshotEnvironment({
-    QORVEX_PWNDBG_GDB: process.execPath,
-    QORVEX_PWNDBG_GDBINIT: init,
-    QORVEX_PWNDBG_VENV_PATH: venv,
-  });
+  const environment = snapshotEnvironment(
+    {
+      QORVEX_PWNDBG_GDB: process.execPath,
+      QORVEX_PWNDBG_GDBINIT: init,
+      QORVEX_PWNDBG_VENV_PATH: venv,
+    },
+    process.platform,
+  );
   const provider = new PwntoolsRecordedCrashProvider(environment);
   onTestFinished(async () => {
     replyClose.denied = false;

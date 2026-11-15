@@ -77,6 +77,22 @@
     },
     {
       "files": [
+        "src/**/*.ts",
+        "scripts/lib/browser-*-e2e.mjs",
+        "scripts/verify-browser-dom-destinations.mjs"
+      ],
+      "rules": { "qorvex/no-raw-cdp-session": "error" }
+    },
+    {
+      "files": [
+        "src/browser/PlaywrightCdpSession.ts",
+        "src/**/*.test.ts",
+        "src/**/*.fixture.ts"
+      ],
+      "rules": { "qorvex/no-raw-cdp-session": "off" }
+    },
+    {
+      "files": [
         "scripts/electron-active-hook*.cjs",
         "tests/conformance/readiness/electron/*.js",
         "website/public/examples/notes-electron/*.js"
@@ -88,8 +104,10 @@
     {
       "files": ["src/**/*.ts"],
       "rules": {
+        "qorvex/provider-failure-classifier": "error",
         "qorvex/typed-resource-refusal": "error",
         "qorvex/no-babel-visitor-keys": "error",
+        "qorvex/no-raw-file-handle-close": "error",
         "typescript/no-misused-promises": "error"
       }
     },
@@ -101,8 +119,10 @@
         "src/**/*.fixture.ts"
       ],
       "rules": {
+        "qorvex/provider-failure-classifier": "off",
         "qorvex/typed-resource-refusal": "off",
         "qorvex/no-babel-visitor-keys": "off",
+        "qorvex/no-raw-file-handle-close": "off",
         "max-lines": "off",
         "max-lines-per-function": [
           "error",
@@ -114,6 +134,10 @@
         ],
         "typescript/no-misused-promises": "warn"
       }
+    },
+    {
+      "files": ["src/filesystem/Owned*.ts"],
+      "rules": { "qorvex/no-raw-file-handle-close": "off" }
     },
     {
       "files": ["src/domain/javascript/javascriptSemanticTraversal.ts"],

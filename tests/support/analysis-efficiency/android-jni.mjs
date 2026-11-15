@@ -737,6 +737,8 @@ const environment = {
         ? "android,session"
         : "android",
   QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+  // The run validates each result against its advertised output schema.
+  QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full",
 };
 const transport = new StdioClientTransport({
   command: process.execPath,
