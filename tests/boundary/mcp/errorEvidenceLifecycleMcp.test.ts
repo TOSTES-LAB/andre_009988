@@ -92,7 +92,7 @@ const customFixture = () => {
           mcpServer: server,
           delivery,
           logger: silentLogger,
-          environment: { QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full" },
+          environment: {},
         },
       }),
   };

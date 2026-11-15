@@ -127,7 +127,6 @@ it.each(["capabilities", "providers"])(
             readConfiguration: () =>
               parseConfig({
                 QORVEX_MCP_TOOL_FAMILIES: " session,session ",
-                QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
                 QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
               }),
             createBinarySession: () => session,

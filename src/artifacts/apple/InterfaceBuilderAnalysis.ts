@@ -3,7 +3,7 @@ import {
   isHostLimitFailure,
   ParseFailureError,
 } from "../../domain/parseFailure.js";
-import { TextDecoder } from "node:util";
+import { InternalInvariantError } from "../../domain/internalInvariant.js";
 
 import { decodeBinaryPropertyList } from "./BinaryPlistMaterializer.js";
 import {
@@ -44,7 +44,7 @@ import {
 } from "./PropertyListDecodeBudget.js";
 import {
   InterfaceBuilderDecodeBudget,
-  InterfaceBuilderDecodeBudgetExceeded,
+  interfaceBuilderDecodeBudgetExceeded,
 } from "./InterfaceBuilderDecodeBudget.js";
 import {
   ArtifactReaderFailure,
@@ -71,6 +71,7 @@ import {
   hasBinaryPlistSignature,
   hasNibArchiveSignature,
 } from "../../domain/apple/appleArchiveFormat.js";
+import { strictUtf8Decoder } from "../../domain/strictUtf8.js";
 
 const MAX_AGGREGATE_INPUT_BYTES = 32 * 1024 * 1024;
 const MAX_AGGREGATE_DECODE_BYTES = 256 * 1024 * 1024;
@@ -284,15 +285,15 @@ const decodeInterfaceBuilderBundle = async (
         if (input.signal?.aborted === true) throw cause;
         // Read/identity failures describe source acquisition, not bad content.
         if (cause instanceof ArtifactReaderFailure) throw cause;
-        if (cause instanceof InterfaceBuilderDecodeBudgetExceeded) {
-          // A document rejected while decoding, e.g. beyond the shared depth
-          // limit, retains no representation; later documents keep its share.
-          recordOmittedArchive(entry.path, cause.reason);
-          continue;
-        }
-        // A plist decode budget or nesting limit is not evidence the archive
-        // is malformed; it is omitted against the shared budget.
-        if (cause instanceof ParseFailureError && cause.kind === "limit") {
+        // A broken internal assumption is a QORVEX defect, not an invalid archive.
+        if (cause instanceof InternalInvariantError) throw cause;
+        // A decode budget, nesting limit or host stack/capacity limit is not
+        // evidence the archive is malformed. The rejected document retains no
+        // representation, so later documents keep its share of the budget.
+        if (
+          (cause instanceof ParseFailureError && cause.kind === "limit") ||
+          isHostLimitFailure(cause)
+        ) {
           recordOmittedArchive(entry.path, "aggregate_decode_budget_exhausted");
           continue;
         }
@@ -727,7 +728,7 @@ const projectNibArchive = (
     try {
       // NSString's NS.bytes representation is UTF-8. A failed conversion
       // does not establish a replacement-character class, title or selector.
-      value = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+      value = strictUtf8Decoder("preserve").decode(
         Buffer.from(encoded, "base64"),
       );
     } catch {
@@ -1043,9 +1044,10 @@ const readEntry = async (
   maxInputBytes: number,
 ): Promise<Buffer> => {
   if (entry.declaredSize !== null && entry.declaredSize > maxInputBytes)
-    throw new InterfaceBuilderDecodeBudgetExceeded(
-      "aggregate_decode_budget_exhausted",
+    throw interfaceBuilderDecodeBudgetExceeded(
+      "interface-builder",
       "archive exceeds the aggregate Interface Builder decode budget",
+      maxInputBytes,
     );
   const stream = await reader.open(entry, signal);
   const chunks: Buffer[] = [];
@@ -1055,33 +1057,15 @@ const readEntry = async (
     length += bytes.length;
     if (length > maxInputBytes) {
       stream.destroy();
-      throw new InterfaceBuilderDecodeBudgetExceeded(
-        "aggregate_decode_budget_exhausted",
+      throw interfaceBuilderDecodeBudgetExceeded(
+        "interface-builder",
         "archive exceeded the aggregate Interface Builder decode budget",
+        maxInputBytes,
       );
     }
     chunks.push(bytes);
   }
   return Buffer.concat(chunks, length);
-};
-
-/**
- * The shared parser bounds plist value nesting before its recursive decode and
- * reports the limit as a `limit` parse failure, which the document loop omits.
- * A host stack or capacity limit is likewise an omitted archive, not a
- * malformed one.
- */
-const parseXmlWithinDecodeBudget = (text: string) => {
-  try {
-    return parseXmlPropertyList(text);
-  } catch (cause: unknown) {
-    if (cause instanceof Error && isHostLimitFailure(cause))
-      throw new InterfaceBuilderDecodeBudgetExceeded(
-        "aggregate_decode_budget_exhausted",
-        cause.message,
-      );
-    throw cause;
-  }
 };
 
 /** Project decoded plist data and dates while retaining scalar coverage. */
@@ -1102,7 +1086,7 @@ const decodePlist = (
     : undefined;
   const { value, numberLiterals, duplicateKeys } = binary
     ? decodeBinaryPropertyList(bytes, scalarPlan, binaryScalarMetadata)
-    : parseXmlWithinDecodeBudget(xmlText ?? decodeXmlPlistText(bytes));
+    : parseXmlPropertyList(xmlText ?? decodeXmlPlistText(bytes));
   const projected = projectPlistValue(value);
   return {
     value: projected.value,

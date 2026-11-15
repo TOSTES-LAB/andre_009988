@@ -1,3 +1,4 @@
+import { HOST_PLATFORM } from "../platform/HostPlatform.js";
 import { expect, it } from "vitest";
 
 import {
@@ -13,10 +14,14 @@ const replaceLauncher = (source: string, format: ClientConfigurationFormat) => {
   const existing = parsed.servers.qorvex;
   if (typeof existing !== "object" || existing === null)
     throw new Error("fixture registration missing");
-  const document = withClientServers(parsed, {
-    ...parsed.servers,
-    qorvex: { ...existing, command: "new-qorvex" },
-  });
+  const document = withClientServers(
+    parsed,
+    {
+      ...parsed.servers,
+      qorvex: { ...existing, command: "new-qorvex" },
+    },
+    HOST_PLATFORM.platform,
+  );
   const result = serializeClientConfiguration(document, format, source, [
     clientServerPath(parsed, "qorvex"),
   ]);
@@ -67,13 +72,17 @@ it("retains nested array tokens while changing siblings, shrinking and extending
   const source = `{"mcpServers":{"qorvex":{"command":"qorvex","items":[{"opaque":9007199254740993,"label":"old"},2,3],"grow":[9007199254740993]}}}`;
   const parsed = parseClientConfiguration(source, "json");
   const result = serializeClientConfiguration(
-    withClientServers(parsed, {
-      qorvex: {
-        command: "qorvex",
-        items: [{ opaque: 9007199254740992, label: "new" }],
-        grow: [9007199254740992, 4],
+    withClientServers(
+      parsed,
+      {
+        qorvex: {
+          command: "qorvex",
+          items: [{ opaque: 9007199254740992, label: "new" }],
+          grow: [9007199254740992, 4],
+        },
       },
-    }),
+      HOST_PLATFORM.platform,
+    ),
     "json",
     source,
     [clientServerPath(parsed, "qorvex")],
@@ -90,7 +99,11 @@ it("retains source tokens when the caller supplies a whole edited document", () 
   const source = `{"opaque":9007199254740993,"mcpServers":{"qorvex":{"command":"old"}}}`;
   const parsed = parseClientConfiguration(source, "fx");
   const result = serializeClientConfiguration(
-    withClientServers(parsed, { qorvex: { command: "new" } }),
+    withClientServers(
+      parsed,
+      { qorvex: { command: "new" } },
+      HOST_PLATFORM.platform,
+    ),
     "fx",
     source,
   );
@@ -103,13 +116,17 @@ it("removes all repeated nested fields without activating an earlier value", () 
   const source = `{"mcpServers":{"qorvex":{"remove":1,"remove":2,"retain":9007199254740993,"command":"old"}}}`;
   const parsed = parseClientConfiguration(source, "json");
   const result = serializeClientConfiguration(
-    withClientServers(parsed, {
-      qorvex: {
-        retain: 9007199254740992,
-        command: "new",
-        added: { enabled: true },
+    withClientServers(
+      parsed,
+      {
+        qorvex: {
+          retain: 9007199254740992,
+          command: "new",
+          added: { enabled: true },
+        },
       },
-    }),
+      HOST_PLATFORM.platform,
+    ),
     "json",
     source,
     [clientServerPath(parsed, "qorvex")],
@@ -132,7 +149,7 @@ it.each([
   const source = `{"mcpServers":{"qorvex":{"items":[1,2,],"old":3,}}}`;
   const parsed = parseClientConfiguration(source, "fx");
   const result = serializeClientConfiguration(
-    withClientServers(parsed, { qorvex }),
+    withClientServers(parsed, { qorvex }, HOST_PLATFORM.platform),
     "fx",
     source,
     [clientServerPath(parsed, "qorvex")],

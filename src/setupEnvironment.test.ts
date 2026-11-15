@@ -93,6 +93,7 @@ it("plans setup and uninstall against selected home and client overrides", async
       environment.HOME,
       undefined,
       environment,
+      doctor.platform,
     ).clients();
     expect(clients.find(({ name }) => name === "codex")?.configPath).toBe(
       join(environment.CODEX_HOME, "config.toml"),
@@ -197,7 +198,7 @@ it.each([
       QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
       QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
       QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
-      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
+      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
       QORVEX_MCP_TOOL_CATALOG_PROFILE: "hot-cold",
       QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB: "256",
       QORVEX_REGEX_MATCHING_DEADLINE_MS: "10000",
@@ -241,7 +242,7 @@ it.each([
           QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
           QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700000",
           QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "120000",
-          QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
+          QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
           QORVEX_MCP_TOOL_CATALOG_PROFILE: "hot-cold",
           QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB: "256",
           QORVEX_REGEX_MATCHING_DEADLINE_MS: "10000",

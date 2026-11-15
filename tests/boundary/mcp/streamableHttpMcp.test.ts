@@ -54,7 +54,6 @@ describe("qorvex mcp --http", () => {
         // Sessions validate advertised output schemas, which default to off.
         {
           QORVEX_MCP_TOOL_CATALOG_PROFILE: "hot-cold",
-          QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full",
         },
       );
       const first = await openSession(started.url, "hot-cold-first");
@@ -105,7 +104,7 @@ describe("qorvex mcp --http", () => {
       const started = await startListeningProcess(
         processes,
         ["mcp", "--http", "--port", "0"],
-        { QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "full" },
+        {},
       );
       expect(started.url.hostname).toBe("127.0.0.1");
       expect(started.url.pathname).toBe("/mcp");

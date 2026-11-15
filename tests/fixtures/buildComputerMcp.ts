@@ -57,7 +57,6 @@ export const connectBuildServer = async (
     {
       environment: {
         ...hostEnvironment,
-        QORVEX_MCP_INPUT_SCHEMA_PROFILE: "full",
         ...environment,
       },
       desktopBuildSettle: settle,

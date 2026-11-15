@@ -51,7 +51,6 @@ import { verifyScenarioStorage } from "./lib/browser-scenario-storage-e2e.mjs";
 import { verifyScenarioStorageFingerprints } from "./lib/browser-scenario-storage-fingerprints-e2e.mjs";
 import { verifyScenarioServiceWorkers } from "./lib/browser-scenario-service-workers-e2e.mjs";
 import { verifyBrowserUrlUserInfo } from "./lib/browser-url-userinfo-e2e.mjs";
-import { schemaVerifierEnvironment } from "./lib/mcp-verification-environment.mjs";
 
 const SCENARIO_SECRET_VALUE = "qorvex-browser-verifier-secret";
 const SCENARIO_URL_SECRET_VALUE = "qorvex-browser-url-verifier-secret";
@@ -448,10 +447,10 @@ async function verifyPublicBundle(endpoint, target, origin) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [fileURLToPath(new URL("./qorvex.mjs", import.meta.url)), "mcp"],
-    env: schemaVerifierEnvironment({
+    env: {
       PATH: process.env.PATH ?? "",
       QORVEX_LOG_LEVEL: "silent",
-    }),
+    },
     stderr: "pipe",
   });
   const client = new Client({ name: "browser-bundle-e2e", version: "1" });

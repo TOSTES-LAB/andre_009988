@@ -1,3 +1,4 @@
+import { HOST_PLATFORM } from "../platform/HostPlatform.js";
 import { describe, expect, it } from "vitest";
 import { parse as parseJsonc, type ParseError } from "jsonc-parser";
 
@@ -21,7 +22,7 @@ const removeRea = (
   const parsed = parseClientConfiguration(text, format);
   const { qorvex: _removed, ...remaining } = parsed.servers;
   return serializeClientConfiguration(
-    withClientServers(parsed, remaining),
+    withClientServers(parsed, remaining, HOST_PLATFORM.platform),
     format,
     text,
     [clientServerPath(parsed, "qorvex")],
@@ -72,7 +73,7 @@ describe("JSON client configuration repeated-member edits", () => {
   it("does not apply repeat-removal authority to a different path", () => {
     const text = `{"mcpServers":{"qorvex":1,"qorvex":2,"peer":3,"peer":4}}`;
     const parsed = parseClientConfiguration(text, "json");
-    const document = withClientServers(parsed, {});
+    const document = withClientServers(parsed, {}, HOST_PLATFORM.platform);
     const result = serializeClientConfiguration(
       document,
       "json",
