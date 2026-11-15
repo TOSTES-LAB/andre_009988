@@ -183,8 +183,9 @@ QORVEX writes Kuna's exports only inside `QORVEX_KUNA_CACHE_DIR`:
 
 The cache key includes the selected launcher and resolved executable paths, plus
 the target's native basename: that name determines the export filenames and
-appears in generated source. QORVEX accepts one current manifest layout. Older
-exports are rebuilt on demand and retired through normal owned-cache cleanup;
+appears in generated source. The key and manifest also name the QORVEX release
+that wrote the entry, and QORVEX accepts only entries from its own release. Exports
+from other releases are rebuilt on demand and retired through normal owned-cache cleanup;
 no manual deletion or migration is needed. Manifests must name the producer's
 exact flat file layout, with matching basenames and producing inputs. Replaced
 entry, project or manifest symlinks are refused before their targets are read;
