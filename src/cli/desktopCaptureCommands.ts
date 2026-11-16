@@ -4,7 +4,7 @@ import { desktopViewPolicyInputSchema } from "../domain/desktop/desktopViewPolic
 import { safeParseJson } from "../domain/safeJson.js";
 import { createInterface } from "node:readline";
 
-import { z } from "incur";
+import { z } from "zod";
 import type { Logger } from "pino";
 
 import { captureDesktopApplication } from "../application/desktop/DesktopApplicationCapture.js";
@@ -33,6 +33,7 @@ import { SessionRequestQueue } from "../desktop/DesktopSessionRequests.js";
 import { withCommandCancellation } from "./commandCancellation.js";
 import type { CliInstance } from "./types.js";
 import { writeCliProgressLine } from "./cliProgress.js";
+import { errorMessage } from "../kernel/errorMessage.js";
 
 /** One coherent view policy; invalid JSON and unknown controls fail at admission. */
 const viewPolicyOption = z
@@ -231,8 +232,7 @@ const withStateReaders = async (
                 ? ArtifactReaderFailure.cleanupObservation(cause, [])
                 : {
                     resources: [],
-                    reason:
-                      cause instanceof Error ? cause.message : String(cause),
+                    reason: errorMessage(cause),
                   };
             const failure = new ProviderCleanupError(
               "qorvex-desktop",
