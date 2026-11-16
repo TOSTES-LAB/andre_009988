@@ -1,0 +1,6 @@
+$ COMPLETE=bash qorvex -- qorvex setup --tool-catalog-profile ""
+exit: 0
+--- stdout
+full<0x0b>hot-cold<end>
+--- stderr
+<end>

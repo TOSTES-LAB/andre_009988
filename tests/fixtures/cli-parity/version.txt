@@ -1,0 +1,7 @@
+$ qorvex --version
+exit: 0
+--- stdout
+<version>
+<end>
+--- stderr
+<end>

@@ -1,0 +1,11 @@
+$ qorvex no-such-command  # stdout is a terminal
+exit: 1
+--- stdout
+Error: 'no-such-command' is not a command for 'qorvex'. Did you mean 'cutter-command'?
+
+Suggested commands:
+  qorvex cutter-command
+  qorvex --help          # see all available commands
+<end>
+--- stderr
+<end>

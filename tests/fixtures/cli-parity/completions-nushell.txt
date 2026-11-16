@@ -1,0 +1,11 @@
+$ qorvex completions nushell
+exit: 0
+--- stdout
+# External completer for qorvex
+# Add to $env.config.completions.external.completer or use in a dispatch completer.
+let _incur_complete_qorvex = {|spans|
+    COMPLETE=nushell qorvex -- ...$spans | from json
+}
+<end>
+--- stderr
+<end>

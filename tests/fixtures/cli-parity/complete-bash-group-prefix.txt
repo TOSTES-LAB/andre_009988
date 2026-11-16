@@ -1,0 +1,6 @@
+$ COMPLETE=bash qorvex -- qorvex mc
+exit: 0
+--- stdout
+mcp<0x01><end>
+--- stderr
+<end>

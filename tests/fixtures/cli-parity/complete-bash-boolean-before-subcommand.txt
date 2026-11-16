@@ -1,0 +1,6 @@
+$ COMPLETE=bash qorvex -- qorvex inspect-byte-entropy --json ""
+exit: 0
+--- stdout
+<end>
+--- stderr
+<end>

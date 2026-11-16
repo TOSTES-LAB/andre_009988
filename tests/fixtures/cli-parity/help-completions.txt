@@ -1,0 +1,20 @@
+$ qorvex completions --help
+exit: 0
+--- stdout
+qorvex completions — Generate shell completion script
+
+Usage: qorvex completions <bash|fish|nushell|zsh>
+
+Arguments:
+  shell  Shell to generate completions for
+
+Setup:
+  bash     eval "$(qorvex completions bash)"  # add to ~/.bashrc
+  fish     qorvex completions fish | source   # add to ~/.config/fish/config.fish
+  nushell  see `qorvex completions nushell`   # add to config.nu
+  zsh      eval "$(qorvex completions zsh)"   # add to ~/.zshrc
+
+Zsh: initialize completion with `autoload -Uz compinit; compinit` before evaluating the zsh hook. If your shell already runs compinit, place the hook after it.
+<end>
+--- stderr
+<end>

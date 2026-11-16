@@ -1,0 +1,15 @@
+$ qorvex inspect-byte-entropy --llms --version
+exit: 0
+--- stdout
+# qorvex
+
+Reverse engineer anything from your terminal or agent.
+
+| Command | Description |
+|---------|-------------|
+| `qorvex inspect-byte-entropy <path>` | Inspect file-wide and block byte entropy without executing the file |
+
+Run `qorvex --llms-full` for full manifest. Run `qorvex <command> --schema` for argument details.
+<end>
+--- stderr
+<end>

@@ -1,0 +1,8 @@
+$ qorvex completions fish
+exit: 0
+--- stdout
+complete --keep-order --exclusive --command qorvex \
+    --arguments "(COMPLETE=fish qorvex -- (commandline --current-process --tokenize --cut-at-cursor) (commandline --current-token))"
+<end>
+--- stderr
+<end>

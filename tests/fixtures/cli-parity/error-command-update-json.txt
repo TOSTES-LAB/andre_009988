@@ -1,0 +1,7 @@
+$ qorvex doctor --update --json
+exit: 1
+--- stdout
+{"code":"UPDATE_FAILED","message":"Use 'qorvex update' to update the identified installation. The '--update' alias accepts only global output flags."}
+<end>
+--- stderr
+<end>

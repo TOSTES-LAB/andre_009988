@@ -1,0 +1,18 @@
+$ qorvex completions zsh
+exit: 0
+--- stdout
+#compdef qorvex
+_incur_complete_qorvex() {
+    local completions=("${(@f)$(
+        export _COMPLETE_INDEX=$(( CURRENT - 1 ))
+        export COMPLETE="zsh"
+        "qorvex" -- "${words[@]}" 2>/dev/null
+    )}")
+    if [[ -n $completions ]]; then
+        _describe 'values' completions -S ''
+    fi
+}
+compdef _incur_complete_qorvex qorvex
+<end>
+--- stderr
+<end>
