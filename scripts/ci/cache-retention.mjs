@@ -18,6 +18,7 @@ const PREFIX_PATTERNS = [
   /^qorvex-static-v1-[A-Za-z0-9]+-[A-Za-z0-9]+-$/u,
   /^qorvex-static-deep-v1-[A-Za-z0-9]+-[A-Za-z0-9]+-$/u,
   /^qorvex-portable-build-v2-[A-Za-z0-9]+-[A-Za-z0-9]+-$/u,
+  /^qorvex-windows-build-v1-[A-Za-z0-9]+-[A-Za-z0-9]+-$/u,
   /^knip-meta-v1-[A-Za-z0-9]+-$/u,
 ];
 
@@ -271,6 +272,10 @@ function familiesFromEnv(env) {
     typeof env.CACHE_PORTABLE_PREFIX === "string" &&
     env.CACHE_PORTABLE_PREFIX.length > 0
       ? { prefix: env.CACHE_PORTABLE_PREFIX }
+      : undefined,
+    typeof env.CACHE_WINDOWS_BUILD_PREFIX === "string" &&
+    env.CACHE_WINDOWS_BUILD_PREFIX.length > 0
+      ? { prefix: env.CACHE_WINDOWS_BUILD_PREFIX }
       : undefined,
   ].filter((family) => family !== undefined);
   if (families.length === 0 && env.DEDUPE_NPM_DOWNLOADS !== "true")
