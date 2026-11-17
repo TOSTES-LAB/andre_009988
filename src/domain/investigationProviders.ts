@@ -60,6 +60,20 @@ export const ELF_NOTES_PROVIDER = Object.freeze({
   version: "1",
 } as const);
 
+/** Provider identity for portable, execution-free DWARF compile-unit inspection. */
+export const DWARF_UNITS_PROVIDER = Object.freeze({
+  id: "qorvex-dwarf-units",
+  name: "QORVEX DWARF compile-unit parser",
+  version: "1",
+} as const);
+
+/** Provider identity for portable, execution-free ELF separate-debug linkage. */
+export const ELF_DEBUG_LINK_PROVIDER = Object.freeze({
+  id: "qorvex-elf-debug-link",
+  name: "QORVEX ELF debug-link parser",
+  version: "1",
+} as const);
+
 /** Provider identity for portable, execution-free ELF unwind-table decoding. */
 export const ELF_UNWIND_RANGES_PROVIDER = Object.freeze({
   id: "qorvex-elf-unwind-ranges",
@@ -77,6 +91,13 @@ export const APPLE_IPS_PROVIDER = Object.freeze({
 export const KERNEL_MODULE_PROVIDER = Object.freeze({
   id: "qorvex-kernel-module",
   name: "QORVEX kernel module parser",
+  version: "1",
+} as const);
+
+/** Provider identity for portable, execution-free ELF dynamic-dependency inventories. */
+export const ELF_DEPENDENCIES_PROVIDER = Object.freeze({
+  id: "qorvex-elf-dependencies",
+  name: "QORVEX ELF dependency parser",
   version: "1",
 } as const);
 
