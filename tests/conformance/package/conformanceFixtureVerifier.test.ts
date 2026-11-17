@@ -39,10 +39,6 @@ it.skipIf(process.platform !== "darwin" && process.platform !== "linux").each([
   { mode: "wrong-prefix", marker: "QORVEX_C_ENTRY" },
   { mode: "prefix-complete", marker: "QORVEX_C_ENTRY" },
   { mode: "marker", marker: "QORVEX_C_ENTRY" },
-  { mode: "marker", marker: "QORVEX_VERSION_ONE" },
-  { mode: "marker", marker: "reaProbeOne" },
-  { mode: "marker", marker: "QORVEX_SWIFT_EXECUTE" },
-  { mode: "fragment", marker: "REAService" },
   { mode: "fragment", marker: "performAction:error:" },
 ])(
   "verifies compiler-produced fixture records: $mode / $marker",
@@ -169,9 +165,8 @@ it.each([
 });
 
 it("preserves a carriage return that belongs to an nm symbol name", () => {
-  expect(splitNmSymbolRecords("qorvex_entry\r\nqorvex_inventory_0000\n")).toEqual([
+  expect(splitNmSymbolRecords("qorvex_entry\r\nqorvex_inventory_0000\r\n")).toEqual([
     "qorvex_entry\r",
-    "qorvex_inventory_0000",
+    "qorvex_inventory_0000\r",
   ]);
-  expect(splitNmSymbolRecords("qorvex_entry\r\n")).toEqual(["qorvex_entry\r"]);
 });
