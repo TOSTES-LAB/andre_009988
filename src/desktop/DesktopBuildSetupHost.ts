@@ -234,7 +234,7 @@ const readSetupFacts = async (
       ? {}
       : {
           packBlocker:
-            "Packing QORVEX's build-computer runtime needs a QORVEX checkout: run qorvex setup --desktop-build from one (see docs/installation.md#run-qorvex-from-a-checkout), or pack an archive yourself and set QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE.",
+            "Packing QORVEX's build-computer runtime needs a QORVEX checkout: run qorvex setup --desktop-build from one (see docs/getting-started/installation.md#run-qorvex-from-a-checkout), or pack an archive yourself and set QORVEX_BUILD_COMPUTER_QORVEX_ARCHIVE.",
         }),
     ...(agentEnv === undefined
       ? {}
