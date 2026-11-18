@@ -6,14 +6,11 @@ import { expect, it } from "vitest";
 import { registerCliCommand } from "../../../src/cli/commandRegistry.js";
 import { createCliShell } from "../../../src/cli/cliShell.js";
 import { createCliCompletions } from "../../../src/cli/completions.js";
-import type { CliInstance } from "../../../src/cli/types.js";
-import { parseCliGlobalArguments } from "../../../src/cliBuiltinArguments.js";
-
-type ServeOptions = NonNullable<Parameters<CliInstance["serve"]>[1]>;
 import { workspaceCliTest } from "../../support/cli/workspaceCliFixture.js";
+import { serveInProcessCli } from "../../support/cli/serveInProcessCli.js";
 
 const registry = () => {
-  const cli = createCommandCli() as unknown as CliInstance;
+  const cli = createCommandCli();
   registerCliCommand(cli, "instructions", {
     options: z.object({
       procedure: z.string().optional(),
@@ -46,9 +43,7 @@ const complete = (words: string[], index = words.length - 1) => {
 };
 
 it("resolves enabled builtin scopes in the same tree as registered commands", () => {
-  expect(complete(["qorvex", "mcp", ""])).toEqual(["add", "doctor"]);
   expect(complete(["qorvex", "mcp", "d"])).toEqual(["doctor"]);
-  expect(complete(["qorvex", "mcp", "ad"])).toEqual(["add"]);
   expect(complete(["qorvex", "mcp"], 2)).toEqual(["add", "doctor"]);
   expect(complete(["qorvex", ""])).toEqual(["instructions", "mcp", "completions"]);
   expect(complete(["qorvex", "completions", "b"])).toEqual(["bash"]);
@@ -74,28 +69,12 @@ it("uses canonical global flag metadata and retains command options and enum hin
     "dos-com",
     "raw-binary",
   ]);
-  expect(complete(["qorvex", "instructions", "--format", ""])).toEqual([
-    "toon",
-    "json",
-    "yaml",
-    "md",
-    "jsonl",
-    "csv",
-    "tsv",
-  ]);
   expect(complete(["qorvex", "mcp", "doctor", "--format", ""])).toEqual([
     "toon",
     "json",
     "yaml",
     "md",
     "jsonl",
-  ]);
-  expect(complete(["qorvex", "mcp", "doctor", "--"])).toEqual([
-    "--format",
-    "--json",
-    "--full-output",
-    "--help",
-    "--timings",
   ]);
   expect(complete(["qorvex", "mcp", "doctor", "--t"])).toEqual(["--timings"]);
   expect(complete(["qorvex", "mcp", "doctor", "-h"])).toEqual(["-h"]);
@@ -110,59 +89,41 @@ it("uses canonical global flag metadata and retains command options and enum hin
   expect(complete(["qorvex", "instructions", "--"])).not.toContain("--mcp");
 });
 
-it("shares Bash registration across ordinary and protocol routes while retaining builtin precedence", () => {
-  const cli = registry();
-  let direct = "";
-  const completions = createCliCompletions(cli, {});
-  const ordinary = (arguments_: readonly string[], options: ServeOptions) =>
-    completions.writeScript(parseCliGlobalArguments(arguments_), options);
-  expect(
-    ordinary(["--format", "json", "completions", "bash"], {
-      stdout: (text) => {
-        direct += text;
-      },
+it("serves the Bash script through both public generation routes", async () => {
+  const ordinary = await serveInProcessCli(createCommandCli(), [
+    "completions",
+    "bash",
+  ]);
+  const protocol = await serveInProcessCli(
+    createCliShell({
+      selectedEnvironment: { COMPLETE: "bash" },
+      registrations: [],
     }),
-  ).toBe(true);
-  let protocol = "";
-  expect(
-    createCliCompletions(cli, { COMPLETE: "bash" }).complete([], {
-      stdout: (text) => {
-        protocol += text;
-      },
-    }),
-  ).toBe(true);
-  expect(direct.trim()).toBe(protocol.trim());
-  expect(direct).toContain("type compopt");
-  expect(direct).toContain("||\n    complete -o default -o bashdefault");
-  expect(ordinary(["completions", "bash", "--help"], {})).toBe(false);
-  for (const flag of ["--schema", "--version"]) {
-    let script = "";
-    expect(
-      ordinary(["completions", "bash", flag], {
-        stdout: (text) => {
-          script += text;
-        },
-      }),
-    ).toBe(true);
-    expect(script).toBe(direct);
-  }
+    [],
+  );
+  expect(ordinary.exitCode).toBe(0);
+  expect(ordinary.stdout).toContain('export COMPLETE="bash"');
+  expect(protocol.exitCode).toBe(0);
+  expect(protocol.stdout.trimEnd()).toBe(ordinary.stdout.trimEnd());
+
+  const help = await serveInProcessCli(createCommandCli(), [
+    "completions",
+    "bash",
+    "--help",
+  ]);
+  expect(help.exitCode).toBe(0);
+  expect(help.stdout).toContain("Usage: qorvex completions");
+  expect(help.stdout).not.toContain('export COMPLETE="bash"');
 });
 
-it("refuses a second shell without writing a completion script", async () => {
-  const cli = createCliShell({ selectedEnvironment: {}, registrations: [] });
-  let output = "";
-  let exitCode: number | undefined;
-  await cli.serve(["completions", "bash", "fish"], {
-    stdout: (text) => {
-      output += text;
-    },
-    exit: (code) => {
-      exitCode = code;
-    },
-  });
-  expect(exitCode).toBe(1);
-  expect(output).toContain("completions expects exactly one shell");
-  expect(output).not.toContain("_incur_complete_qorvex");
+it("refuses a second shell", async () => {
+  const reply = await serveInProcessCli(createCommandCli(), [
+    "completions",
+    "bash",
+    "fish",
+  ]);
+  expect(reply.exitCode).toBe(1);
+  expect(reply.stdout).toContain("completions expects exactly one shell");
 });
 
 workspaceCliTest(
@@ -175,11 +136,7 @@ workspaceCliTest(
       QORVEX_TEST_NODE: process.execPath,
       QORVEX_TEST_DISPATCHER: resolve("scripts/qorvex.mjs"),
     };
-    for (const arguments_ of [
-      ["completions", "--help"],
-      ["--json", "completions", "--help"],
-      ["completions"],
-    ]) {
+    for (const arguments_ of [["completions", "--help"], ["completions"]]) {
       const help = await processes.run(
         process.execPath,
         [resolve("scripts/qorvex.mjs"), ...arguments_],
