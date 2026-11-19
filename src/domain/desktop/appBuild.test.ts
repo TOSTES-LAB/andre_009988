@@ -62,7 +62,7 @@ describe("build bundle renderer", () => {
       { id: "env", type: "deploy_env", env_id: "mousepad" },
     ]);
     const script = text(bundle.files, "envs/mousepad/install-qorvex.sh");
-    expect(script).toContain("/opt/qorvex/payload/*/scripts/qorvex.mjs");
+    expect(script).toContain('ln -sfn "$launcher" /opt/qorvex/qorvex.mjs');
     expect(script).toContain(
       `/opt/qorvex/node-v${BUILD_NODE_VERSION}-linux-*/bin/node`,
     );

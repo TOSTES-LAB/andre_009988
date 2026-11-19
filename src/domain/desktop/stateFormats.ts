@@ -1,7 +1,7 @@
 import type { Element, Node } from "@xmldom/xmldom";
 
 import { isExactJsonNumber } from "../exactJsonNumber.js";
-import type { JsonValue } from "../jsonValue.js";
+import { jsonValueExceedsDepth, type JsonValue } from "../jsonValue.js";
 import {
   DESKTOP_VIEW_DEFAULTS,
   desktopViewByteDisplay,
@@ -9,6 +9,8 @@ import {
 } from "./desktopViewPolicy.js";
 import { err, ok, type Result } from "../result.js";
 import { safeParseJson } from "../safeJson.js";
+import { hasZipLocalHeader, hasZipSignature } from "../zipPackageFormat.js";
+import { ZIP_EOCD_BYTES } from "../zipEndOfCentralDirectory.js";
 import {
   declaredDocumentType,
   isWellFormedXml,
@@ -42,8 +44,6 @@ export const SQLITE_SIDECARS = [
   { suffix: "-journal", label: "rollback journal" },
 ] as const;
 const GVDB_HEADER = "GVariant";
-/** A zip archive's local file header, which FreeCAD, ODF, OOXML, EPUB and JAR files begin with. */
-const ZIP_HEADER = "PK\u0003\u0004";
 const XML_EXTENSIONS = /\.(?:xml|xbel|plist|svg|ui)$/iu;
 /** A DOCTYPE that only names its DTD reads as XML; one with an internal subset, which can declare entities, does not. */
 export const XML_POLICY = {
@@ -306,7 +306,11 @@ export const detectStateFormat = (
   const header = new TextDecoder("latin1").decode(bytes.subarray(0, 16));
   if (header === SQLITE_HEADER) return "sqlite";
   if (header.startsWith(GVDB_HEADER)) return "dconf";
-  if (header.startsWith(ZIP_HEADER)) return "zip";
+  if (
+    hasZipLocalHeader(bytes) ||
+    (bytes.length >= ZIP_EOCD_BYTES && hasZipSignature(bytes))
+  )
+    return "zip";
   const text = decodeStateText(bytes);
   if (text === undefined) return "binary";
   const trimmed = text.trimStart();
@@ -325,29 +329,6 @@ export const detectStateFormat = (
 };
 
 /** An object's own values one at a time, without copying them into an array. */
-function* ownValues(record: Record<string, JsonValue>): Generator<JsonValue> {
-  for (const key in record)
-    if (Object.hasOwn(record, key)) yield record[key] ?? null;
-}
-
-/**
- * Whether a parsed JSON value nests deeper than a limit, checked without
- * recursion: a value's depth is the number of levels open above it, each
- * walked by one iterator, so no container's members are copied or queued.
- */
-export const deeperThan = (root: JsonValue, limit: number): boolean => {
-  const levels: Iterator<JsonValue>[] = [[root].values()];
-  for (let level = levels.at(-1); level !== undefined; level = levels.at(-1)) {
-    const next = level.next();
-    if (next.done === true) levels.pop();
-    else if (levels.length - 1 > limit) return true;
-    else if (Array.isArray(next.value)) levels.push(next.value.values());
-    else if (typeof next.value === "object" && next.value !== null)
-      levels.push(ownValues(next.value));
-  }
-  return false;
-};
-
 /** A JSON file's value, refused when a number would be rounded or it nests too deeply. */
 const jsonView = (
   text: string,
@@ -365,7 +346,7 @@ const jsonView = (
       "a number in it cannot be read exactly, such as an integer above 2^53",
     );
   const value = parsed.value as JsonValue;
-  return deeperThan(value, policy.json_depth)
+  return jsonValueExceedsDepth(value, policy.json_depth)
     ? err(
         `nested deeper than the ${String(policy.json_depth)} levels a JSON view keeps`,
       )

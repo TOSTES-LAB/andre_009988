@@ -236,7 +236,10 @@ export const runSolveHelper = async (options: {
       report ??= line.ok
         ? parseReport(line.value)
         : {
-            error: "QORVEX's solve helper's report is too long",
+            error:
+              line.error._tag === "ControlLineMalformedUtf8"
+                ? "QORVEX's solve helper's report is not valid UTF-8"
+                : "QORVEX's solve helper's report is too long",
             cleanup: { unknown: true, sandboxes: [] },
           };
   })().catch(() => undefined);

@@ -35,6 +35,7 @@ import { INSTALL_SCRIPT, type ExportPackageFile } from "./appExportInstall.js";
 import { isArmoredKey } from "./aptRepositories.js";
 import { DEBIAN_PACKAGE_NAME } from "./debianPackageFile.js";
 import { sha256Hex } from "../../kernel/sha256Hex.js";
+import { PYTHON_BUILD_ARCHIVE } from "./appBuildArchive.js";
 
 /** The Node.js release the build layer runs QORVEX with: the one QORVEX pins. */
 export const BUILD_NODE_VERSION = "24.22.1";
@@ -226,23 +227,32 @@ mkdir -p /opt/qorvex/payload${
     : `
 cp ${packageFile} ${BUILD_PACKAGE_FILE}`
 }
-python3 - <<'PY'
+launcher=$(python3 - <<'PY'
 import glob
+from pathlib import Path
 import tarfile
 
-for name, into in [(path, "/opt/qorvex") for path in glob.glob("node-*.tar.xz")] + [("${QORVEX_PAYLOAD}", "/opt/qorvex/payload")]:
+${PYTHON_BUILD_ARCHIVE}
+payload = Path("/opt/qorvex/payload")
+with tarfile.open("${QORVEX_PAYLOAD}") as archive:
+    archive.extractall(payload, filter="tar")
+    entry, _, problem = inspect_qorvex_archive(archive)
+    if problem is not None:
+        raise SystemExit(problem)
+launcher = payload / entry
+if not launcher.is_file() or not launcher.resolve().is_relative_to(payload.resolve()):
+    raise SystemExit("The selected scripts/qorvex.mjs did not extract as a regular file.")
+
+for name in glob.glob("node-*.tar.xz"):
     with tarfile.open(name) as archive:
-        archive.extractall(into, filter="tar")
+        archive.extractall("/opt/qorvex", filter="tar")
+print(launcher)
 PY
-set -- /opt/qorvex/payload/*/scripts/qorvex.mjs
-if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
-    echo "The QORVEX archive must hold one top folder with scripts/qorvex.mjs." >&2
-    exit 1
-fi
+)
 ln -sf /opt/qorvex/node-v${BUILD_NODE_VERSION}-linux-*/bin/node /usr/local/bin/node
 # The archive's top folder is caller-chosen and may contain spaces. The launcher
 # runs a fixed path so the shell does not split that folder before Node opens it.
-ln -sfn "$1" /opt/qorvex/qorvex.mjs
+ln -sfn "$launcher" /opt/qorvex/qorvex.mjs
 printf '#!/bin/sh\\nexec /usr/local/bin/node /opt/qorvex/qorvex.mjs "$@"\\n' > /usr/local/bin/qorvex
 chmod 755 /usr/local/bin/qorvex
 rm -f node-*.tar.xz ${QORVEX_PAYLOAD}
@@ -371,12 +381,14 @@ if [ -z "$desktop" ]; then
   echo "No installed desktop entry $entry.desktop was found, so its command cannot be adjusted for Electron." >&2
   exit 1
 fi
-set -- /opt/qorvex/payload/*/dist/domain/desktop/appExportInstall.js
-if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+launcher=$(readlink /opt/qorvex/qorvex.mjs)
+policy="\${launcher%/scripts/qorvex.mjs}/dist/domain/desktop/appExportInstall.js"
+if [ ! -f "$policy" ]; then
   echo "The QORVEX archive must include dist/domain/desktop/appExportInstall.js so an Electron app can use QORVEX's launch policy." >&2
   exit 1
 fi
-/usr/local/bin/node --input-type=module - "$1" "$desktop" <<'JS'
+/usr/local/bin/node --input-type=module - "$policy" "$desktop" <<'JS'
+import { isUtf8 } from "node:buffer";
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -386,7 +398,12 @@ if (typeof policy.adjustInstalledDesktopText !== "function") {
   process.exit(1);
 }
 const desktop = process.argv[3];
-const adjusted = policy.adjustInstalledDesktopText(readFileSync(desktop, "utf8"), true);
+const bytes = readFileSync(desktop);
+if (!isUtf8(bytes)) {
+  console.error(\`The desktop entry \${desktop} is not valid UTF-8 and could not be adjusted for Electron.\`);
+  process.exit(1);
+}
+const adjusted = policy.adjustInstalledDesktopText(bytes.toString("utf8"), true);
 if (!adjusted.ok) {
   console.error(\`The desktop entry \${desktop} could not be adjusted for Electron: \${adjusted.error}.\`);
   process.exit(1);
