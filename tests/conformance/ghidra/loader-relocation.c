@@ -48,6 +48,18 @@ qorvex_loader_word qorvex_loader_got_caller(qorvex_loader_word value) {
   return qorvex_external((int)value) + qorvex_external_value;
 }
 
+/* An initial-exec TLS variable from the provider. Its R_X86_64_TPOFF64 slot
+ * sits in the same read-only .got as the applied entries above, and only the
+ * runtime loader fills it, so Ghidra imports it unapplied. Protecting that
+ * slot must not make the applied GOT entries beside it opaque. */
+extern __thread qorvex_loader_word qorvex_external_tls
+    __attribute__((tls_model("initial-exec")));
+
+__attribute__((noinline, used, visibility("default")))
+qorvex_loader_word qorvex_loader_tls_reader(void) {
+  return qorvex_external_tls;
+}
+
 __attribute__((used, visibility("default"))) void qorvex_loader_start(void) {
   volatile qorvex_loader_word result = qorvex_loader_reader();
   (void)result;

@@ -20,7 +20,7 @@ it("attributes case-folded Windows overrides without disclosing values", async (
     undefined,
     "win32",
     {
-      qorvex_asar_max_header_bytes: "0",
+      writeOverrides: { qorvex_asar_max_header_bytes: "0" },
     },
   );
   expect(result).toMatchObject({
@@ -96,7 +96,7 @@ it.each([
       },
       undefined,
       process.platform,
-      overrides,
+      { writeOverrides: overrides },
     );
     if (result.ok) throw new Error("Expected rejected environment");
     expect(result.error.detail).toContain(reported);

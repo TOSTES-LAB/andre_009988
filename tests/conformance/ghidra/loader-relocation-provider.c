@@ -10,3 +10,6 @@ qorvex_loader_word qorvex_external_value = 0x22222222u;
 
 __attribute__((visibility("default")))
 const qorvex_loader_word qorvex_external_const = 0x11111111u;
+
+__attribute__((visibility("default")))
+__thread qorvex_loader_word qorvex_external_tls = 0x33333333u;

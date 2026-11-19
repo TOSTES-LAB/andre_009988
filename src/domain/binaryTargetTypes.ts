@@ -41,6 +41,7 @@ export interface ElfFamilyMetadata {
   readonly byteOrder: "little" | "big";
   readonly type: number;
   readonly flags: number;
+  readonly hasInterpreter?: boolean;
 }
 
 /** Referenced CodeView debug symbols from a PE debug directory. */
@@ -59,12 +60,6 @@ export const ELF_METADATA_ARCHITECTURES = [
 ] as const satisfies readonly BinaryArchitecture[];
 export type ElfMetadataArchitecture =
   (typeof ELF_METADATA_ARCHITECTURES)[number];
-
-/** Families whose ISA and ABI need a separate ELF declaration to be admitted. */
-export const isElfMetadataArchitecture = (
-  architecture: BinaryArchitecture,
-): architecture is ElfMetadataArchitecture =>
-  (ELF_METADATA_ARCHITECTURES as readonly string[]).includes(architecture);
 
 /** Families that require a specialized target variant instead of generic headers. */
 export const HEADER_ARCHITECTURE_EXCLUSIONS = [
@@ -94,8 +89,17 @@ export interface MipsElfMetadata extends ElfFamilyMetadata {
     | {
         readonly status: "complete";
         readonly relocationCount: number;
+        /** The dynamic table declares DF_1_PIE. */
+        readonly declaresPie?: true;
         readonly relocationTypes: readonly number[];
         readonly symbolRelativeCount: number;
+        /** Every PT_LOAD virtual address with its program-header index, in header order. */
+        readonly loadAddresses: readonly {
+          readonly headerIndex: number;
+          readonly virtualAddress: number;
+        }[];
+        /** Android prelink trailer base; null when the file has no trailer. */
+        readonly prelinkBase: number | null;
       }
     | { readonly status: "unavailable"; readonly reason: string };
 }
@@ -164,6 +168,8 @@ export interface UniversalMachOSliceIdentity extends UniversalMachOSlice {
 interface BinaryTargetIdentity {
   readonly path: string;
   readonly sourcePath?: string;
+  /** Verbatim selected spelling when it differs from the inspected file path. */
+  readonly callerInputPath?: string;
   /** Selected artifact spelling determines name-based format hints and external companions. */
   readonly artifactSelectedPath?: string;
   /** Info.plist of the app bundle the target was resolved from. */
