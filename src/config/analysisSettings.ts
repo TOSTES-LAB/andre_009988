@@ -34,6 +34,7 @@ import {
   windowsChangeTimeSettlePollMsSchema,
 } from "./windowsChangeTimeSettle.js";
 import { pwntoolsInputBytesSchema } from "./pwntoolsInputLimit.js";
+import { zstandardMaxFramesSchema } from "../domain/compression/zstandardFrameAllowance.js";
 const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
   {
     QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema,
@@ -67,6 +68,7 @@ const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
     QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS: windowsChangeTimeSettlePollMsSchema,
     QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS:
       windowsChangeTimeSettleMaxPollsSchema,
+    QORVEX_ZSTD_MAX_FRAMES: zstandardMaxFramesSchema,
   };
 export const launchAnalysisSetting = (
   id: AnalysisSettingId,

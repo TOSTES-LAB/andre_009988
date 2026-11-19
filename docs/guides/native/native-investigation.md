@@ -701,6 +701,10 @@ Available CPU type, subtype/capability bits, byte range, and alignment remain
 checked against the source bytes. Inventory records source ranges and hashes, and
 extraction copies those ranges without running the target. This does not
 expand any analysis provider's supported architectures.
+An unnamed architecture can carry a numeric CPU type and base subtype in
+`lipo`'s label. The `PTR_AUTH_VERSION` line identifies a userspace or kernel
+ABI, while the exact version and full subtype code remain unknown when that
+line is the only capability information.
 Malformed successful `lipo` output reports a format failure with its parse
 diagnostic.
 Apple lipo's hidden ARM64 compatibility row is retained separately from the
@@ -984,6 +988,10 @@ complete observation.
   a source-owned AppKit XIB with `ibtool`. Storyboards require an installed
   iOS platform; unsupported archive forms remain explicit.
   XML plist archives accept UTF-8 and BOM-marked UTF-16 in either byte order.
+  Bundle executable resolution and Hopper's minimum-version check admit
+  `Info.plist` only when its opened descriptor is a regular file of at most
+  64 MiB. A symlink at the selected path can resolve to that regular file.
+  The separate 16 MiB budget applies to the decoded representation.
   App bundle `Info.plist` executable resolution uses the same decoder as keyed
   archives and Interface Builder. The decoder consumes an initial
   BOM and rejects malformed byte sequences, unsupported encoding declarations,
