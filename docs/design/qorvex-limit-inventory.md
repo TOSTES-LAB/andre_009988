@@ -32,57 +32,48 @@ The other values reported here are in force, so `pending_restart` is false. Pros
 restart QORVEX is marked `prose`. `mcp_server_restart_required` is a
 server-identity alignment state in `src/process/ServerIdentity.ts`, not a setting field.
 
-Three numeric limits are absent from this tree and are being moved into the
-runtime system on their own PRs. This audit does not change them:
-
-| Name                                         | Tracking |
-| -------------------------------------------- | -------- |
-| `QORVEX_NTFS_MFT_MAX_FILE_BYTES`                | #9868    |
-| `QORVEX_REGF_HIVE_MAX_FILE_BYTES`               | #9865    |
-| `QORVEX_WEB_BUNDLE_ENDPOINT_LITERAL_CANDIDATES` | #9836    |
-
-When those names land in `src`, the static check requires them to be analysis
-settings. They are not on the restart-only list.
+None pending. No numeric `QORVEX_` limit is absent from this tree.
 
 ## Counts
 
 | Category                                                              |                                                                        Count |
 | --------------------------------------------------------------------- | ---------------------------------------------------------------------------: |
-| Runtime analysis settings                                             |                  29 (26 have an `QORVEX_` seed; 3 are per-call parameters only) |
+| Runtime analysis settings                                             |   32 (29 have an `QORVEX_` seed; 3 have a per-call override and no launch seed) |
 | Per-call numeric `QORVEX_` limits still read from the launch environment |                                                                            0 |
 | Restart-only numeric `QORVEX_` limits                                    |                                                                           15 |
-| Numeric `QORVEX_` candidates recognized in TypeScript source             |                                                                           39 |
+| Numeric `QORVEX_` candidates recognized in TypeScript source             |                                                                           41 |
 | Numeric `QORVEX_` controls with external or generated-reader provenance  |                                                                            2 |
 | Non-numeric `QORVEX_` settings kept restart-only                         | 52 caller settings, plus process-protocol names that are not caller settings |
 | Hardcoded ceilings left for follow-up                                 |                        grouped below; none converted in the inventory change |
 
 ## Runtime analysis settings
 
-Already adjustable with `update_analysis_settings`. Each call reads the snapshot
+Both runtime tables cover the 32 `ANALYSIS_SETTINGS` entries adjustable with
+`update_analysis_settings`. Each call reads the snapshot
 accepted for that operation. Launch source is `default` or `setting`; a runtime
 override is `source: "runtime"`. The structured field is `update_mode: "runtime"` and `pending_restart: false`.
 `applies_at` is the finer point
 (`next_operation`, `next_worker`, or `next_startup`).
 
-| Setting                                      | Environment seed                                 | Owner                                                         | Default                                   |            Floor |                                Maximum | Read                  |
-| -------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------- | ----------------------------------------- | ---------------: | -------------------------------------: | --------------------- |
-| `asar.max_header_bytes`                      | `QORVEX_ASAR_MAX_HEADER_BYTES`                      | `src/domain/analysisResourceLimits.ts`                        | 16777216                                  |                1 |                              268435456 | per operation         |
-| `asar.max_listing_bytes`                     | `QORVEX_ASAR_MAX_LISTING_BYTES`                     | `src/domain/analysisResourceLimits.ts`                        | 67108864                                  |                1 |              `Number.MAX_SAFE_INTEGER` | per operation         |
-| `ghidra.value_flow_max_operations`           | `QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS`           | `src/domain/analysisResourceLimits.ts`                        | 3000                                      |                1 |                             2147483647 | per operation         |
-| `ghidra.value_flow_max_inputs_per_operation` | `QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION` | `src/domain/analysisResourceLimits.ts`                        | 64                                        |                1 |                             2147483647 | per operation         |
-| `ghidra.value_flow_max_edges`                | `QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES`                | `src/domain/analysisResourceLimits.ts`                        | 12000                                     |                1 |                             2147483647 | per operation         |
-| `ghidra.decompile_max_payload_mib`           | `QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB`           | `src/domain/analysisResourceLimits.ts`                        | unset (`null`, unbounded payload policy)  |                1 |                                   2047 | per operation         |
-| `ghidra.startup_timeout_ms`                  | `QORVEX_GHIDRA_STARTUP_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 330000                                    |                1 |                             2147483647 | next provider startup |
-| `hopper.startup_timeout_ms`                  | `QORVEX_HOPPER_STARTUP_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 120000                                    |                1 |                             2147483647 | next provider startup |
-| `ghidra.decompile_timeout_seconds`           | `QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS`           | `src/domain/analysisResourceLimits.ts`                        | unset (`null`, decompile stays unbounded) |                1 | `MAX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS` | per operation         |
-| `jadx.operation_timeout_ms`                  | `QORVEX_JADX_OPERATION_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 120000                                    |                1 |                             2147483647 | per operation         |
-| `regex.matching_deadline_ms`                 | `QORVEX_REGEX_MATCHING_DEADLINE_MS`                 | `src/domain/analysisResourceLimits.ts`                        | 5000                                      |                1 |                             2147483647 | per operation         |
-| `regex.worker_heap_request_mib`              | `QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB`              | `src/domain/analysisResourceLimits.ts`                        | 128                                       |                7 |                                  16384 | next worker           |
-| `capture.decoder_old_generation_mib`         | `QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB`         | `src/domain/analysisResourceLimits.ts`                        | 192                                       | semi-space floor |                                  16384 | next worker           |
-| `javascript.analysis_timeout_ms`             | none (`analysis_timeout_ms`)                     | `src/domain/javascript/javascriptAnalysisResourceControls.ts` | owner default                             |                1 |                             2147483647 | per operation         |
-| `javascript.max_heap_mb`                     | none (`max_heap_mb`)                             | `src/domain/javascript/javascriptAnalysisResourceControls.ts` | owner default                             |      owner floor |                          owner maximum | next worker           |
-| `wasm.command_timeout_ms`                    | none (`command_timeout_ms`)                      | `src/domain/wasm/wasmArtifact.ts`                             | owner default                             |                1 |                          owner maximum | per operation         |
-| `native.matching_representation_bytes`       | `QORVEX_NATIVE_MATCHING_REPRESENTATION_BYTES`       | `src/domain/analysisResourceLimits.ts`                        | 100663296                                 |                1 |                             1073741824 | per operation         |
+| Setting                                      | Environment seed                                 | Owner                                                         | Default                                   | Floor |                                Maximum | Read                  |
+| -------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------- | ----------------------------------------- | ----: | -------------------------------------: | --------------------- |
+| `asar.max_header_bytes`                      | `QORVEX_ASAR_MAX_HEADER_BYTES`                      | `src/domain/analysisResourceLimits.ts`                        | 16777216                                  |     1 |                              268435456 | per operation         |
+| `asar.max_listing_bytes`                     | `QORVEX_ASAR_MAX_LISTING_BYTES`                     | `src/domain/analysisResourceLimits.ts`                        | 67108864                                  |     1 |              `Number.MAX_SAFE_INTEGER` | per operation         |
+| `ghidra.value_flow_max_operations`           | `QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS`           | `src/domain/analysisResourceLimits.ts`                        | 3000                                      |     1 |                             2147483647 | per operation         |
+| `ghidra.value_flow_max_inputs_per_operation` | `QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION` | `src/domain/analysisResourceLimits.ts`                        | 64                                        |     1 |                             2147483647 | per operation         |
+| `ghidra.value_flow_max_edges`                | `QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES`                | `src/domain/analysisResourceLimits.ts`                        | 12000                                     |     1 |                             2147483647 | per operation         |
+| `ghidra.decompile_max_payload_mib`           | `QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB`           | `src/domain/analysisResourceLimits.ts`                        | unset (`null`, unbounded payload policy)  |     1 |                                   2047 | per operation         |
+| `ghidra.startup_timeout_ms`                  | `QORVEX_GHIDRA_STARTUP_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 330000                                    |     1 |                             2147483647 | next provider startup |
+| `hopper.startup_timeout_ms`                  | `QORVEX_HOPPER_STARTUP_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 120000                                    |     1 |                             2147483647 | next provider startup |
+| `ghidra.decompile_timeout_seconds`           | `QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS`           | `src/domain/analysisResourceLimits.ts`                        | unset (`null`, decompile stays unbounded) |     1 | `MAX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS` | per operation         |
+| `jadx.operation_timeout_ms`                  | `QORVEX_JADX_OPERATION_TIMEOUT_MS`                  | `src/domain/analysisResourceLimits.ts`                        | 120000                                    |     1 |                             2147483647 | per operation         |
+| `regex.matching_deadline_ms`                 | `QORVEX_REGEX_MATCHING_DEADLINE_MS`                 | `src/domain/analysisResourceLimits.ts`                        | 5000                                      |     1 |                             2147483647 | per operation         |
+| `regex.worker_heap_request_mib`              | `QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB`              | `src/domain/analysisResourceLimits.ts`                        | 128                                       |     7 |                                  16384 | next worker           |
+| `capture.decoder_old_generation_mib`         | `QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB`         | `src/domain/analysisResourceLimits.ts`                        | 192                                       |     8 |                                  16384 | next worker           |
+| `javascript.analysis_timeout_ms`             | none (`analysis_timeout_ms`)                     | `src/domain/javascript/javascriptAnalysisResourceControls.ts` | 300000                                    |     1 |                             2147483647 | per operation         |
+| `javascript.max_heap_mb`                     | none (`max_heap_mb`)                             | `src/domain/javascript/javascriptAnalysisResourceControls.ts` | 1024                                      |   128 |                                  16384 | next worker           |
+| `wasm.command_timeout_ms`                    | none (`command_timeout_ms`)                      | `src/domain/wasm/wasmArtifact.ts`                             | 30000                                     |     1 |                             2147483647 | per operation         |
+| `native.matching_representation_bytes`       | `QORVEX_NATIVE_MATCHING_REPRESENTATION_BYTES`       | `src/domain/analysisResourceLimits.ts`                        | 100663296                                 |     1 |                             1073741824 | per operation         |
 
 An out-of-range `update_analysis_settings` value is rejected by the setting's
 schema. Invalid launch seeds that the global environment parser accepts as
