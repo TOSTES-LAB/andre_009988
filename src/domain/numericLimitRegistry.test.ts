@@ -5,7 +5,7 @@ import { ANALYSIS_SETTINGS } from "./analysisSettingDefinitions.js";
 import { NUMERIC_LIMIT_REGISTRY } from "./numericLimitRegistry.js";
 
 const inventory = readFileSync(
-  join(import.meta.dirname, "../../docs/design/qorvex-limit-inventory.md"),
+  join(import.meta.dirname, "../../docs/reference/qorvex-limit-inventory.md"),
   "utf8",
 );
 

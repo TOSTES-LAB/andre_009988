@@ -94,7 +94,8 @@ raising a QORVEX startup or operation deadline, separately ensure the client all
 enough time for the full request. Use `inspect_analysis_settings` for the running
 server's defaults; `qorvex doctor` checks launch configuration and cannot observe
 another process's runtime overrides. See the
-[settings design](../design/limits-and-recovery.md) for ownership and lifetime.
+[analysis settings and recovery](../reference/limits-and-recovery.md#precedence-and-lifetime)
+for precedence and lifetime.
 
 ## Client tool names and discovery
 

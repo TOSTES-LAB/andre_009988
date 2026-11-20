@@ -362,7 +362,6 @@ Zacznij od [przewodników z przykładami](https://qorvex.tools/pl/guides/) na st
 - [CLI i Evidence](../getting-started/cli.md): polecenia, wybór dostawcy, migawki, import/eksport i kody zakończenia.
 - [Kontrakty MCP](../reference/mcp-contracts.md) i [prompty dla agentów](../getting-started/mcp-prompts.md): wyniki narzędzi, sesje i prowadzone analizy.
 - [Katalog narzędzi](../reference/mcp-contracts.md#generated-catalog): generowany podczas kompilacji wykaz narzędzi, dostawców i poleceń CLI.
-- [Plan rozwoju](../development/roadmap.md): planowane prace i śledzenie funkcjonalności.
 
 Zgłaszaj podatności zgodnie z [SECURITY.md](../../SECURITY.md).
 
@@ -394,7 +393,7 @@ applicable licenses.
 
 Chętnie przyjmiemy Twoją pomoc w rozwoju QORVEX! [Otwórz zgłoszenie](https://github.com/TOSTES-LAB/andre_009988/issues), aby poinformować o błędzie lub zaproponować funkcję, albo [wyślij pull request](https://github.com/TOSTES-LAB/andre_009988/pulls) z ulepszeniami kodu lub dokumentacji.
 
-Zobacz [CONTRIBUTING.md](../../CONTRIBUTING.md), aby poznać konfigurację środowiska programistycznego i kontrole, [testowanie](../development/testing.md), aby poznać ścieżki weryfikacji, oraz [mapę architektury](../architecture/architecture.mermaid), aby poznać strukturę projektu.
+Zobacz [CONTRIBUTING.md](../../CONTRIBUTING.md), aby poznać konfigurację środowiska programistycznego i kontrole, [testowanie](../development/testing.md), aby poznać ścieżki weryfikacji.
 
 ## Licencja
 

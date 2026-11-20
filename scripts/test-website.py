@@ -306,8 +306,9 @@ class WebsiteSearchChecks(unittest.TestCase):
                 },
             )
             nested.rename(site / "moved.html")
-            self.assertIn("https://qorvex.tools/moved.html", urls())
-            self.assertNotIn("https://qorvex.tools/guides/new/", urls())
+            moved = urls()
+            self.assertIn("https://qorvex.tools/moved.html", moved)
+            self.assertNotIn("https://qorvex.tools/guides/new/", moved)
             (site / "moved.html").unlink()
             self.assertNotIn("https://qorvex.tools/moved.html", urls())
 
@@ -319,31 +320,25 @@ class WebsiteSearchChecks(unittest.TestCase):
                 "index.html",
                 'rel="canonical" href="https://qorvex.tools/"',
                 'rel="canonical" href="https://TOSTES-LAB.github.io/qorvex/"',
-                "head canonical",
+                "needs exactly one head canonical",
             ),
             (
                 "faq/index.html",
                 'hreflang="zh-CN" href="https://qorvex.tools/zh-CN/faq/"',
                 'hreflang="zh-CN" href="https://[::1/faq/"',
-                "invalid URL",
+                "invalid hreflang URL",
             ),
             (
                 "showcase/aegis/index.html",
                 'rel="canonical" href="https://qorvex.tools/showcase/aegis/"',
                 'rel="canonical" href="https://qorvex.tools/"',
-                "head canonical",
-            ),
-            (
-                "examples/notes-electron/index.html",
-                'content="noindex"',
-                'content="index"',
-                "must have a head noindex",
+                "needs exactly one head canonical",
             ),
             (
                 "sitemap.xml",
                 "https://qorvex.tools/faq/",
                 "https://qorvex.tools/deleted/",
-                "each indexable page once",
+                "must contain each indexable page once",
             ),
             (
                 "faq/index.html",
@@ -352,25 +347,27 @@ class WebsiteSearchChecks(unittest.TestCase):
                 "twitter:card",
             ),
         )
-        for name, old, new, message in cases:
-            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
-                site = Path(directory) / "public"
-                shutil.copytree(ROOT / "website/_site", site)
+        with tempfile.TemporaryDirectory() as directory:
+            site = Path(directory) / "public"
+            shutil.copytree(ROOT / "website/_site", site)
+            for name, old, new, _ in cases:
                 path = site / name
                 source = path.read_text()
                 self.assertIn(old, source)
                 path.write_text(source.replace(old, new, 1))
-                self.assertTrue(
-                    any(message in error for error in VERIFY.check_site(site)[3])
-                )
-        with tempfile.TemporaryDirectory() as directory:
-            site = Path(directory) / "public"
-            shutil.copytree(ROOT / "website/_site", site)
             (site / "assets/social-card.png").unlink()
-            self.assertIn(
-                "Social preview PNG is missing; run scripts/prepare-website.py",
-                VERIFY.check_site(site)[3],
-            )
+            diagnostics = "\n".join(VERIFY.check_site(site)[3])
+            for name, _, _, message in cases:
+                with self.subTest(name=name, message=message):
+                    self.assertIn(f"{name}: {message}", diagnostics)
+            self.assertIn("Social preview PNG is missing", diagnostics)
+
+            # Changing the indexable set would also invalidate the sitemap.
+            example = site / "examples/notes-electron/index.html"
+            source = example.read_text()
+            self.assertIn('content="noindex"', source)
+            example.write_text(source.replace('content="noindex"', 'content="index"', 1))
+            self.assertIn(f"{example.relative_to(site).as_posix()}: example application must have a head noindex directive", VERIFY.check_site(site)[3])
 
 
 class WebsiteMaintenanceChecks(unittest.TestCase):
@@ -541,16 +538,18 @@ class WebsiteMaintenanceChecks(unittest.TestCase):
             page = site / "faq/index.html"
             original = page.read_text()
             cases = (
-                ('<a href="https://qorvex.tools/deleted/">Broken</a>', "missing local target"),
-                ('<code>https://qorvex.tools/guides/native/#deleted</code>', "missing HTML fragment"),
-                ('<code>https://TOSTES-LAB.github.io/qorvex/examples/notes-web/</code>', "obsolete website URL"),
-                ('<button data-copy="deleted">Copy</button>', "missing copy target"),
-                ('<a href="https://[">Malformed</a>', "invalid URL"),
+                ('<a href="https://qorvex.tools/deleted/">Broken</a>', "missing local target: https://qorvex.tools/deleted/"),
+                ('<code>https://qorvex.tools/guides/native/#deleted</code>', "missing HTML fragment: https://qorvex.tools/guides/native/#deleted"),
+                ('<code>https://TOSTES-LAB.github.io/qorvex/examples/notes-web/</code>', "obsolete website URL: https://TOSTES-LAB.github.io/qorvex/examples/notes-web/"),
+                ('<button data-copy="deleted">Copy</button>', "missing copy target: deleted"),
+                ('<a href="https://[">Malformed</a>', "invalid URL 'https://[':"),
             )
-            for inserted, message in cases:
+            inserted = "".join(html for html, _ in cases)
+            page.write_text(original.replace("</main>", inserted + "</main>", 1))
+            diagnostics = "\n".join(VERIFY.check_site(site)[3])
+            for _, message in cases:
                 with self.subTest(message=message):
-                    page.write_text(original.replace("</main>", inserted + "</main>", 1))
-                    self.assertTrue(any(message in error for error in VERIFY.check_site(site)[3]))
+                    self.assertIn(f"{page.relative_to(site)}: {message}", diagnostics)
 
     def test_repository_links_preserve_targets_and_containment_through_aliased_roots(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -362,7 +362,6 @@ Beginne mit den [praxisnahen Anleitungen](https://qorvex.tools/de/guides/) auf d
 - [CLI und Evidence](../getting-started/cli.md): Befehle, Provider-Auswahl, Snapshots, Import/Export und Exit-Status.
 - [MCP-Kontrakte](../reference/mcp-contracts.md) und [Agenten-Prompts](../getting-started/mcp-prompts.md): Werkzeugergebnisse, Sitzungen und geführte Untersuchungen.
 - [Werkzeugkatalog](../reference/mcp-contracts.md#generated-catalog): Beim Build erzeugtes Inventar von Werkzeugen, Providern und CLI-Befehlen.
-- [Roadmap](../development/roadmap.md): Geplante Arbeiten und Fortschrittsübersichten zu Fähigkeiten.
 
 Melde Sicherheitslücken gemäß [SECURITY.md](../../SECURITY.md).
 
@@ -394,7 +393,7 @@ applicable licenses.
 
 Wir freuen uns über deine Hilfe bei QORVEX! [Öffne ein Issue](https://github.com/TOSTES-LAB/andre_009988/issues), um einen Fehler zu melden oder eine Funktion vorzuschlagen, oder [sende einen Pull Request](https://github.com/TOSTES-LAB/andre_009988/pulls), um Code oder Dokumentation zu verbessern.
 
-Die Entwicklungsumgebung und Prüfungen beschreibt [CONTRIBUTING.md](../../CONTRIBUTING.md), die Verifikationspfade der [Testleitfaden](../development/testing.md) und die Projektstruktur die [Architekturübersicht](../architecture/architecture.mermaid).
+Die Entwicklungsumgebung und Prüfungen beschreibt [CONTRIBUTING.md](../../CONTRIBUTING.md), die Verifikationspfade der [Testleitfaden](../development/testing.md).
 
 ## Lizenz
 

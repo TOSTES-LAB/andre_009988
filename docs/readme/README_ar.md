@@ -362,7 +362,6 @@ npx qorvex-agents@latest setup
 - [CLI وEvidence](../getting-started/cli.md): الأوامر، واختيار الموفّر، واللقطات، والاستيراد/التصدير، وحالات الخروج.
 - [عقود MCP](../reference/mcp-contracts.md) و[تعليمات الوكلاء](../getting-started/mcp-prompts.md): نتائج الأدوات، والجلسات، والاستقصاءات الموجّهة.
 - [كتالوج الأدوات](../reference/mcp-contracts.md#generated-catalog): قائمة الأدوات والموفّرين وأوامر CLI المولّدة أثناء البناء.
-- [خطة العمل](../development/roadmap.md): الأعمال المخطط لها ومتابعة القدرات.
 
 أبلغ عن الثغرات وفق [SECURITY.md](../../SECURITY.md).
 
@@ -394,7 +393,7 @@ applicable licenses.
 
 نرحّب بمساعدتك في تطوير QORVEX! [افتح issue](https://github.com/TOSTES-LAB/andre_009988/issues) للإبلاغ عن خطأ أو اقتراح ميزة، أو [أرسل pull request](https://github.com/TOSTES-LAB/andre_009988/pulls) لتحسين الشيفرة أو التوثيق.
 
-راجع [CONTRIBUTING.md](../../CONTRIBUTING.md) لإعداد بيئة التطوير والفحوص، و[دليل الاختبار](../development/testing.md) لمسارات التحقق، و[خريطة البنية](../architecture/architecture.mermaid) لهيكل المشروع.
+راجع [CONTRIBUTING.md](../../CONTRIBUTING.md) لإعداد بيئة التطوير والفحوص، و[دليل الاختبار](../development/testing.md) لمسارات التحقق.
 
 ## الترخيص
 
