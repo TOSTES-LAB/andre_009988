@@ -1552,23 +1552,19 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       handshake: covered(
         test(
           "src/browser/PlaywrightScenarioBrowser.test.ts",
-          "applies command_timeout_ms to the primary connect handshake when service workers are allowed",
-        ),
-        test(
-          "src/browser/PlaywrightScenarioBrowser.test.ts",
           "closes a browser that connects after its deadline without waiting to report the timeout",
         ),
       ),
       operation: covered(
         test(
           "src/browser/PlaywrightBrowserScenarioProvider.test.ts",
-          "returns an initial state and every step of a long scenario",
+          "retains all long-scenario steps and monotonic elapsed time",
         ),
       ),
       cancel: covered(
         test(
-          "src/browser/PlaywrightBrowserScenarioProvider.test.ts",
-          "cancels an active action and still closes the session",
+          "src/browser/PlaywrightScenarioSession.test.ts",
+          "preserves $outcome action rejection through provider cancellation (cleanup refused: $cleanupFails)",
         ),
       ),
       cleanup: covered(
@@ -1580,7 +1576,7 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       retry: covered(
         test(
           "src/browser/PlaywrightBrowserScenarioProvider.test.ts",
-          "shares concurrent close and retries browser cleanup after failure",
+          "retries all opening leases after a refusal and reports only those still owned",
         ),
       ),
     },
@@ -1720,17 +1716,13 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       handshake: covered(
         test(
           "src/browser/modules/NativeModuleResolver.test.ts",
-          "closes a browser whose connection completes after cancellation",
-        ),
-        test(
-          "src/browser/modules/NativeModuleResolver.test.ts",
-          "reports failed cleanup of a browser whose connection completes after cancellation",
+          "awaits and closes the late browser connection after cancellation",
         ),
       ),
       operation: covered(
         test(
           "tests/boundary/filesystem/webModuleArtifacts.test.ts",
-          "verifies original bytes and tolerates relocation without inventing URL paths",
+          "verifies relocated source identity before accepting the captured bytes",
         ),
       ),
       cancel: covered(
@@ -1786,7 +1778,7 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       operation: covered(
         test(
           "tests/boundary/filesystem/webSourceLocationArtifacts.test.ts",
-          "reads exact selected map bytes, retaining a BOM and explicitly selected URL context",
+          "retains exact selected map bytes and completed reads across failures",
         ),
       ),
       cancel: covered(

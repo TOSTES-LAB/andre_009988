@@ -16,37 +16,35 @@ afterEach(() => {
 
 // These executable probes validate the real CLI and process environment boundary;
 // they do not establish native Apktool decoding behavior.
-it.skipIf(process.platform === "win32").each([
-  { name: "missing", selected: {}, expected: "absent" },
-  {
-    name: "unset",
-    selected: { QORVEX_APKTOOL_ENV_PROFILE: undefined },
-    expected: "absent",
-  },
-  {
-    name: "empty",
-    selected: { QORVEX_APKTOOL_ENV_PROFILE: "" },
-    expected: "empty",
-  },
-  {
-    name: "selected",
-    selected: { QORVEX_APKTOOL_ENV_PROFILE: "selected-profile" },
-    expected: "selected-profile",
-  },
-])(
-  "preserves $name Apktool settings after the ambient environment changes",
-  async ({ selected, expected }) => {
+it.skipIf(process.platform === "win32")(
+  "preserves selected Apktool settings after the ambient environment changes",
+  async () => {
     const root = await createTestTempDirectory(
       "qorvex-apktool-selected-environment-",
     );
     const command = join(root, "apktool");
     await writeFile(
       command,
-      '#!/bin/sh\nprofile=${QORVEX_APKTOOL_ENV_PROFILE-absent}\n[ -n "$profile" ] || profile=empty\nprintf "2.11.1+%s\\n" "$profile"\n',
+      [
+        "#!/bin/sh",
+        'printf "2.11.1+%s.%s.%s.%s\\n" "${QORVEX_APKTOOL_MISSING-absent}" "${QORVEX_APKTOOL_UNSET-absent}" "empty-${QORVEX_APKTOOL_EMPTY-absent}" "${QORVEX_APKTOOL_SELECTED-absent}"',
+        "",
+      ].join("\n"),
       { mode: 0o755 },
     );
-    const cli = createCli({ QORVEX_APKTOOL_COMMAND: command, ...selected });
-    vi.stubEnv("QORVEX_APKTOOL_ENV_PROFILE", "late-ambient-profile");
+    const cli = createCli({
+      QORVEX_APKTOOL_COMMAND: command,
+      QORVEX_APKTOOL_UNSET: undefined,
+      QORVEX_APKTOOL_EMPTY: "",
+      QORVEX_APKTOOL_SELECTED: "selected-profile",
+    });
+    for (const key of [
+      "QORVEX_APKTOOL_MISSING",
+      "QORVEX_APKTOOL_UNSET",
+      "QORVEX_APKTOOL_EMPTY",
+      "QORVEX_APKTOOL_SELECTED",
+    ])
+      vi.stubEnv(key, "late-ambient-profile");
     let stdout = "";
     await cli.serve(["inspect-apktool-client", "--json"], {
       env: {},
@@ -57,7 +55,9 @@ it.skipIf(process.platform === "win32").each([
     });
     const evidence = parseEvidence(JSON.parse(stdout));
     expect(evidence.normalized_result).toMatchObject({
-      client: { apktool_version: `2.11.1+${expected}` },
+      client: {
+        apktool_version: "2.11.1+absent.absent.empty-.selected-profile",
+      },
     });
     expect(evidence.environment).toBeNull();
   },

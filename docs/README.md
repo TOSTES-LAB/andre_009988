@@ -6,6 +6,7 @@ The [QORVEX website](https://qorvex.tools/) has worked examples and product page
 ## Getting started
 
 - [Installation and setup](getting-started/installation.md)
+- [Supported targets and requirements](reference/supported-targets.md)
 - [Client configuration and troubleshooting](getting-started/client-configuration.md)
 - [CLI and Evidence](getting-started/cli.md)
 - [Guided MCP prompts and completion](getting-started/mcp-prompts.md)
