@@ -217,8 +217,11 @@ instructions and references. Consumers should use `identity.skill.state`,
 obsolete `installed_catalog_digest` field has been removed; current catalog
 identity remains available at `identity.catalog`.
 
-Setup pins package-runner MCP registrations to the exact installed QORVEX version,
-installs the matching skill and on-demand references in the same plan, and adds
+Setup records MCP registrations that launch the installation performing setup
+directly: its absolute JavaScript runtime and entry script, followed by `mcp`
+(see [MCP Registry](#mcp-registry)). Client starts therefore run that
+installation instead of resolving a package. In the same plan, setup installs
+the matching skill and on-demand references and adds
 `startup_timeout_sec = 30` for Codex and Grok Build when no positive timeout
 is already configured. Codex also receives a
 `tool_timeout_sec` derived from known provider startup plus operation headroom.
@@ -467,7 +470,9 @@ qorvex uninstall --purge-data
 ```
 
 Uninstall preserves Hopper, Node.js, Evidence files, captures, unrelated skills
-and other MCP servers. Purging removes QORVEX's legacy cache and state under
+and other MCP servers. Uninstall and `--purge-data` leave the saved provider
+settings file `qorvex.json` in place and can run when it is malformed. Purging
+removes QORVEX's legacy cache and state under
 `~/.qorvex`, the default Kuna cache (`~/Library/Caches/qorvex/kuna` on macOS or
 `${XDG_CACHE_HOME:-~/.cache}/qorvex/kuna` on Linux), and Linux Hopper release
 archives under `${XDG_CACHE_HOME:-~/.cache}/qorvex/hopper-releases`. Other cache
@@ -630,6 +635,10 @@ cd qorvex
 npm ci
 npm run build:cached
 ```
+
+These commands do not build the Windows x64 native addon or its manifest.
+Windows workflows that need native controls require the extra step in
+[Windows source checkouts](https://github.com/TOSTES-LAB/andre_009988/blob/main/CONTRIBUTING.md#windows-source-checkouts).
 
 Then run `npm link` once in the checkout to put its `qorvex` on your `PATH`, or,
 wherever these docs say `qorvex …`, run
@@ -1230,8 +1239,10 @@ until a release is known to clear it.
 
 Each installation must include the native decompiler for the host
 architecture in `Ghidra/Features/Decompiler/os/<platform>/` or the corresponding
-`build/os/<platform>/` directory. Linux ARM64 uses `linux_arm_64`; official
-release archives may require you to build that native component separately.
+`build/os/<platform>/` directory. Linux ARM64 uses `linux_arm_64`. Official
+release archives ship native binaries only for Windows and Linux x64, so on
+Linux ARM64 build them with the release's
+[native component instructions](https://github.com/NationalSecurityAgency/ghidra/blob/Ghidra_12.2_build/GhidraDocs/GettingStarted.md#building-native-components).
 QORVEX checks the executable prerequisite by inspecting the file's own executable
 header, so a native component built for another platform or architecture is
 reported as incompatible instead of being admitted from its directory name, and
@@ -1839,7 +1850,7 @@ Each line is `address<TAB>kind[<TAB>name]`, where kind is `function`, `code` or 
 
 Label seeds can name mapped uninitialized storage such as `.bss`; function and code seeds require initialized bytes.
 
-When Ghidra has no function for a requested procedure, the error's remediation names this seed recovery. A `resolve_containing_procedure` result of `not_in_procedure` carries it as a limitation. Neither establishes that the address holds code. Seeds apply only to a fresh import, so a session with `QORVEX_GHIDRA_PROJECT_PATH` or `QORVEX_GHIDRA_CHECKPOINT_DIR` names the setting to unset first.
+When Ghidra has no function for a requested procedure, the error's remediation names this seed recovery. A `resolve_containing_procedure` result of `not_in_procedure` carries it as a limitation, and an `inspect_native_instruction` result with status `not-in-listing` carries the `code` seed variant. None of these establishes that the address holds code. Seeds apply only to a fresh import, so a session with `QORVEX_GHIDRA_PROJECT_PATH` or `QORVEX_GHIDRA_CHECKPOINT_DIR` names the setting to unset first.
 
 To skip a named Ghidra auto-analyzer (for example, when default auto-analysis
 stalls in one analyzer on a Swift/Objective-C arm64 Mach-O):
