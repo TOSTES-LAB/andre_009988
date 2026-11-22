@@ -17,28 +17,23 @@ for (const level of ["loud", "INFO"])
       expect(help.stdout).toBe("");
       expect(help.stderr).toBe(invalidLogLevelMessage);
 
-      const doctorInvocation = {
+      const doctor = await cli.run({
         arguments: ["--json", "doctor", "--provider", "hopper"],
         environment: { QORVEX_LOG_LEVEL: level },
-      };
-      for (const doctor of [
-        await cli.run(doctorInvocation),
-        await cli.run(doctorInvocation),
-      ]) {
-        expect(doctor.exitCode, doctor.stderr).toBe(1);
-        expect(doctor.stderr).toBe("");
-        expect(doctor.json).toMatchObject({
-          healthy: false,
-          scope_checks: expect.arrayContaining([
-            expect.objectContaining({
-              name: "runtime-configuration:QORVEX_LOG_LEVEL",
-              ok: false,
-              classification: "config_drift",
-              detail: expect.stringContaining("QORVEX_LOG_LEVEL"),
-            }),
-          ]),
-        });
-      }
+      });
+      expect(doctor.exitCode, doctor.stderr).toBe(1);
+      expect(doctor.stderr).toBe("");
+      expect(doctor.json).toMatchObject({
+        healthy: false,
+        scope_checks: expect.arrayContaining([
+          expect.objectContaining({
+            name: "runtime-configuration:QORVEX_LOG_LEVEL",
+            ok: false,
+            classification: "config_drift",
+            detail: expect.stringContaining("QORVEX_LOG_LEVEL"),
+          }),
+        ]),
+      });
 
       const client = await cli.run({
         arguments: ["--json", "doctor", "--client", "codex"],

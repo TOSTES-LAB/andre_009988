@@ -1,25 +1,3 @@
-import {
-  createByteEntropyService,
-  createRecordedCrashService,
-  createBinaryLayoutService,
-  createElfNotesService,
-  createDwarfUnitsService,
-  createElfDebugLinkService,
-  createNativeInitializersService,
-  createElfUnwindRangesService,
-  createAppleIpsService,
-  createDevicetreeService,
-  createKernelModuleService,
-  createKernelBuildConfigService,
-  createPeLoadConfigService,
-  createBinaryHardeningService,
-  createPeResourcesService,
-  createPeCertificatesService,
-  createPeImportsService,
-  createWindowsShortcutService,
-  createNativeExportsService,
-  createElfDependenciesService,
-} from "../composition/binaryDiagnostics.js";
 import type { Logger } from "pino";
 import type { CliInstance } from "./types.js";
 import { projectAnalysisError } from "../domain/analysisErrorProjection.js";
@@ -58,7 +36,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local ELF32/ELF64 image" } },
     },
-    inspectWithService(createElfNotesService, "qorvex-elf-notes"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/elfNotes.js")
+        ).createElfNotesService(),
+      "qorvex-elf-notes",
+    ),
   );
   registerContractCommand(
     cli,
@@ -79,7 +63,13 @@ export const registerBinaryDiagnosticsCommands = (
         },
       },
     },
-    inspectWithService(createDwarfUnitsService, "qorvex-dwarf-units"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/dwarfUnits.js")
+        ).createDwarfUnitsService(),
+      "qorvex-dwarf-units",
+    ),
   );
   registerContractCommand(
     cli,
@@ -97,7 +87,13 @@ export const registerBinaryDiagnosticsCommands = (
         },
       },
     },
-    inspectWithService(createElfDebugLinkService, "qorvex-elf-debug-link"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/elfDebugLink.js")
+        ).createElfDebugLinkService(),
+      "qorvex-elf-debug-link",
+    ),
   );
   registerContractCommand(
     cli,
@@ -120,7 +116,10 @@ export const registerBinaryDiagnosticsCommands = (
       },
     },
     inspectWithService(
-      createNativeInitializersService,
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/nativeInitializers.js")
+        ).createNativeInitializersService(),
       "qorvex-native-initializers",
     ),
   );
@@ -135,7 +134,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local ELF32/ELF64 image" } },
     },
-    inspectWithService(createElfUnwindRangesService, "qorvex-elf-unwind-ranges"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/elfUnwindRanges.js")
+        ).createElfUnwindRangesService(),
+      "qorvex-elf-unwind-ranges",
+    ),
   );
   registerContractCommand(
     cli,
@@ -154,7 +159,13 @@ export const registerBinaryDiagnosticsCommands = (
         },
       },
     },
-    inspectWithService(createAppleIpsService, "qorvex-apple-ips"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/appleIps.js")
+        ).createAppleIpsService(),
+      "qorvex-apple-ips",
+    ),
   );
   registerContractCommand(
     cli,
@@ -172,7 +183,13 @@ export const registerBinaryDiagnosticsCommands = (
         },
       },
     },
-    inspectWithService(createKernelModuleService, "qorvex-kernel-module"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/kernelModule.js")
+        ).createKernelModuleService(),
+      "qorvex-kernel-module",
+    ),
   );
   registerContractCommand(
     cli,
@@ -191,7 +208,10 @@ export const registerBinaryDiagnosticsCommands = (
       },
     },
     inspectWithService(
-      createKernelBuildConfigService,
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/kernelBuildConfig.js")
+        ).createKernelBuildConfigService(),
       "qorvex-kernel-build-config",
     ),
   );
@@ -206,7 +226,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local PE32/PE32+ image" } },
     },
-    inspectWithService(createPeLoadConfigService, "qorvex-pe-load-config"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/peLoadConfig.js")
+        ).createPeLoadConfigService(),
+      "qorvex-pe-load-config",
+    ),
   );
   registerContractCommand(
     cli,
@@ -219,9 +245,14 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local ELF, PE, or Mach-O image" } },
     },
-    inspectWithService(createBinaryHardeningService, "qorvex-binary-hardening"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/binaryHardening.js")
+        ).createBinaryHardeningService(),
+      "qorvex-binary-hardening",
+    ),
   );
-  const entropy = createByteEntropyService();
   registerContractCommand(
     cli,
     logger,
@@ -246,7 +277,13 @@ export const registerBinaryDiagnosticsCommands = (
           "One-shot output is complete Evidence; this command has no summary delivery",
       },
     },
-    inspectWithService(() => entropy, BYTE_ENTROPY_PROVIDER.id),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/byteEntropy.js")
+        ).createByteEntropyService(),
+      BYTE_ENTROPY_PROVIDER.id,
+    ),
   );
   registerContractCommand(
     cli,
@@ -259,7 +296,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local PE32/PE32+ image" } },
     },
-    inspectWithService(createPeCertificatesService, "qorvex-pe-certificates"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/peCertificates.js")
+        ).createPeCertificatesService(),
+      "qorvex-pe-certificates",
+    ),
   );
   registerContractCommand(
     cli,
@@ -272,7 +315,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local PE32/PE32+ image" } },
     },
-    inspectWithService(createPeImportsService, "qorvex-pe-imports"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/peImports.js")
+        ).createPeImportsService(),
+      "qorvex-pe-imports",
+    ),
   );
   registerContractCommand(
     cli,
@@ -287,7 +336,13 @@ export const registerBinaryDiagnosticsCommands = (
         path: { description: "Local Windows Shell Link (.lnk) file" },
       },
     },
-    inspectWithService(createWindowsShortcutService, "qorvex-windows-shortcut"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/windowsShortcut.js")
+        ).createWindowsShortcutService(),
+      "qorvex-windows-shortcut",
+    ),
   );
   registerContractCommand(
     cli,
@@ -300,7 +355,13 @@ export const registerBinaryDiagnosticsCommands = (
       callerPaths: ["path"],
       fields: { path: { description: "Local PE32/PE32+ image" } },
     },
-    inspectWithService(createPeResourcesService, "qorvex-pe-resources"),
+    inspectWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/peResources.js")
+        ).createPeResourcesService(),
+      "qorvex-pe-resources",
+    ),
   );
   registerContractCommand(
     cli,
@@ -321,7 +382,13 @@ export const registerBinaryDiagnosticsCommands = (
         max_depth: { description: "Maximum device-tree nesting depth" },
       },
     },
-    deliverWithService(createDevicetreeService, "qorvex-devicetree"),
+    deliverWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/devicetree.js")
+        ).createDevicetreeService(),
+      "qorvex-devicetree",
+    ),
   );
   registerContractCommand(
     cli,
@@ -329,13 +396,19 @@ export const registerBinaryDiagnosticsCommands = (
     contract("inspect_native_exports"),
     {
       description:
-        "Inspect a PE or ELF image's export table without executing it",
+        "Inspect PE or ELF image's export table without executing it",
       positionals: ["path"],
       callerPaths: ["path"],
       evidenceDelivery: true,
       fields: { path: { description: "Local PE or ELF image" } },
     },
-    deliverWithService(createNativeExportsService, "qorvex-native-exports"),
+    deliverWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/nativeExports.js")
+        ).createNativeExportsService(),
+      "qorvex-native-exports",
+    ),
   );
   registerContractCommand(
     cli,
@@ -351,9 +424,14 @@ export const registerBinaryDiagnosticsCommands = (
         path: { description: "Local ELF32/ELF64 ET_EXEC or ET_DYN image" },
       },
     },
-    deliverWithService(createElfDependenciesService, "qorvex-elf-dependencies"),
+    deliverWithService(
+      async () =>
+        (
+          await import("../composition/binaryDiagnostics/elfDependencies.js")
+        ).createElfDependenciesService(),
+      "qorvex-elf-dependencies",
+    ),
   );
-  const layout = createBinaryLayoutService(environment);
   registerContractCommand(
     cli,
     logger,
@@ -374,7 +452,11 @@ export const registerBinaryDiagnosticsCommands = (
       },
     },
     async (input, context) => {
-      const result = await layout.inspectAndClose(input, {
+      const { createBinaryLayoutService } =
+        await import("../composition/binaryDiagnostics/binaryLayout.js");
+      const result = await createBinaryLayoutService(
+        environment,
+      ).inspectAndClose(input, {
         signal: context.signal,
       });
       return result.ok
@@ -382,7 +464,6 @@ export const registerBinaryDiagnosticsCommands = (
         : projectAnalysisError(result.error);
     },
   );
-  const recorded = createRecordedCrashService(environment);
   registerContractCommand(
     cli,
     logger,
@@ -405,7 +486,11 @@ export const registerBinaryDiagnosticsCommands = (
       },
     },
     async (input, context) => {
-      const result = await recorded.inspectAndClose(input, {
+      const { createRecordedCrashService } =
+        await import("../composition/binaryDiagnostics/recordedCrash.js");
+      const result = await createRecordedCrashService(
+        environment,
+      ).inspectAndClose(input, {
         signal: context.signal,
       });
       return result.ok
