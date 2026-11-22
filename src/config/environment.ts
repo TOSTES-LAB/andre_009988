@@ -276,19 +276,15 @@ export const parseEnvironment = (
         unresolvedSettings.has("QORVEX_GHIDRA_PROJECT_PATH")
         ? []
         : ["QORVEX_GHIDRA_PROGRAM_NAME"]
-      : [
-          "QORVEX_GHIDRA_LANGUAGE_ID",
-          "QORVEX_GHIDRA_COMPILER_SPEC_ID",
-          "QORVEX_GHIDRA_SEED_FILE",
-          "QORVEX_GHIDRA_DISABLED_ANALYZERS",
-          "QORVEX_GHIDRA_NATIVEAOT_JAR",
-        ].filter(
-          (setting) =>
-            // Blank analyzer lists parse to no override, so they cannot conflict.
-            (setting === "QORVEX_GHIDRA_DISABLED_ANALYZERS"
-              ? env[setting]
-              : environment[setting]) !== undefined,
-        );
+      : (
+          [
+            "QORVEX_GHIDRA_LANGUAGE_ID",
+            "QORVEX_GHIDRA_COMPILER_SPEC_ID",
+            "QORVEX_GHIDRA_SEED_FILE",
+            "QORVEX_GHIDRA_DISABLED_ANALYZERS",
+            "QORVEX_GHIDRA_NATIVEAOT_JAR",
+          ] as const
+        ).filter((setting) => env[setting] !== undefined);
   if (incompatible.length > 0)
     return err(
       new ConfigurationError("Invalid existing Ghidra project configuration", {

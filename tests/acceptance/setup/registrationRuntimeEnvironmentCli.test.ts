@@ -48,191 +48,150 @@ const missingHopperAndGhidraEnvironment = (home: string) => ({
   JAVA_HOME: join(home, "missing-java"),
 });
 
-cliTest(
-  "retains selected MCP settings and unavailable provider paths in a new registration",
-  async ({ cli }) => {
-    const config = join(home, ".qwen/settings.json");
-    const selected = {
-      HOPPER_LAUNCHER_PATH: join(home, "missing-hopper"),
-      HOPPER_LOADER_ARGS_JSON: '["", "--loader", "Mach-O"]',
-      GHIDRA_INSTALL_DIR: join(home, "offline-ghidra"),
-      GHIDRA_HEADLESS_MAXMEM: "512M",
-      GHIDRA_MAXMEM: "3G",
-      JAVA_HOME: join(home, "offline-jdk"),
-      QORVEX_IDA_MCP_CONFIG: join(home, "offline-ida.json"),
-      QORVEX_JADX_MCP_JAR: join(home, "offline-jadx.jar"),
-      QORVEX_KUNA_COMMAND: join(home, "offline-kuna"),
-      QORVEX_ADB_PATH: join(home, "offline-adb"),
-      QORVEX_APKTOOL_COMMAND: join(home, "offline-apktool"),
-      QORVEX_TSHARK_COMMAND: join(home, "offline-tshark"),
-      QORVEX_CAPINFOS_COMMAND: join(home, "offline-capinfos"),
-      QORVEX_TSHARK_PRLIMIT_COMMAND: join(home, "offline-prlimit"),
-      QORVEX_OBJDUMP_COMMAND: join(home, "offline-objdump"),
-      QORVEX_GDB_COMMAND: join(home, "offline-gdb"),
-      QORVEX_RIZIN_COMMAND: join(home, "offline-rizin"),
-      QORVEX_CUTTER_BRIDGE_DIR: join(home, "cutter-bridge"),
-      QORVEX_WABT_BIN_DIRECTORY: join(home, "wabt"),
-      QORVEX_WAKARU_COMMAND: join(home, "offline-wakaru"),
-      QORVEX_JAVASCRIPT_PRLIMIT_COMMAND: join(home, "javascript-prlimit"),
-      QORVEX_BINWALK_COMMAND: join(home, "offline-binwalk"),
-      QORVEX_UNBLOB_COMMAND: join(home, "offline-unblob"),
-      QORVEX_FIRMWARE_PRLIMIT_COMMAND: join(home, "firmware-prlimit"),
-      QORVEX_EVM_PRLIMIT_COMMAND: join(home, "evm-prlimit"),
-      QORVEX_SIGROK_COMMAND: join(home, "offline-sigrok"),
-      QORVEX_SIGROK_PRLIMIT_COMMAND: join(home, "sigrok-prlimit"),
-      QORVEX_MITMDUMP_COMMAND: join(home, "offline-mitmdump"),
-      QORVEX_BROWSER_EXECUTABLE: join(home, "offline-chromium"),
-      QORVEX_BROWSER_NO_SANDBOX: "false",
-      QORVEX_PWNTOOLS_PYTHON: join(home, "offline-python"),
-      QORVEX_PWNTOOLS_MAX_INPUT_BYTES: "67108864",
-      QORVEX_PWNDBG_GDB: join(home, "pwndbg-gdb"),
-      QORVEX_PWNDBG_GDBINIT: join(home, "pwndbg-gdbinit"),
-      QORVEX_PWNDBG_VENV_PATH: join(home, "pwndbg-venv"),
-      ...(process.platform === "darwin"
-        ? {}
-        : {
-            QORVEX_DARWIN_SWIFTC_PATH: join(home, "offline-swiftc"),
-            QORVEX_DARWIN_MODULE_CACHE_PATH: join(home, "swift-module-cache"),
-            SDKROOT: join(home, "macos-sdk"),
-          }),
-      QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: "180000",
-      QORVEX_LOG_LEVEL: "warn",
-      QORVEX_ASAR_MAX_LISTING_BYTES: "134217728",
-      QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS: "6000",
-      QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION: "128",
-      QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES: "24000",
-      QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB: "128",
-      QORVEX_REFERENCE_SECRET_PATTERNS_JSON: '["explicit-private-value"]',
-      QORVEX_ANALYSIS_PROVIDER: "ghidra",
-      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
-      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "off",
-      QORVEX_MCP_MAX_RESPONSE_BYTES: "20971520",
-      QORVEX_MCP_TOOL_FAMILIES: "session",
-    };
-    const environment = {
-      HOME: home,
-      USERPROFILE: home,
-      QWEN_HOME: join(home, ".qwen"),
-      ...selected,
-      CALLER_UNRELATED_SETTING: "do not copy",
-      QORVEX_UNKNOWN_SETTING: "do not copy",
-      QORVEX_PROCESS_RUN_ID: "do not copy",
-      QORVEX_TOKEN: "do not copy",
-      HOPPER_TARGET_PATH: "do not copy",
-    };
-    const run = () =>
-      cli.run({
-        arguments: [
-          "setup",
-          "--client",
-          "qwen_code",
-          "--skill=false",
-          "--yes",
-          "--json",
-        ],
-        cwd: home,
-        environment,
-      });
-    const setup = await run();
-    expect(setup.exitCode, setup.stdout).toBe(0);
-    const configured = await readFile(config, "utf8");
-    expect(JSON.parse(configured)).toMatchObject({
-      mcpServers: { qorvex: { env: selected } },
-    });
-    expect(configured).not.toContain("do not copy");
-    // A later setup must update a selection rather than retaining the first value.
-    selected.QORVEX_MCP_TOOL_FAMILIES = "session,application";
-    environment.QORVEX_MCP_TOOL_FAMILIES = selected.QORVEX_MCP_TOOL_FAMILIES;
-    selected.QORVEX_OBJDUMP_COMMAND = join(home, "replacement-objdump");
-    environment.QORVEX_OBJDUMP_COMMAND = selected.QORVEX_OBJDUMP_COMMAND;
-    selected.HOPPER_LOADER_ARGS_JSON = "[]";
-    environment.HOPPER_LOADER_ARGS_JSON = selected.HOPPER_LOADER_ARGS_JSON;
-    // Empty headless heap explicitly selects the lower-priority caller value.
-    selected.GHIDRA_HEADLESS_MAXMEM = "";
-    selected.GHIDRA_MAXMEM = "768M";
-    environment.GHIDRA_HEADLESS_MAXMEM = selected.GHIDRA_HEADLESS_MAXMEM;
-    environment.GHIDRA_MAXMEM = selected.GHIDRA_MAXMEM;
-    const updated = await run();
-    expect(updated.exitCode, updated.stdout).toBe(0);
-    const updatedConfiguration = await readFile(config, "utf8");
-    expect(JSON.parse(updatedConfiguration)).toMatchObject({
-      mcpServers: { qorvex: { env: selected } },
-    });
-    expect(updatedConfiguration).not.toContain("do not copy");
-    const repeated = await run();
-    expect(repeated.exitCode, repeated.stdout).toBe(0);
-    expect(repeated.json).toMatchObject({
-      plannedActions: [],
-      appliedActions: [],
-    });
-    expect(await readFile(config, "utf8")).toBe(updatedConfiguration);
-  },
-);
+const selectedProviderEnvironment = (home: string) => ({
+  HOPPER_LAUNCHER_PATH: join(home, "missing-hopper"),
+  HOPPER_LOADER_ARGS_JSON: '["", "--loader", "Mach-O"]',
+  GHIDRA_INSTALL_DIR: join(home, "offline-ghidra"),
+  GHIDRA_HEADLESS_MAXMEM: "512M",
+  GHIDRA_MAXMEM: "3G",
+  JAVA_HOME: join(home, "offline-jdk"),
+  QORVEX_IDA_MCP_CONFIG: join(home, "offline-ida.json"),
+  QORVEX_JADX_MCP_JAR: join(home, "offline-jadx.jar"),
+  QORVEX_KUNA_COMMAND: join(home, "offline-kuna"),
+  QORVEX_ADB_PATH: join(home, "offline-adb"),
+  QORVEX_APKTOOL_COMMAND: join(home, "offline-apktool"),
+  QORVEX_TSHARK_COMMAND: join(home, "offline-tshark"),
+  QORVEX_CAPINFOS_COMMAND: join(home, "offline-capinfos"),
+  QORVEX_TSHARK_PRLIMIT_COMMAND: join(home, "offline-prlimit"),
+  QORVEX_OBJDUMP_COMMAND: join(home, "offline-objdump"),
+  QORVEX_GDB_COMMAND: join(home, "offline-gdb"),
+  QORVEX_RIZIN_COMMAND: join(home, "offline-rizin"),
+  QORVEX_CUTTER_BRIDGE_DIR: join(home, "cutter-bridge"),
+  QORVEX_WABT_BIN_DIRECTORY: join(home, "wabt"),
+  QORVEX_WAKARU_COMMAND: join(home, "offline-wakaru"),
+  QORVEX_JAVASCRIPT_PRLIMIT_COMMAND: join(home, "javascript-prlimit"),
+  QORVEX_BINWALK_COMMAND: join(home, "offline-binwalk"),
+  QORVEX_UNBLOB_COMMAND: join(home, "offline-unblob"),
+  QORVEX_FIRMWARE_PRLIMIT_COMMAND: join(home, "firmware-prlimit"),
+  QORVEX_EVM_PRLIMIT_COMMAND: join(home, "evm-prlimit"),
+  QORVEX_SIGROK_COMMAND: join(home, "offline-sigrok"),
+  QORVEX_SIGROK_PRLIMIT_COMMAND: join(home, "sigrok-prlimit"),
+  QORVEX_MITMDUMP_COMMAND: join(home, "offline-mitmdump"),
+  QORVEX_BROWSER_EXECUTABLE: join(home, "offline-chromium"),
+  QORVEX_BROWSER_NO_SANDBOX: "false",
+  QORVEX_PWNTOOLS_PYTHON: join(home, "offline-python"),
+  QORVEX_PWNTOOLS_MAX_INPUT_BYTES: "67108864",
+  QORVEX_PWNDBG_GDB: join(home, "pwndbg-gdb"),
+  QORVEX_PWNDBG_GDBINIT: join(home, "pwndbg-gdbinit"),
+  QORVEX_PWNDBG_VENV_PATH: join(home, "pwndbg-venv"),
+  ...(process.platform === "darwin"
+    ? {}
+    : {
+        QORVEX_DARWIN_SWIFTC_PATH: join(home, "offline-swiftc"),
+        QORVEX_DARWIN_MODULE_CACHE_PATH: join(home, "swift-module-cache"),
+        SDKROOT: join(home, "macos-sdk"),
+      }),
+  QORVEX_SWIFTC_COMPILE_TIMEOUT_MS: "180000",
+  QORVEX_LOG_LEVEL: "warn",
+  QORVEX_ASAR_MAX_LISTING_BYTES: "134217728",
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS: "6000",
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_INPUTS_PER_OPERATION: "128",
+  QORVEX_GHIDRA_VALUE_FLOW_MAX_EDGES: "24000",
+  QORVEX_GHIDRA_DECOMPILE_MAX_PAYLOAD_MIB: "128",
+  QORVEX_REFERENCE_SECRET_PATTERNS_JSON: '["explicit-private-value"]',
+  QORVEX_ANALYSIS_PROVIDER: "ghidra",
+  QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
+  QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "off",
+  QORVEX_MCP_MAX_RESPONSE_BYTES: "20971520",
+  QORVEX_MCP_TOOL_FAMILIES: "session",
+});
 
 cliTest(
-  "persists, updates and validates tool-family scopes without losing client configuration",
+  "retains selected Qwen settings across new, updated and refused registrations",
   async ({ cli }) => {
     const config = join(home, ".qwen/settings.json");
-    const foreign = { command: "foreign-tool", args: ["keep"] };
-    const original = JSON.stringify({ mcpServers: { foreign } });
-    await mkdir(dirname(config), { recursive: true });
-    await writeFile(config, original);
-    const environment = {
-      HOME: home,
-      USERPROFILE: home,
-      QWEN_HOME: join(home, ".qwen"),
-      ...missingHopperAndGhidraEnvironment(home),
-      QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
-      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
-    };
-    const run = (families: string) =>
+    const selected = selectedProviderEnvironment(home);
+    const run = (values: typeof selected, families?: string) =>
       cli.run({
         arguments: [
           "setup",
           "--client",
           "qwen_code",
-          "--tool-families",
-          families,
           "--skill=false",
           "--yes",
           "--json",
+          ...(families === undefined ? [] : ["--tool-families", families]),
         ],
         cwd: home,
-        environment,
-      });
-    const first = await run("session");
-    expect(first.exitCode, first.stdout).toBe(0);
-    expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(original);
-    const scope = "native,application,session";
-    const updated = await run(scope);
-    expect(updated.exitCode, updated.stdout).toBe(0);
-    const selected = await readFile(config, "utf8");
-    expect(JSON.parse(selected)).toMatchObject({
-      mcpServers: {
-        foreign,
-        qorvex: {
-          env: {
-            QORVEX_MCP_TOOL_FAMILIES: scope,
-            QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
-            QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
-          },
+        environment: {
+          HOME: home,
+          USERPROFILE: home,
+          QWEN_HOME: dirname(config),
+          ...values,
+          CALLER_UNRELATED_SETTING: "do not copy",
+          QORVEX_UNKNOWN_SETTING: "do not copy",
+          QORVEX_PROCESS_RUN_ID: "do not copy",
+          QORVEX_TOKEN: "do not copy",
+          HOPPER_TARGET_PATH: "do not copy",
         },
-      },
+      });
+    const setup = await run(selected);
+    expect(setup.exitCode, setup.stdout).toBe(0);
+    const configured = await readFile(config, "utf8");
+    expect(configured).not.toContain("do not copy");
+    expect(
+      effectiveClientServer(
+        parseClientConfiguration(configured, "json"),
+        "qorvex",
+      ),
+    ).toHaveProperty("env", selected);
+
+    const foreign = { command: "foreign-tool", args: ["keep"] };
+    const document = JSON.parse(configured) as {
+      mcpServers: Record<string, unknown>;
+    };
+    document.mcpServers.foreign = foreign;
+    const original = JSON.stringify(document);
+    await writeFile(config, original);
+
+    const changed = {
+      ...selected,
+      QORVEX_OBJDUMP_COMMAND: join(home, "replacement-objdump"),
+      HOPPER_LOADER_ARGS_JSON: "[]",
+      // Empty headless heap explicitly selects the lower-priority caller value.
+      GHIDRA_HEADLESS_MAXMEM: "",
+      GHIDRA_MAXMEM: "768M",
+      QORVEX_MCP_OUTPUT_SCHEMA_PROFILE: "compact",
+    };
+    const scope = "native,application,session";
+    const updated = await run(changed, scope);
+    expect(updated.exitCode, updated.stdout).toBe(0);
+    const saved = await readFile(config, "utf8");
+    expect(saved).not.toContain("do not copy");
+    const parsed = parseClientConfiguration(saved, "json");
+    expect(effectiveClientServer(parsed, "foreign")).toEqual(foreign);
+    expect(effectiveClientServer(parsed, "qorvex")).toHaveProperty("env", {
+      ...changed,
+      QORVEX_MCP_TOOL_FAMILIES: scope,
     });
-    const backup = await readFile(`${config}.qorvex.backup`, "utf8");
-    const repeated = await run(scope);
+    const backup = `${config}.qorvex.backup`;
+    expect(await readFile(backup, "utf8")).toBe(original);
+
+    const repeated = await run(changed, scope);
     expect(repeated.exitCode, repeated.stdout).toBe(0);
     expect(repeated.json).toMatchObject({
       plannedActions: [],
       appliedActions: [],
     });
-    const rejected = await run("session,typo");
+    expect(await readFile(config, "utf8")).toBe(saved);
+
+    const rejected = await run(changed, "session,typo");
     expect(rejected.exitCode).not.toBe(0);
     expect(rejected.stdout + rejected.stderr).toContain(
       "QORVEX_MCP_TOOL_FAMILIES",
     );
-    expect(await readFile(config, "utf8")).toBe(selected);
-    expect(await readFile(`${config}.qorvex.backup`, "utf8")).toBe(backup);
+    expect(await readFile(config, "utf8")).toBe(saved);
+    expect(await readFile(backup, "utf8")).toBe(original);
   },
 );
 
@@ -364,6 +323,7 @@ cliTest.for([
       DSH_HOME: join(home, ".dsh"),
       ...missingHopperAndGhidraEnvironment(home),
     };
+    const valueMarker = "reaNulFixtureValue_6c04e2";
     const registration = (env: Readonly<Record<string, string>>) => {
       const entry = clientRegistrationEntry(
         scenario.format,
@@ -377,7 +337,7 @@ cliTest.for([
         entry.env = Object.fromEntries(
           Object.entries(env).map(([key, value]) => {
             if (!key.includes("\0")) return [key, value];
-            const expression = new Scalar("process.env.CALLER_SETTING");
+            const expression = new Scalar(`process.env.${valueMarker}`);
             expression.tag = "tag:yaml.org,2002:js";
             return [key, expression];
           }),
@@ -396,12 +356,12 @@ cliTest.for([
           ])
         : JSON.stringify({ mcpServers: { qorvex: entry } });
     };
-    const valueMarker = "reaNulFixtureValue_6c04e2";
     const original = registration(
       scenario.position === "value"
         ? { CALLER_SETTING: `${valueMarker}\0value` }
         : { ["CALLER\0SETTING"]: `${valueMarker} value` },
     );
+    expect(original).toContain(valueMarker);
     await writeFile(config, original);
     const doctor = await cli.run({
       arguments: [
@@ -444,12 +404,15 @@ cliTest.for([
       appliedActions: [],
       remediation: expect.stringContaining("NUL"),
     });
-    expect(setup.stdout + doctor.stdout).not.toContain(valueMarker);
+    expect(
+      setup.stdout + setup.stderr + doctor.stdout + doctor.stderr,
+    ).not.toContain(valueMarker);
     expect(await readFile(config, "utf8")).toBe(original);
     await expect(access(`${config}.qorvex.backup`)).rejects.toMatchObject({
       code: "ENOENT",
     });
 
+    if (scenario.position !== "value") return;
     const repaired = registration({
       CALLER_SETTING: "ordinary\nvalue=二\t",
       EMPTY_SETTING: "",
@@ -666,7 +629,8 @@ cliTest(
     });
     expect(await readFile(lower, "utf8")).toBe(lowerContent);
     expect(await readFile(upper, "utf8")).toBe(upperContent);
-    await writeFile(lower, content({ CALLER_SETTING: "retained" }));
+    const withoutLanguage = content({ CALLER_SETTING: "retained" });
+    await writeFile(lower, withoutLanguage);
     const missing = await run([
       "setup",
       "--client",
@@ -690,6 +654,7 @@ cliTest(
         ]),
       },
     });
+    expect(await readFile(lower, "utf8")).toBe(withoutLanguage);
     expect(await readFile(upper, "utf8")).toBe(upperContent);
     for (const path of [lower, upper])
       await expect(access(`${path}.qorvex.backup`)).rejects.toMatchObject({
@@ -706,12 +671,7 @@ cliTest(
     await Promise.all(
       [codexHome, kimiHome].map((path) => mkdir(path, { recursive: true })),
     );
-    const environment = {
-      HOME: home,
-      USERPROFILE: home,
-      XDG_CONFIG_HOME: join(home, ".config"),
-      CODEX_HOME: codexHome,
-      KIMI_CODE_HOME: kimiHome,
+    const selected = {
       ...missingHopperAndGhidraEnvironment(home),
       QORVEX_ANALYSIS_PROVIDER: "auto",
       QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
@@ -726,6 +686,14 @@ cliTest(
       QORVEX_MCP_TOOLS_LIST_BUDGET_MS: "6000",
       QORVEX_MCP_FIRST_CATALOG_BUDGET_MS: "21000",
       QORVEX_MCP_DOCTOR_DEADLINE_MS: "31000",
+    };
+    const environment = {
+      HOME: home,
+      USERPROFILE: home,
+      XDG_CONFIG_HOME: join(home, ".config"),
+      CODEX_HOME: codexHome,
+      KIMI_CODE_HOME: kimiHome,
+      ...selected,
       QORVEX_UNRELATED_MARKER: "do-not-persist",
     };
     const run = (arguments_: readonly string[]) =>
@@ -735,7 +703,20 @@ cliTest(
         environment,
       });
 
-    for (const client of ["codex", "kimi"] as const) {
+    for (const [client, config, format, timeout] of [
+      [
+        "codex",
+        join(codexHome, "config.toml"),
+        "toml",
+        { tool_timeout_sec: 3021 },
+      ],
+      [
+        "kimi",
+        join(kimiHome, "mcp.json"),
+        "kimi",
+        { toolTimeoutMs: 3_020_003 },
+      ],
+    ] as const) {
       const setup = await run([
         "setup",
         "--client",
@@ -745,53 +726,15 @@ cliTest(
       ]);
       expect(setup.exitCode, setup.stderr).toBe(0);
       expect(setup.json).toMatchObject({ status: "ready" });
+      const text = await readFile(config, "utf8");
+      expect(text).not.toContain("QORVEX_UNRELATED_MARKER");
+      const registration = effectiveClientServer(
+        parseClientConfiguration(text, format),
+        "qorvex",
+      );
+      expect(registration).toMatchObject(timeout);
+      expect(registration).toHaveProperty("env", selected);
     }
-
-    const codexConfig = await readFile(join(codexHome, "config.toml"), "utf8");
-    const codexRegistration = effectiveClientServer(
-      parseClientConfiguration(codexConfig, "toml"),
-      "qorvex",
-    );
-    expect(codexRegistration).toMatchObject({ tool_timeout_sec: 3021 });
-    expect(codexConfig).toContain('QORVEX_BRIDGE_MAX_REQUEST_BYTES = "33554432"');
-    expect(codexConfig).toContain('QORVEX_JEB_MCP_TIMEOUT_MS = "2900003"');
-    expect(codexConfig).toContain(
-      'QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB = "256"',
-    );
-    expect(codexConfig).toContain('QORVEX_REGEX_MATCHING_DEADLINE_MS = "10000"');
-    expect(codexConfig).toContain('QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB = "256"');
-    expect(codexConfig).toContain('QORVEX_MCP_INITIALIZE_BUDGET_MS = "16000"');
-    expect(codexConfig).toContain('QORVEX_MCP_TOOLS_LIST_BUDGET_MS = "6000"');
-    expect(codexConfig).toContain('QORVEX_MCP_FIRST_CATALOG_BUDGET_MS = "21000"');
-    expect(codexConfig).toContain('QORVEX_MCP_DOCTOR_DEADLINE_MS = "31000"');
-    expect(codexConfig).not.toContain("QORVEX_UNRELATED_MARKER");
-
-    const kimiPath = join(kimiHome, "mcp.json");
-    const kimiRegistration = effectiveClientServer(
-      parseClientConfiguration(await readFile(kimiPath, "utf8"), "kimi"),
-      "qorvex",
-    );
-    expect(kimiRegistration).toMatchObject({
-      toolTimeoutMs: 3_020_003,
-      env: {
-        QORVEX_ANALYSIS_PROVIDER: "auto",
-        QORVEX_BRIDGE_MAX_REQUEST_BYTES: "33554432",
-        QORVEX_GHIDRA_STARTUP_TIMEOUT_MS: "2700001",
-        QORVEX_HOPPER_STARTUP_TIMEOUT_MS: "2800002",
-        QORVEX_JEB_MCP_TIMEOUT_MS: "2900003",
-        QORVEX_MCP_INPUT_SCHEMA_PROFILE: "compact",
-        QORVEX_CAPTURE_DECODER_OLD_GENERATION_MIB: "256",
-        QORVEX_REGEX_MATCHING_DEADLINE_MS: "10000",
-        QORVEX_REGEX_WORKER_HEAP_REQUEST_MIB: "256",
-        QORVEX_MCP_INITIALIZE_BUDGET_MS: "16000",
-        QORVEX_MCP_TOOLS_LIST_BUDGET_MS: "6000",
-        QORVEX_MCP_FIRST_CATALOG_BUDGET_MS: "21000",
-        QORVEX_MCP_DOCTOR_DEADLINE_MS: "31000",
-      },
-    });
-    expect(await readFile(kimiPath, "utf8")).not.toContain(
-      "QORVEX_UNRELATED_MARKER",
-    );
 
     const doctor = await run(["doctor", "--client", "kimi"]);
     expect(doctor.exitCode, doctor.stderr).toBe(0);
@@ -873,6 +816,18 @@ ${lookup}`;
       });
     }
 
+    const recoveryFiles = async () =>
+      Promise.all(
+        (await readdir(dirname(cordis)))
+          .filter((name) => name.startsWith("cordis.patch.yml.qorvex"))
+          .sort()
+          .map(async (name) => [
+            name,
+            await readFile(join(dirname(cordis), name), "utf8"),
+          ]),
+      );
+    const backups = await recoveryFiles();
+
     const unresolvedLocator = registration(
       "          XDG_CONFIG_HOME: !!js process.env.XDG_CONFIG_HOME\n",
     );
@@ -883,6 +838,7 @@ ${lookup}`;
       remediation: expect.stringContaining("XDG_CONFIG_HOME"),
     });
     expect(await readFile(cordis, "utf8")).toBe(unresolvedLocator);
+    expect(await recoveryFiles()).toEqual(backups);
 
     // With no explicit IDA file or config root, the saved lookup needs the home setting.
     const unknown = registration();
@@ -906,6 +862,7 @@ ${lookup}`;
       remediation: expect.stringContaining(homeSetting),
     });
     expect(await readFile(cordis, "utf8")).toBe(unknown);
+    expect(await recoveryFiles()).toEqual(backups);
   },
 );
 
