@@ -83,7 +83,6 @@ cliTest(
     // A foreign later fragment can inherit fields from an owned V1 entry.
     const ownedLegacy = JSON.stringify({
       mcp: {
-        servers: {},
         qorvex: {
           type: "local",
           command: [PRODUCT_IDENTITY.cliBinary, "mcp"],
@@ -92,7 +91,7 @@ cliTest(
       },
     });
     const foreignPartial = JSON.stringify({
-      mcp: { servers: { qorvex: { command: ["/usr/bin/false"] } } },
+      mcp: { qorvex: { command: ["/usr/bin/false"] } },
     });
     await writeFile(lower, ownedLegacy);
     await writeFile(upper, foreignPartial);

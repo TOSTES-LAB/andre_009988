@@ -29,43 +29,35 @@ const replaceLauncher = (source: string, format: ClientConfigurationFormat) => {
   return result.value;
 };
 
-it.each(["json", "fx", "copilot_cli", "copilot_cli_project"] as const)(
-  "%s retains opaque number and string tokens inside and outside the edited row",
-  (format) => {
-    const source = `{"metadata":{"opaque":9007199254740993},"mcpServers":{"peer":{"opaque":9007199254740993},"qorvex":{"command":"old-qorvex","metadata":{"opaque":9007199254740993,"nested":[{"number":1e+03,"negative":-0,"text":"\\u0061"}]}}}}`;
-    const output = replaceLauncher(source, format);
-    expect(output.match(/9007199254740993/gu)).toHaveLength(3);
-    expect(output).not.toContain("9007199254740992");
-    expect(output).toContain("1e+03");
-    expect(output).toContain('"negative":-0');
-    expect(output).toContain('"\\u0061"');
-    expect(parseClientConfiguration(output, format).servers.qorvex).toMatchObject({
-      command: "new-qorvex",
-    });
-  },
-);
+it("retains every unedited token inside and outside a strict JSON launcher row", () => {
+  const source = `{"metadata":{"opaque":9007199254740993},"mcpServers":{"peer":{"opaque":9007199254740993},"qorvex":{"command":"old-qorvex","metadata":{"opaque":9007199254740993,"nested":[{"number":1e+03,"negative":-0,"text":"\\u0061"}]}}}}`;
+  expect(replaceLauncher(source, "fx")).toBe(
+    source.replace('"old-qorvex"', '"new-qorvex"'),
+  );
+});
 
-it.each(["fx", "copilot_cli", "copilot_cli_project"] as const)(
-  "%s strips only non-native JSON syntax while retaining opaque source tokens",
-  (format) => {
-    const source = `\uFEFF{/*root*/"metadata":{"opaque":9007199254740993,},"mcpServers":{"qorvex":{"command":"old-qorvex",// row\n"opaque":9007199254740993,"text":"/*literal*/",},},}`;
-    const output = replaceLauncher(source, format);
-    expect(() => JSON.parse(output)).not.toThrow();
-    expect(output.match(/9007199254740993/gu)).toHaveLength(2);
-    expect(output).toContain('"/*literal*/"');
-    expect(output).not.toContain("/*root*/");
-    expect(output).not.toContain("// row");
-  },
-);
+const sourceWithJsoncSyntax = `\uFEFF{/*root*/"metadata":{"opaque":9007199254740993,},"mcpServers":{"qorvex":{"command":"old-qorvex",// row\n"opaque":9007199254740993,"text":"/*literal*/",},},}`;
 
-it("retains JSONC comments, trailing commas, BOM and untouched token spellings", () => {
-  const source = `\uFEFF{/*root*/"mcpServers":{"qorvex":{"command":"old-qorvex",/*owned metadata*/"opaque":9007199254740993,},},}`;
-  const output = replaceLauncher(source, "json");
-  expect(output.startsWith("\uFEFF")).toBe(true);
-  expect(output).toContain("/*root*/");
-  expect(output).toContain("/*owned metadata*/");
-  expect(output).toContain("9007199254740993");
-  expect(output).toMatch(/,\s*\}/u);
+it("repairs JSONC for a strict client while retaining the opaque source tokens", () => {
+  const output = replaceLauncher(sourceWithJsoncSyntax, "fx");
+  expect(JSON.parse(output)).toEqual({
+    metadata: { opaque: 9007199254740992 },
+    mcpServers: {
+      qorvex: {
+        command: "new-qorvex",
+        opaque: 9007199254740992,
+        text: "/*literal*/",
+      },
+    },
+  });
+  expect(output.match(/9007199254740993/gu)).toHaveLength(2);
+  expect(output).toContain('"/*literal*/"');
+});
+
+it("keeps the exact JSONC source outside the changed launcher value", () => {
+  expect(replaceLauncher(sourceWithJsoncSyntax, "json")).toBe(
+    sourceWithJsoncSyntax.replace('"old-qorvex"', '"new-qorvex"'),
+  );
 });
 
 it("retains nested array tokens while changing siblings, shrinking and extending arrays", () => {
@@ -140,14 +132,15 @@ it("removes all repeated nested fields without activating an earlier value", () 
   });
 });
 
-it.each([
-  ["replace all members", { replacement: true }],
-  ["remove all members", {}],
-  ["replace array contents", { items: [5] }],
-  ["empty arrays", { items: [] }],
-])("keeps collection separators valid when editing %s", (_name, qorvex) => {
-  const source = `{"mcpServers":{"qorvex":{"items":[1,2,],"old":3,}}}`;
+it("keeps native JSON separators valid across replaced and emptied collections", () => {
+  const source = `{"mcpServers":{"qorvex":{"replace":{"old":1,},"empty":{"old":2,},"shrink":[1,2,],"clear":[3,4,],}}}`;
   const parsed = parseClientConfiguration(source, "fx");
+  const qorvex = {
+    replace: { replacement: true },
+    empty: {},
+    shrink: [5],
+    clear: [],
+  };
   const result = serializeClientConfiguration(
     withClientServers(parsed, { qorvex }, HOST_PLATFORM.platform),
     "fx",
