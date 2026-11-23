@@ -1,4 +1,4 @@
-import { BinaryReader } from "./binaryContainer.js";
+import { BinaryReader, hasElfMagic } from "./binaryContainer.js";
 import {
   resolveMappedFileOffset,
   type FileMapping,
@@ -27,6 +27,7 @@ import { readPeSectionHeader } from "./peSectionHeader.js";
 import { isStrictUtf8 } from "./strictUtf8.js";
 import { readElfFixedHeader } from "./elfFixedHeader.js";
 import {
+  hasDosMzMagic,
   mzWindowsHeaderLayoutLimitation,
   parseMzHeaderEvidence,
   type MzHeaderEvidence,
@@ -118,13 +119,6 @@ export const PE_RECORD_HEADER_BYTES = 24;
 /** Bound the optional-header read used by structural PE admission. */
 export const MAX_PE_OPTIONAL_HEADER_BYTES = 4096;
 
-const hasElfMagic = (bytes: Buffer): boolean =>
-  bytes.length >= 4 &&
-  bytes[0] === 0x7f &&
-  bytes[1] === 0x45 &&
-  bytes[2] === 0x4c &&
-  bytes[3] === 0x46;
-
 /**
  * Whether leading bytes begin an executable header family that
  * `parseExecutableHeader` interprets, whether or not that header is valid.
@@ -136,7 +130,7 @@ export const claimsExecutableHeader = (
   (bytes.length >= 4 &&
     (hasElfMagic(bytes) ||
       readMachoHeaderPrefixFacts(bytes).format !== null)) ||
-  (bytes.length >= 2 && bytes[0] === 0x4d && bytes[1] === 0x5a) ||
+  hasDosMzMagic(bytes) ||
   readFatContainerHeader(bytes, fileSize).state !== "not-fat";
 
 /**
@@ -152,7 +146,7 @@ export const parseExecutableHeader = (
   fatEvidence?: FatSliceHeaderEvidence,
 ): Result<ExecutableMetadata, string> => {
   if (hasElfMagic(bytes)) return parseElf(bytes, fileSize);
-  if (bytes.length >= 2 && bytes[0] === 0x4d && bytes[1] === 0x5a)
+  if (hasDosMzMagic(bytes))
     return parseMzExecutableMetadata(
       bytes,
       parseMzHeaderEvidence(bytes, fileSize, mzWindowsHeaderSignature),

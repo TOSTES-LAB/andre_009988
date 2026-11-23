@@ -24,8 +24,7 @@ import { MANAGED_TOOL_CONTRACTS } from "../contracts/managed/managedToolContract
 import { promptsForToolFamilies } from "../contracts/promptToolFamilyScope.js";
 import { retainedDebuggerDiagnostics } from "../process/ownedDebuggerCleanupError.js";
 import { snapshotEnvironment } from "../process/snapshotEnvironment.js";
-import { captureProviderEnvironment } from "./providerEnvironment.js";
-import { createByteEntropyService } from "../composition/binaryDiagnostics.js";
+import { createByteEntropyService } from "../composition/binaryDiagnostics/byteEntropy.js";
 import { FridaInstrumentationService } from "../application/frida/FridaInstrumentationService.js";
 import { EvidenceMcpServer } from "./EvidenceMcpServer.js";
 import { catalogIdentityForToolFamilies } from "../contracts/catalog/catalogIdentity.js";
@@ -46,10 +45,10 @@ import { silentLogger } from "../logger.js";
 import type { Logger } from "pino";
 import { JavaScriptRecoveryService } from "../application/javascript/JavaScriptRecoveryService.js";
 import { AndroidAnalysisService } from "../application/android/AndroidAnalysisService.js";
-import { JebAnalysisService } from "../application/jeb/JebAnalysisService.js";
-import { PcapAnalysisService } from "../application/pcap/PcapAnalysisService.js";
-import { ApktoolResourceAnalysisService } from "../application/apktool/ApktoolResourceAnalysisService.js";
-import { FlutterBuildAnalysisService } from "../application/flutter/FlutterBuildAnalysisService.js";
+import { createJebAnalysisService } from "../application/ProviderOperationServices.js";
+import { createPcapAnalysisService } from "../application/ProviderOperationServices.js";
+import { createApktoolResourceAnalysisService } from "../application/ProviderOperationServices.js";
+import { createFlutterBuildAnalysisService } from "../application/ProviderOperationServices.js";
 import { AdbDeviceAnalysisService } from "../application/adb/AdbDeviceAnalysisService.js";
 import { registerGuidedPrompts } from "./registerPrompts.js";
 import { registerSessionTools } from "./registerSessionTools.js";
@@ -151,9 +150,8 @@ export const createServer = (
   );
   if (!catalogProfile.ok) throw catalogProfile.error;
   const advertisedToolFamilies = selectAdvertisedToolFamilies(environment);
-  const providerEnvironment = captureProviderEnvironment(
-    options.providerEnvironment,
-    environment,
+  const providerEnvironment = snapshotEnvironment(
+    options.providerEnvironment ?? environment,
     host.platform,
   );
   const baseDelivery = selectToolResultDelivery(environment, options.delivery);
@@ -502,14 +500,14 @@ export const createServer = (
     pcap: () => {
       registerServiceTools(
         server,
-        { pcapAnalysis: new PcapAnalysisService(pcap) },
+        { pcapAnalysis: createPcapAnalysisService(pcap) },
         contractTools,
       );
     },
     flutter: () => {
       registerServiceTools(
         server,
-        { flutterAnalysis: new FlutterBuildAnalysisService(flutter) },
+        { flutterAnalysis: createFlutterBuildAnalysisService(flutter) },
         contractTools,
       );
     },
@@ -524,13 +522,13 @@ export const createServer = (
     apktool: () =>
       registerServiceTools(
         server,
-        { apktoolAnalysis: new ApktoolResourceAnalysisService(apktool) },
+        { apktoolAnalysis: createApktoolResourceAnalysisService(apktool) },
         contractTools,
       ),
     jeb: () =>
       registerServiceTools(
         server,
-        { jebAnalysis: new JebAnalysisService(jeb) },
+        { jebAnalysis: createJebAnalysisService(jeb) },
         contractTools,
       ),
     adb: () =>

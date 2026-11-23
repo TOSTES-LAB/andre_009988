@@ -1,4 +1,4 @@
-import type { UefiAnalysisService } from "../application/uefi/UefiAnalysisService.js";
+import type { UefiAnalysisService } from "../application/ProviderOperationServices.js";
 import type { MavenGradleMetadataService } from "../application/java/MavenGradleMetadataService.js";
 
 import type { NugetNupkgService } from "../application/nuget/NugetNupkgService.js";
@@ -21,10 +21,14 @@ import { javascriptSourceAnalysis } from "../composition/javascriptSourceAnalysi
 import { analysisSettingsConstraints } from "./analysisSettingsConstraints.js";
 import type { ToolResultDelivery } from "./ToolResultDelivery.js";
 import type { AndroidAnalysisService } from "../application/android/AndroidAnalysisService.js";
-import { inspectAndroidJniBindings } from "../application/android/AndroidJniInspection.js";
-import { inspectAndroidPackage } from "../application/android/AndroidPackageInspection.js";
-import { inspectAndroidSymbol } from "../application/android/AndroidSymbolInspection.js";
 import {
+  androidJniInspectionInputSchema,
+  androidPackageInspectionInputSchema,
+  androidSymbolInspectionInputSchemas,
+} from "../domain/android/androidAnalysis.js";
+import { dartAotInspectionInputSchema } from "../domain/flutter/flutterBuildAnalysis.js";
+import {
+  executeRetainedSummaryOperation,
   inspectAnalysisView,
   projectRetainedAnalysis,
   requireAnalysisViewRetention,
@@ -34,7 +38,7 @@ import {
 import { z } from "zod";
 import { analysisViewSourceSchema } from "../domain/analysisView/analysisViewRequest.js";
 import type { ApkSignatureService } from "../application/apkSignature/ApkSignatureService.js";
-import type { ApktoolResourceAnalysisService } from "../application/apktool/ApktoolResourceAnalysisService.js";
+import type { ApktoolResourceAnalysisService } from "../application/ProviderOperationServices.js";
 import type { DesktopApplicationService } from "../application/artifacts/DesktopApplicationService.js";
 import type { AppleIpsService } from "../application/binaryDiagnostics/AppleIpsService.js";
 import type { BinaryHardeningService } from "../application/binaryDiagnostics/BinaryHardeningService.js";
@@ -57,8 +61,7 @@ import type { PacketCaptureService } from "../application/captures/PacketCapture
 import type { BeamService } from "../application/erlang/BeamService.js";
 import type { EvmInterfaceService } from "../application/evm/EvmInterfaceService.js";
 import type { FirmwareAnalysisService } from "../application/firmware/FirmwareAnalysisService.js";
-import { inspectDartAot } from "../application/flutter/DartAotInspection.js";
-import type { FlutterBuildAnalysisService } from "../application/flutter/FlutterBuildAnalysisService.js";
+import type { FlutterBuildAnalysisService } from "../application/ProviderOperationServices.js";
 import type { GoBinaryService } from "../application/go/GoBinaryService.js";
 import type { GpuCodeObjectsService } from "../application/gpu/GpuCodeObjectsService.js";
 import type { Il2cppMetadataService } from "../application/il2cpp/Il2cppMetadataService.js";
@@ -67,9 +70,9 @@ import {
   recordEvidenceSources,
 } from "../application/investigation/recordEvidenceSources.js";
 import type { JavaScriptRecoveryService } from "../application/javascript/JavaScriptRecoveryService.js";
-import type { JebAnalysisService } from "../application/jeb/JebAnalysisService.js";
+import type { JebAnalysisService } from "../application/ProviderOperationServices.js";
 import type { ModelArtifactService } from "../application/model/ModelArtifactService.js";
-import type { PcapAnalysisService } from "../application/pcap/PcapAnalysisService.js";
+import type { PcapAnalysisService } from "../application/ProviderOperationServices.js";
 import type { PythonPycService } from "../application/python/PythonPycService.js";
 import type { ReleaseExposureService } from "../application/releaseExposure/ReleaseExposureService.js";
 import type { RustBinaryService } from "../application/rust/RustBinaryService.js";
@@ -113,10 +116,12 @@ import {
   settledExecution,
   sourceToBundleComparisonExecution,
 } from "../application/ApplicationToolExecutions.js";
-import { projectAndroidApplicationEvidence } from "../application/android/AndroidApplicationService.js";
+import {
+  projectAndroidApplicationEvidence,
+  projectAppleApplicationEvidence,
+  projectHarmonyApplicationEvidence,
+} from "../application/InventoryProjectionEvidence.js";
 import { inspectApiContractEvidence } from "../application/apiContract/ApiContractService.js";
-import { projectAppleApplicationEvidence } from "../application/apple/AppleApplicationService.js";
-import { projectHarmonyApplicationEvidence } from "../application/harmony/HarmonyApplicationService.js";
 import type { EvidenceWorkflowExecution } from "../application/investigation/EvidenceWorkflowExecution.js";
 import type { InvestigationWorkflowExecution } from "../application/investigation/InvestigationWorkflows.js";
 import { traceApplicationFeatureEvidence } from "../application/javascript/JavaScriptApplicationWorkflowService.js";
@@ -721,7 +726,14 @@ const SERVICE_TOOL_BINDINGS = {
     inspect_dart_aot: {
       admission: "sdk",
       run: (input, options) =>
-        inspectDartAot(service, input, retention, options),
+        executeRetainedSummaryOperation(
+          service,
+          "inspect_dart_aot",
+          dartAotInspectionInputSchema,
+          input,
+          retention,
+          options,
+        ),
     },
   })) satisfies Bind<FlutterBuildAnalysisService>,
   androidAnalysis: ((service, retention) => ({
@@ -732,19 +744,34 @@ const SERVICE_TOOL_BINDINGS = {
     inspect_android_package: {
       admission: "sdk",
       run: (input, options) =>
-        inspectAndroidPackage(service, input, retention, options),
+        executeRetainedSummaryOperation(
+          service,
+          "inspect_android_package",
+          androidPackageInspectionInputSchema,
+          input,
+          retention,
+          options,
+        ),
     },
     inspect_android_jni_bindings: {
       admission: "sdk",
       run: (input, options) =>
-        inspectAndroidJniBindings(service, input, retention, options),
+        executeRetainedSummaryOperation(
+          service,
+          "inspect_android_jni_bindings",
+          androidJniInspectionInputSchema,
+          input,
+          retention,
+          options,
+        ),
     },
     inspect_android_class: {
       admission: "sdk",
       run: (input, options) =>
-        inspectAndroidSymbol(
+        executeRetainedSummaryOperation(
           service,
           "inspect_android_class",
+          androidSymbolInspectionInputSchemas.inspect_android_class,
           input,
           retention,
           options,
@@ -753,9 +780,10 @@ const SERVICE_TOOL_BINDINGS = {
     inspect_android_method: {
       admission: "sdk",
       run: (input, options) =>
-        inspectAndroidSymbol(
+        executeRetainedSummaryOperation(
           service,
           "inspect_android_method",
+          androidSymbolInspectionInputSchemas.inspect_android_method,
           input,
           retention,
           options,
@@ -1729,7 +1757,10 @@ const SERVICE_TOOL_BINDINGS = {
       admission: "sdk",
       value: async (input) =>
         jsonValueResult(
-          await service.listProcesses(fridaDeviceSelection(input)),
+          await service.listProcesses(fridaDeviceSelection(input), {
+            limit: input.limit,
+            offset: input.offset,
+          }),
         ),
     },
     start_frida_session: {

@@ -8,12 +8,14 @@ import {
   describeContractCommand,
   describeOperationChoices,
   describeContractDocumentCommand,
-  type ContractCliDescription,
-  type ContractCliParameter,
 } from "../../../src/cli/contractCliDescription.js";
+import type {
+  ContractCliDescription,
+  ContractCliParameter,
+} from "../../../src/cli/contractCliDescriptionTypes.js";
 import { BROWSER_TOOL_CONTRACTS } from "../../../src/contracts/browserToolContracts.js";
 import { passiveNetworkCapture } from "../../fixtures/passiveNetworkCapture.js";
-import { contractInputBranch } from "../../../src/cli/contractCommand.js";
+import { contractInputBranch } from "../../../src/cli/routedContractCommand.js";
 import { jsonInputContentSchema } from "../../../src/cli/jsonInputArgument.js";
 import {
   cliCommands,
