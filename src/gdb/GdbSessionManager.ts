@@ -13,7 +13,6 @@ import { ArtifactResourceScope } from "../resources/index.js";
 import { analysisErrorWithCleanupFailure } from "../domain/analysisErrorCleanup.js";
 import type { JsonValue } from "../domain/jsonValue.js";
 import { commandMayChangeInferiorOutput } from "./GdbCommandClassification.js";
-export { gdbOneShotCommandMayInvalidateDetachProof } from "./GdbCommandClassification.js";
 import {
   gdbThreadGroupPids,
   miQuote,
@@ -29,7 +28,7 @@ import {
 } from "./GdbProviderIdentity.js";
 import { persistentDebuggerHostSupported } from "../process/PersistentDebuggerHost.js";
 import { HOST_PLATFORM } from "../platform/HostPlatform.js";
-import { AbortedWait, waitForAbortable } from "../process/AbortablePromise.js";
+import { waitForCommandTurn } from "../process/AbortablePromise.js";
 import {
   describeLaunchFailure,
   launcherFailureOf,
@@ -1522,7 +1521,7 @@ export class GdbSessionManager {
       release = resolve;
     });
     try {
-      await waitForGdbCommandTurn(previous, signal);
+      await waitForCommandTurn(previous, signal, "gdb_console");
       acquired = true;
       return await operation();
     } finally {
@@ -2244,15 +2243,3 @@ export class GdbSessionManager {
     }
   }
 }
-
-/** Await a serialized command turn, preserving the caller's cancellation reason. */
-const waitForGdbCommandTurn = (
-  previous: Promise<void>,
-  signal?: AbortSignal,
-): Promise<void> => {
-  if (signal === undefined) return previous;
-  return waitForAbortable(previous, signal).then((outcome) => {
-    if (outcome instanceof AbortedWait)
-      throw cancelledBy("gdb_console", outcome);
-  });
-};
