@@ -1,3 +1,4 @@
+import { expectResultValue } from "../../tests/support/expectResultValue.js";
 import { HOST_PLATFORM } from "../platform/HostPlatform.js";
 import { describe, expect, it } from "vitest";
 import { parse as parseJsonc, type ParseError } from "jsonc-parser";
@@ -19,7 +20,7 @@ const removeRea = (
   format: ClientConfigurationFormat,
   options?: ClientConfigurationEditOptions,
 ) => {
-  const parsed = parseClientConfiguration(text, format);
+  const parsed = expectResultValue(parseClientConfiguration(text, format));
   const { qorvex: _removed, ...remaining } = parsed.servers;
   return serializeClientConfiguration(
     withClientServers(parsed, remaining, HOST_PLATFORM.platform),
@@ -51,7 +52,9 @@ describe("JSON client configuration repeated-member edits", () => {
       `"qorvex":${JSON.stringify(owned)},` +
       `"other":{"args":[1,2]},` +
       `"qorvex":${JSON.stringify(owned)}}}`;
-    const parsed = parseClientConfiguration(text, "claude_code");
+    const parsed = expectResultValue(
+      parseClientConfiguration(text, "claude_code"),
+    );
     const path = clientServerPath(parsed, "qorvex");
     const result = removeRea(text, "claude_code", {
       removeShadowedMembersAt: [path],
@@ -69,7 +72,7 @@ describe("JSON client configuration repeated-member edits", () => {
 
   it("does not apply repeat-removal authority to a different path", () => {
     const text = `{"mcpServers":{"qorvex":1,"qorvex":2,"peer":3,"peer":4}}`;
-    const parsed = parseClientConfiguration(text, "json");
+    const parsed = expectResultValue(parseClientConfiguration(text, "json"));
     const document = withClientServers(parsed, {}, HOST_PLATFORM.platform);
     const result = serializeClientConfiguration(
       document,

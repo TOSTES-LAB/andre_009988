@@ -1,3 +1,4 @@
+import { expectResultValue } from "../../tests/support/expectResultValue.js";
 import { HOST_PLATFORM } from "../platform/HostPlatform.js";
 import { describe, expect, it } from "vitest";
 
@@ -40,20 +41,22 @@ describe("MCP tool deadline allowance for a Ghidra decompile limit", () => {
 
   it("derives the registration allowance from QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS", () => {
     const details = clientRegistrationEnvironmentDetails(
-      parseClientConfiguration(
-        JSON.stringify({
-          mcpServers: {
-            qorvex: {
-              command: "qorvex",
-              args: ["mcp"],
-              env: {
-                QORVEX_ANALYSIS_PROVIDER: "ghidra",
-                QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: "600",
+      expectResultValue(
+        parseClientConfiguration(
+          JSON.stringify({
+            mcpServers: {
+              qorvex: {
+                command: "qorvex",
+                args: ["mcp"],
+                env: {
+                  QORVEX_ANALYSIS_PROVIDER: "ghidra",
+                  QORVEX_GHIDRA_DECOMPILE_TIMEOUT_SECONDS: "600",
+                },
               },
             },
-          },
-        }),
-        "json",
+          }),
+          "json",
+        ),
       ),
       undefined,
       HOST_PLATFORM.platform,

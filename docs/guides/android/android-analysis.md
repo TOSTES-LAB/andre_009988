@@ -183,19 +183,14 @@ $env:QORVEX_JADX_MCP_JAR = $jar
 
 QORVEX runs its packaged Java metadata bridge in source-file mode against the
 unmodified engine JAR. QORVEX does not install Java, an Android SDK, JADX, a device
-service or an emulator. Set the path in the shell or MCP server environment:
+service or an emulator. Set `QORVEX_JADX_MCP_JAR` in the shell or MCP server
+environment, as above. To select an existing JDK rather than `java` on `PATH`,
+also set `JAVA_HOME=/absolute/path/existing-jdk`.
 
-```sh
-export QORVEX_JADX_MCP_JAR=/absolute/path/jadx-headless-mcp-0.8.0-all.jar
-# Optional: select an existing JDK rather than java on PATH.
-export JAVA_HOME=/absolute/path/existing-jdk
-```
-
-On Windows x64, use a QORVEX package with its matching bundled Windows native
-controls **including owned protocol stdin support**. This Windows boundary is
-new on repository main; an older released package can still reject this host.
-PowerShell accepts paths containing spaces without additional escaping
-inside these environment values:
+On Windows x64, use a QORVEX package (6.2.0 or later) with its matching bundled
+Windows native controls **including owned protocol stdin support**. PowerShell
+accepts paths containing spaces without additional escaping inside these
+environment values:
 
 ```powershell
 $env:QORVEX_JADX_MCP_JAR = 'D:\tools\jadx-headless-mcp-0.8.0-all.jar'

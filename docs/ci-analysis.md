@@ -20,7 +20,7 @@ or an MCP client. It does not promise support for every QORVEX provider.
    | `analysis.stderr` | Original diagnostics/progress; an empty file is normal when there are none.                        |
    | `exit-code.txt`   | Original analysis process exit code.                                                               |
 
-The example pins Node.js 24.22.1, QORVEX 6.7.0, and action commit revisions. It installs
+The example pins Node.js 24.22.1, the current QORVEX release, and action commit revisions. It installs
 QORVEX into the runner's temporary directory rather than changing the application's
 dependencies. This pins the tool version, not every transitive npm dependency;
 use a reviewed, committed package lock and `npm ci` if your integration requires
@@ -84,7 +84,7 @@ The retained JSON error has category `unsupported_target`; the step exits nonzer
 Restore the correct path before using the example normally.
 
 To exercise partial analysis, append `export const broken = ;` to the demo's
-JavaScript. QORVEX 6.7.0 retains `data.normalized_result.statistics.parse_failures`
+JavaScript. The pinned QORVEX retains `data.normalized_result.statistics.parse_failures`
 and an incomplete-coverage limitation while the operation can still exit zero.
 Inspect those facts instead of treating process success as full coverage. The
 report JSON and diagnostics remain unfiltered in all three cases.

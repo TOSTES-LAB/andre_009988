@@ -195,3 +195,40 @@ it.each(["other", "qorvex"])(
     }
   },
 );
+
+it("reports an OpenCode layer conflict introduced before the transaction snapshot", async () => {
+  const home = await createTestTempDirectory("qorvex-setup-opencode-snapshot-");
+  const nativePath = join(home, "opencode.json");
+  const configPath = join(home, "opencode.jsonc");
+  const client: SetupClient = {
+    name: "opencode",
+    registrationProfile: supportedClientRegistrationProfile("opencode"),
+    configPath,
+    configPaths: [nativePath, configPath],
+    format: "opencode",
+  };
+  const native =
+    '{"mcp":{"servers":{"peer":{"type":"local","command":["peer"]}}}}';
+  const conflict =
+    '{"mcp":{"servers":{"type":"local","command":["legacy-peer"]}}}';
+  await writeFile(nativePath, native);
+  await writeFile(configPath, "{}");
+  expect(
+    await inspectClientConfiguration(client, {}, ["qorvex", "mcp"]),
+  ).toMatchObject({
+    status: "update",
+  });
+  refresh.afterDiscovery = () => writeFile(configPath, conflict);
+  expect(
+    await configureClientConfiguration(client, {}, ["qorvex", "mcp"]),
+  ).toEqual({
+    status: "failed",
+    reason: "invalid_configuration",
+    detail: expect.stringContaining("legacy OpenCode server named servers"),
+  });
+  expect(await readFile(configPath, "utf8")).toBe(conflict);
+  expect(await readFile(nativePath, "utf8")).toBe(native);
+  await expect(readFile(`${configPath}.qorvex.backup`)).rejects.toMatchObject({
+    code: "ENOENT",
+  });
+});

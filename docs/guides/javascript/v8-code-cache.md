@@ -8,7 +8,7 @@ decompiler.
 
 ```bash
 qorvex inspect-v8-code-cache /absolute/path/to/module.jsc --json
-qorvex inspect-v8-code-cache /absolute/path/to/module.jsc --minStringBytes 8 --json
+qorvex inspect-v8-code-cache /absolute/path/to/module.jsc --min-string-bytes 8 --json
 ```
 
 The MCP tool is `inspect_v8_code_cache` with the same inputs and the same retained
