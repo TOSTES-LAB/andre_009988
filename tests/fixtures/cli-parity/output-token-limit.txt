@@ -2,7 +2,7 @@ $ qorvex inspect-byte-entropy <workspace>/sample.bin --filter-output normalized_
 exit: 0
 --- stdout
 normalized_result:
-[truncated: showing tokens 0–5 of 42]
+[truncated: showing tokens 0–5 of 50]
 <end>
 --- stderr
 <end>
