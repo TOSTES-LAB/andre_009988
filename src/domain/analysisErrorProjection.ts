@@ -27,6 +27,7 @@ import {
   AnalysisOutputError,
   AnalysisTimeoutError,
   AnalysisResourceConstraintError,
+  type MalformedTargetFailure,
 } from "./analysisErrorCore.js";
 import { ArtifactOperationError } from "./artifactOperationError.js";
 import {
@@ -616,6 +617,25 @@ const errorDetails = (
   providerErrorDetails(error) ??
   lifecycleErrorDetails(error);
 
+/** The public facts of a format owner's malformed or truncated parse. */
+const parseFailureDetails = (failure: MalformedTargetFailure) => {
+  const { kind, format, offset, field } = failure;
+  const extent = kind === "truncated" ? failure.extent : undefined;
+  return {
+    format_failure: kind,
+    format,
+    ...(offset === undefined ? {} : { offset }),
+    ...(field === undefined ? {} : { field }),
+    // The reader's measured end of the input and the length it needed.
+    ...(extent === undefined
+      ? {}
+      : {
+          available_bytes: extent.availableBytes,
+          required_bytes: extent.requiredBytes,
+        }),
+  };
+};
+
 const requestErrorDetails = (
   error: AnalysisError,
 ): Readonly<Record<string, JsonValue>> | undefined => {
@@ -625,18 +645,13 @@ const requestErrorDetails = (
       path: error.path,
       reason: error.reason,
     };
-  if (error instanceof AnalysisMalformedTargetError) {
-    const { kind, format, detail, offset, field } = error.failure;
+  if (error instanceof AnalysisMalformedTargetError)
     return {
       operation: error.operation,
       path: error.path,
-      reason: detail,
-      format_failure: kind,
-      format,
-      ...(offset === undefined ? {} : { offset }),
-      ...(field === undefined ? {} : { field }),
+      reason: error.failure.detail,
+      ...parseFailureDetails(error.failure),
     };
-  }
   if (error instanceof AnalysisResourceConstraintError)
     return {
       operation: error.operation,
@@ -742,6 +757,9 @@ const artifactStateErrorDetails = (
       ...(error.integrityCheck === undefined
         ? {}
         : { integrity_check: error.integrityCheck }),
+      ...(error.parseFailure === undefined
+        ? {}
+        : parseFailureDetails(error.parseFailure)),
       ...(error.readerLimit === undefined
         ? {}
         : { reader_limit: { ...error.readerLimit } }),

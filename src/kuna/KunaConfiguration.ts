@@ -194,7 +194,7 @@ export const readKunaConfiguration = (
 ): Result<KunaConfiguration, KunaConfigurationFailure> => {
   const command = environment.QORVEX_KUNA_COMMAND;
   if (command === undefined || command.length === 0)
-    return failure("not_configured", KUNA_COMMAND_REMEDIATION);
+    return failure("not_configured", "QORVEX_KUNA_COMMAND is not set.");
   if (!isAbsolute(command))
     return failure(
       "open_options_invalid",
