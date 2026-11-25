@@ -80,7 +80,7 @@ it.each(["QORVEX-UNSUPPORTED", "ISO-8859-1"])(
         parameters: { path: "Panel.nib" },
       }),
     ).rejects.toMatchObject({
-      reason: "format",
+      reason: "unsupported",
       message: expect.stringContaining(declaration),
     });
   },
