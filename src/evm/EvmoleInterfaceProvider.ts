@@ -51,13 +51,12 @@ import {
 import {
   type AnalysisCancelledError,
   AnalysisCapabilityUnavailableError,
-  AnalysisUnsupportedTargetError,
-  AnalysisInputError,
   AnalysisTargetFailureError,
   AnalysisOutputError,
   cancelledBy,
   carriedReason,
   type AbortedSignal,
+  unsupportedTarget,
 } from "../domain/analysisErrorCore.js";
 import { isAbortOf } from "../process/SignalAbort.js";
 import {
@@ -265,7 +264,7 @@ const replySchema = z.discriminatedUnion("ok", [
   }),
   z.strictObject({
     ok: z.literal(false),
-    reason: z.enum(["format", "decoder", "output-limit", "unsupported"]),
+    reason: z.enum(["malformed", "decoder", "output-limit", "unsupported"]),
     message: z.string(),
   }),
 ]);
@@ -759,14 +758,15 @@ export class EvmoleInterfaceProvider implements EvmInterfacePort {
       }
       if (!reply.ok) {
         if (reply.reason === "unsupported")
-          throw new AnalysisUnsupportedTargetError(
+          throw unsupportedTarget(
             OPERATION,
             input.path,
+            "evm-bytecode",
             reply.message,
             { capturedOutput },
           );
         // The worker rejected the selected bytecode, not the request.
-        if (reply.reason === "format")
+        if (reply.reason === "malformed")
           throw new AnalysisTargetFailureError(
             OPERATION,
             input.path,

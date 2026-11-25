@@ -58,6 +58,7 @@ export {
   malformedArtifact,
   truncatedArtifact,
   unsupportedArtifact,
+  readFailureError,
   artifactPrimaryCleanupLeases,
   assertProducedEntry,
   copyArtifactEntry,
@@ -97,7 +98,9 @@ export type {
 } from "./ArtifactResourceScope.js";
 export {
   imageFileSizeRemediation,
+  closeArtifactResources,
   projectArtifactCloseFailure,
+  withArtifactCleanupFailure,
   projectOwnedArtifactIdentityFailure,
   projectOwnedArtifactInputFailure,
   projectSelectedArtifactFileFailure,

@@ -6,7 +6,7 @@ import { isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import { TOOL_CONTRACTS } from "../dist/contracts/toolContracts.js";
-import { isPathWithinRoot } from "../dist/domain/localPath.js";
+import { verifyClientSetup } from "./verify/clients/setup.mjs";
 import { createVerifierCommands } from "./lib/verify-commands.mjs";
 import { withVerifierCleanup } from "./lib/verifier-cleanup.mjs";
 import { publishClientReceipt } from "./verify/clients/receipt.mjs";
@@ -301,12 +301,6 @@ await withVerifierCleanup(async () => {
         2,
       ) + "\n";
     await writeFile(configPath, original);
-    const qorvex = (args) =>
-      commands.exec(
-        process.execPath,
-        [join(runtimeRoot, "scripts/qorvex.mjs"), ...args, "--json"],
-        { env: environment, cwd: workspace, timeout: 60_000, stdin: "pipe" },
-      );
     clientVersion = (
       await commands.exec(command, ["--version"], {
         env: environment,
@@ -315,54 +309,23 @@ await withVerifierCleanup(async () => {
         stdin: "pipe",
       })
     ).stdout.trim();
-    for (const args of [
-      ["setup", "--client", "commandcode", "--dry-run"],
-      ["setup", "--client", "commandcode", "--yes"],
-      ["doctor", "--client", "commandcode", "--skill"],
-    ]) {
-      const response = await qorvex(args);
-      await writeFile(
-        join(
-          lab,
-          `${args[0]}${args.includes("--dry-run") ? "-plan" : ""}.json`,
-        ),
-        response.stdout,
-      );
-      const result = JSON.parse(response.stdout);
-      if (args[0] === "doctor") assert.equal(result.healthy, true);
-      else
-        assert.equal(
-          result.status,
-          args.includes("--dry-run") ? "planned" : "ready",
-        );
-      if (args.includes("--dry-run")) {
-        assert(
-          result.plannedActions.some((action) => action.target === configPath),
-        );
-        assert(
-          result.plannedActions.every(
-            (action) =>
-              action.target === configPath ||
-              (isAbsolute(action.target) &&
-                isPathWithinRoot(skillDirectory, action.target)),
-          ),
-          "Refuse setup writes outside the disposable account's configuration and skill",
-        );
-      }
-    }
-    assert.equal(await readFile(`${configPath}.qorvex.backup`, "utf8"), original);
-    const configured = await readFile(configPath, "utf8");
-    assert.equal(JSON.parse(configured).preserved, "keep unrelated settings");
-    assert.equal(
-      JSON.parse(configured).mcpServers.other.command,
-      "unrelated-server",
-    );
-    const repeated = JSON.parse(
-      (await qorvex(["setup", "--client", "commandcode", "--yes"])).stdout,
-    );
-    assert.deepEqual(repeated.appliedActions, []);
-    assert.equal(await readFile(configPath, "utf8"), configured);
-    assert.equal(await readFile(`${configPath}.qorvex.backup`, "utf8"), original);
+    await verifyClientSetup({
+      client: "commandcode",
+      commands,
+      runtimeRoot,
+      environment,
+      workspace,
+      lab,
+      configPath,
+      original,
+      skillDirectory,
+      requiredPlanTargets: [configPath],
+      checkConfigured: (configured) => {
+        const registration = JSON.parse(configured);
+        assert.equal(registration.preserved, "keep unrelated settings");
+        assert.equal(registration.mcpServers.other.command, "unrelated-server");
+      },
+    });
     const installedSkill = await readFile(
       join(skillDirectory, "SKILL.md"),
       "utf8",
