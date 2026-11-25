@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
-import { open, readFile, writeFile } from "node:fs/promises";
+import { open, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { Readable } from "node:stream";
 import { crc32, deflateRawSync, gzipSync } from "node:zlib";
+import { buffer } from "node:stream/consumers";
 
 import { describe, expect, it } from "vitest";
 
 import { waitFor } from "../../../tests/support/testWait.js";
 
-import { createTestTempDirectory } from "../../../tests/fixtures/temporaryDirectory.js";
+import { createTestTempFile } from "../../../tests/fixtures/temporaryDirectory.js";
 import {
   inventoryArtifact,
   materializeArtifactInventory,
@@ -32,18 +32,8 @@ import {
   type TarFixtureMember,
 } from "./tar.fixture.js";
 
-const collect = async (stream: Readable): Promise<Buffer> => {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks);
-};
-
-const write = async (name: string, bytes: Buffer): Promise<string> => {
-  const directory = await createTestTempDirectory("qorvex-tar-");
-  const path = join(directory, name);
-  await writeFile(path, bytes);
-  return path;
-};
+const write = (name: string, bytes: Buffer): Promise<string> =>
+  createTestTempFile("qorvex-tar-", name, bytes);
 
 const read = async (bytes: Buffer, options: { expanded?: number } = {}) => {
   const reader = new TarArtifactReader(
@@ -65,7 +55,7 @@ const read = async (bytes: Buffer, options: { expanded?: number } = {}) => {
       if (entry.kind === "file")
         contents.set(
           entry.path,
-          (await collect(await reader.open(entry))).toString("utf8"),
+          (await buffer(await reader.open(entry))).toString("utf8"),
         );
     return {
       entries,
@@ -370,8 +360,8 @@ describe("gzip expansion", () => {
     try {
       const entries: ArtifactEntry[] = [];
       for await (const entry of reader.entries()) entries.push(entry);
-      const second = await collect(await reader.open(entries[1]!));
-      const first = await collect(await reader.open(entries[0]!));
+      const second = await buffer(await reader.open(entries[1]!));
+      const first = await buffer(await reader.open(entries[0]!));
       expect([first.toString(), second.toString()]).toEqual([
         "first",
         "second",
