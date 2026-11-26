@@ -104,6 +104,7 @@ The [QORVEX website](https://qorvex.tools/) has worked examples and product page
 
 - [Firmware analysis](guides/firmware/firmware-analysis.md)
 - [Android OTA update payloads](guides/firmware/android-ota-payload.md)
+- [Android sparse images](guides/firmware/android-sparse-image.md)
 - [Flattened devicetree inspection](devicetree.md)
 - [ESP flash images](esp-flash-image.md)
 - [ESP images](esp-image.md)
@@ -111,6 +112,7 @@ The [QORVEX website](https://qorvex.tools/) has worked examples and product page
 - [Intel HEX and S-record images](hex-records.md)
 - [UF2 and DfuSe images](uf2-dfuse.md)
 - [U-Boot legacy uImage containers](uimage.md)
+- [uClinux bFLT flat executables](bflt-executables.md)
 
 ## HarmonyOS packages
 
