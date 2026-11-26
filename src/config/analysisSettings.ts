@@ -1,3 +1,4 @@
+import { artifactMemberCountSchema } from "./artifactMemberCount.js";
 import { err, ok } from "../domain/result.js";
 import type { z } from "zod";
 import type { AnalysisSettingId } from "../domain/analysisSettings.js";
@@ -34,6 +35,7 @@ import {
   windowsChangeTimeSettlePollMsSchema,
 } from "./windowsChangeTimeSettle.js";
 import { pwntoolsInputBytesSchema } from "./pwntoolsInputLimit.js";
+import { producerOutputBytesSchema } from "./producerOutputBytesSeed.js";
 import { zstandardMaxFramesSchema } from "../domain/compression/zstandardFrameAllowance.js";
 import {
   agentResultBudgetBytesSchema,
@@ -41,6 +43,7 @@ import {
 } from "../domain/agentResultBudget.js";
 const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
   {
+    QORVEX_ARTIFACT_MEMBER_COUNT: artifactMemberCountSchema,
     QORVEX_ASAR_MAX_HEADER_BYTES: asarMaxHeaderBytesSchema,
     QORVEX_ASAR_MAX_LISTING_BYTES: asarMaxListingBytesSchema,
     QORVEX_GHIDRA_VALUE_FLOW_MAX_OPERATIONS: ghidraValueFlowCountSchema,
@@ -68,6 +71,7 @@ const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
     QORVEX_KUNA_PROJECT_TIMEOUT_MS: providerStartupTimeoutSchema,
     QORVEX_KUNA_TIMEOUT_MS: providerStartupTimeoutSchema,
     QORVEX_PWNTOOLS_MAX_INPUT_BYTES: pwntoolsInputBytesSchema,
+    QORVEX_PRODUCER_OUTPUT_BYTES: producerOutputBytesSchema,
     QORVEX_WINDOWS_CHANGE_TIME_DRIFT_MS: windowsChangeTimeDriftMsSchema,
     QORVEX_WINDOWS_CHANGE_TIME_SETTLE_POLL_MS: windowsChangeTimeSettlePollMsSchema,
     QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS:

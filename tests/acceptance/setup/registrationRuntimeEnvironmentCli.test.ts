@@ -82,6 +82,7 @@ const selectedProviderEnvironment = (home: string) => ({
   QORVEX_BROWSER_NO_SANDBOX: "false",
   QORVEX_PWNTOOLS_PYTHON: join(home, "offline-python"),
   QORVEX_PWNTOOLS_MAX_INPUT_BYTES: "67108864",
+  QORVEX_PRODUCER_OUTPUT_BYTES: "8388608",
   QORVEX_PWNDBG_GDB: join(home, "pwndbg-gdb"),
   QORVEX_PWNDBG_GDBINIT: join(home, "pwndbg-gdbinit"),
   QORVEX_PWNDBG_VENV_PATH: join(home, "pwndbg-venv"),

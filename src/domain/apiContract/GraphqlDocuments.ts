@@ -86,6 +86,8 @@ export const parseGraphqlDocument = (
         { parser: "graphql-js" },
         {
           cause,
+          // The host ran out of stack or heap; no QORVEX control was reached.
+          measuredExhaustion: true,
           remediationAction:
             "Use a smaller, less deeply nested complete document.",
         },
