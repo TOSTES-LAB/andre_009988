@@ -30,6 +30,7 @@ import {
   type InventorySet,
 } from "../artifactInventoryEvidence.js";
 import type { ArtifactInspectionResult } from "../artifactInspection.js";
+import { filterSet } from "./selectViewRows.js";
 import type { AnalysisViewParent } from "./analysisViewParent.js";
 import {
   assertOwnedView,
@@ -336,9 +337,11 @@ export const projectArtifactInventoryView = (
     inventory.manifest.root_format === "esp-flash-image" ||
     inventory.manifest.root_format === "fit" ||
     inventory.manifest.root_format === "nds" ||
+    inventory.manifest.root_format === "n64-rom" ||
     inventory.manifest.root_format === "qualcomm-mbn" ||
     inventory.manifest.root_format === "android-ota-payload" ||
     inventory.manifest.root_format === "android-vbmeta" ||
+    inventory.manifest.root_format === "android-dtbo" ||
     inventory.manifest.root_format === "android-sparse-image" ||
     inventory.manifest.root_format === "ubi-image";
   const counts = inventoryCounts(source);
@@ -562,14 +565,9 @@ const occurrenceIndices = (
   if (selectors.every((selector) => selector === undefined)) return undefined;
   if (selectors.some((selector) => selector?.length === 0)) return [];
   const rows = source.inventory.occurrences;
-  const paths =
-    view.logical_paths === undefined ? undefined : new Set(view.logical_paths);
-  const kinds =
-    view.entry_kinds === undefined ? undefined : new Set(view.entry_kinds);
-  const artifactKinds =
-    view.artifact_kinds === undefined
-      ? undefined
-      : new Set(view.artifact_kinds);
+  const paths = filterSet(view.logical_paths);
+  const kinds = filterSet(view.entry_kinds);
+  const artifactKinds = filterSet(view.artifact_kinds);
   const globs = view.path_globs?.map(compileInventoryPathGlob);
   const matches = (index: number) => {
     const row = rows[index]!;

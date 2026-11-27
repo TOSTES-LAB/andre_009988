@@ -35,6 +35,7 @@ import {
   windowsChangeTimeSettlePollMsSchema,
 } from "./windowsChangeTimeSettle.js";
 import { pwntoolsInputBytesSchema } from "./pwntoolsInputLimit.js";
+import { YARA_SETTING_SEEDS } from "./yaraSettingSeeds.js";
 import { producerOutputBytesSchema } from "./producerOutputBytesSeed.js";
 import { zstandardMaxFramesSchema } from "../domain/compression/zstandardFrameAllowance.js";
 import {
@@ -77,6 +78,7 @@ const environmentSchemas: Readonly<Record<string, z.ZodType<number, string>>> =
     QORVEX_WINDOWS_CHANGE_TIME_SETTLE_MAX_POLLS:
       windowsChangeTimeSettleMaxPollsSchema,
     QORVEX_ZSTD_MAX_FRAMES: zstandardMaxFramesSchema,
+    ...YARA_SETTING_SEEDS,
     QORVEX_AGENT_RESULT_BUDGET_BYTES: agentResultBudgetBytesSchema,
     QORVEX_CLI_RETAINED_EVIDENCE_BYTES: cliRetainedEvidenceBytesSchema,
   };

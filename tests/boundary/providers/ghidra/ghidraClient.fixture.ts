@@ -18,9 +18,11 @@ export const ghidraFixturePath = fileURLToPath(
 type FixtureMode =
   | "checkpoint"
   | "checkpoint_fail_close"
+  | "checkpoint_hang_edit"
   | "checkpoint_hold_startup"
   | "checkpoint_hold_close"
   | "checkpoint_hold_close_hang_tool"
+  | "checkpoint_hang_tool"
   | "unicode_search"
   | "reject_first_connection"
   | "reject_all_connections"

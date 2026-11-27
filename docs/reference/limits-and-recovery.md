@@ -90,6 +90,20 @@ Frida process discovery applies `limit` and `offset` after enumerating the
 selected device. It reports `total_processes` and `truncated`. Moving to another
 page runs a fresh discovery on that device.
 
+`inspect_gpu_code_objects` accepts per-call budgets `max_object_bytes` (default
+and maximum 128 MiB), `max_work_bytes` (default and maximum 512 MiB, covering
+payload input, decoded output, native-section reads, and AMDGPU note/structure
+reads), `max_report_bytes` (default and maximum 16 MiB), `max_metadata_bytes`
+(default and maximum 8 MiB), `max_structure_bytes` (default 16 MiB, up to
+512 MiB), `max_parser_entries` (default and maximum 65,536),
+`max_parser_visits` (default and maximum 262,144), and `max_token_bytes`
+(default and maximum 65,536). Top-level refusals report `details.limit`
+(`control_kind: "parameter"`), per-object payload/metadata/visit limits retain
+sibling observations with `inspection: "capacity"` naming the budget, and
+recursive container/AMDGPU MessagePack nesting caps and the 128-token PTX
+single-parameter syntax limit remain fixed ceilings; see
+[GPU code objects](../gpu-code-objects.md#work-and-limits).
+
 Graph tools accept per-call traversal bounds (`max_depth` and `max_nodes` on
 `get_call_graph` and `trace_call_path`).
 
@@ -119,8 +133,8 @@ import and lambda rows combined; default 65,536, at most 1,048,576).
 ### Native table structure budget
 
 `inspect_elf_unwind_ranges`, `inspect_kernel_module`, `inspect_elf_debug_link`,
-`inspect_dwarf_units`, `inspect_binary_hardening`, `inspect_native_initializers`
-and `inspect_native_exports` accept `max_structure_bytes` (CLI
+`inspect_dwarf_units`, `inspect_binary_hardening`, `inspect_native_initializers`,
+`inspect_gpu_code_objects` and `inspect_native_exports` accept `max_structure_bytes` (CLI
 `--max-structure-bytes`, 64 bytes to 512 MiB, default 16 MiB). It bounds one
 header, section, load-command or ELF dynamic-directory table read, and,
 separately, the section names decoded from the section-name table, before the
@@ -555,6 +569,13 @@ authored `remediationAction`, with no `limit`, `fixedAllowance` or
 that count may only shrink, and `--shrink-baselines` lowers it
 ([#14234](https://github.com/TOSTES-LAB/andre_009988/issues/14234)).
 
+A Nintendo 64 ROM above 64 MiB (67,108,864 bytes) is refused as the fixed
+allowance "The Nintendo 64 ROM size allowance" (`n64.rom_bytes`). Retail
+cartridge masks stop at 64 MiB (512 Mbit). The reader refuses the file before
+swapping its bytes. This release has no runtime override.
+`artifact_limits.expanded_bytes` does not raise it. A v64 or n64 dump also
+counts a decoded copy of each member toward `artifact_limits.expanded_bytes`.
+
 JSON values stop at `MAX_JSON_DEPTH` (1000) in
 [`jsonValue.ts`](https://github.com/TOSTES-LAB/andre_009988/blob/main/src/domain/jsonValue.ts):
 "JSON value exceeds maximum nesting depth of 1000. This release has no runtime
@@ -751,21 +772,23 @@ editable setting or active worker telemetry.
 
 `inspect_artifact` and `extract_artifact` accept `bun`, `dotnet_bundle`,
 `node_sea`, `godot`, `iso9660`, `deno`, `wxapkg`, `tar` and
-`android_sparse_image` and `android_vbmeta` groups in `artifact_limits`. Their controls apply when
+`android_sparse_image`, `android_vbmeta` and `android_dtbo` groups in `artifact_limits`. Their controls apply when
 recognition or inventory encounters that format. Supplying a policy does not
 assert the format is present. Unsupported keys are rejected. Each group follows
 one domain-owned default policy. See [.NET bundles](../dotnet-bundles.md),
 [Node SEA](../node-sea.md), [Godot PCK](../godot-pck.md),
 [Bun standalone](../bun-standalone.md), [Deno compile](../deno-standalone.md),
-[wxapkg](../wxapkg.md), [tar](../tar-archives.md) and
-[Android sparse images](../guides/firmware/android-sparse-image.md) and
-[Android vbmeta](../guides/firmware/android-vbmeta.md) for format semantics.
+[wxapkg](../wxapkg.md), [tar](../tar-archives.md),
+[Android sparse images](../guides/firmware/android-sparse-image.md),
+[Android vbmeta](../guides/firmware/android-vbmeta.md) and
+[Android DTBO partition images](../android-dtbo.md) for format semantics.
 
 `artifact_limits.expanded_bytes` selects aggregate plaintext work for ZIP, Bun,
 SEA, PCK, ISO 9660, Deno, wxapkg, tar, macOS flat `.pkg` (including
 `Scripts`/`Payload` cpio archive decoding and scaled cpio member and path-byte
 allowances, plus `Distribution`/`PackageInfo` metadata decoding and scaled
-metadata record and XML-node allowances) and Android sparse image readers, NSO
+metadata record and XML-node allowances), Android sparse image and Android DTBO
+readers (every DTBO row is charged, including rows that share one payload), NSO
 segment decompression, and bFLT gzip decompression (which is also capped at a
 fixed 128 MiB in-memory inflation ceiling), including repeated readable logical
 occurrences. Omission retains each archive's encoded-size-derived default. The

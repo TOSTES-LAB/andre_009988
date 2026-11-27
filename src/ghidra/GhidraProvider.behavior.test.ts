@@ -4230,6 +4230,9 @@ describe("Ghidra empty annotation reference facets", () => {
         name: "fixture_main",
         comment: null,
         inline_comment: null,
+        signature: "undefined fixture_main()",
+        signature_source: "default",
+        calling_convention: "unknown",
       },
       dossier: { ...dossier, incoming_references: [], outgoing_references: [] },
       effects: {
@@ -4263,6 +4266,9 @@ describe("Ghidra empty annotation reference facets", () => {
         name: "fixture_main",
         comment: null,
         inline_comment: null,
+        signature: "undefined fixture_main()",
+        signature_source: "default",
+        calling_convention: "unknown",
       },
       dossier: {
         ...dossier,
@@ -5179,6 +5185,71 @@ describe("the cancel grace launch control", () => {
       code: "configuration_invalid",
       details: { settings: [{ setting: "QORVEX_GHIDRA_CANCEL_GRACE_MS" }] },
     });
+  });
+});
+
+describe("the checkpoint save wait launch control", () => {
+  const open = async (environment: Readonly<Record<string, string>>) => {
+    const received: unknown[] = [];
+    const ghidra = provider(
+      installationHost(),
+      (options) => {
+        received.push(options.checkpointSaveWait);
+        return {
+          start: async () => ok(sessionInfo()),
+          callTool: async () => ok([]),
+          close: async () => ok(null),
+        };
+      },
+      environment,
+    );
+    onTestFinished(async () => {
+      await ghidra.closeOwnedResources();
+    });
+    const target = executableTarget("elf", "x86_64");
+    const profile = await ghidra.resolveAnalysisProfile(target);
+    if (!profile.ok || profile.value.profile === null)
+      throw new Error("Expected Ghidra analysis profile");
+    const result = await ghidra
+      .createClient(target, profile.value.profile)
+      .execute("list_documents", {});
+    return { received, result };
+  };
+
+  it("hands a checkpointed session the launch value and leaves the default implicit", async () => {
+    const root = await createTestTempDirectory("qorvex-save-wait-");
+    const selected = await open({
+      QORVEX_GHIDRA_CHECKPOINT_DIR: root,
+      QORVEX_GHIDRA_CHECKPOINT_SAVE_WAIT_MS: "1200",
+    });
+    expect(selected.received).toEqual([{ waitMs: 1_200, source: "setting" }]);
+    const unset = await open({ QORVEX_GHIDRA_CHECKPOINT_DIR: root });
+    expect(unset.received).toEqual([{ waitMs: 30_000, source: "default" }]);
+  });
+
+  it("refuses a checkpointed session on an invalid value and leaves ephemeral sessions alone", async () => {
+    const root = await createTestTempDirectory("qorvex-save-wait-invalid-");
+    const refused = await open({
+      QORVEX_GHIDRA_CHECKPOINT_DIR: root,
+      QORVEX_GHIDRA_CHECKPOINT_SAVE_WAIT_MS: "600001",
+    });
+    expect(refused.received).toEqual([]);
+    if (refused.result.ok) throw new Error("invalid save wait was applied");
+    expect(projectAnalysisError(refused.result.error)).toMatchObject({
+      code: "configuration_invalid",
+      details: {
+        settings: [{ setting: "QORVEX_GHIDRA_CHECKPOINT_SAVE_WAIT_MS" }],
+      },
+    });
+    // Without a checkpoint nothing applies the wait.
+    const ephemeral = await open({
+      QORVEX_GHIDRA_CHECKPOINT_SAVE_WAIT_MS: "600001",
+    });
+    expect(ephemeral.received).toEqual([undefined]);
+    if (!ephemeral.result.ok)
+      expect(projectAnalysisError(ephemeral.result.error).code).not.toBe(
+        "configuration_invalid",
+      );
   });
 });
 
