@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.lang.ref.SoftReference;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,6 +31,7 @@ import java.security.MessageDigest;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +46,13 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -58,6 +66,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonWriter;
 
+import generic.concurrent.ConcurrentQ;
+import generic.concurrent.ConcurrentQBuilder;
+import generic.concurrent.GThreadPool;
+import generic.concurrent.QResult;
+
 import ghidra.app.util.headless.HeadlessScript;
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileOptions;
@@ -65,6 +78,7 @@ import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.decompiler.DecompiledFunction;
 import ghidra.app.decompiler.ClangCaseToken;
 import ghidra.app.decompiler.ClangNode;
+import ghidra.app.decompiler.parallel.DecompilerCallback;
 import ghidra.framework.Application;
 import ghidra.app.util.bin.format.pdb.PdbParserConstants;
 import ghidra.app.util.opinion.ElfLoader;
@@ -132,7 +146,10 @@ import ghidra.program.model.pcode.VarnodeAST;
 import ghidra.program.util.ContextEvaluatorAdapter;
 import ghidra.program.util.SymbolicPropogator;
 import ghidra.program.util.VarnodeContext;
+import ghidra.util.UndefinedFunction;
+import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
+import ghidra.util.task.TaskMonitorAdapter;
 
 public final class ReaGhidraBridge extends HeadlessScript {
     // At most 24 KiB after worst-case JSON escaping (six bytes per UTF-16 unit).
@@ -209,6 +226,51 @@ public final class ReaGhidraBridge extends HeadlessScript {
     private List<StringEntry> stringInventory;
     private Boolean swiftProgramCached;
     private DecompInterface decompiler;
+    /**
+     * Completed decompilations of the current Program state, least recently
+     * used first. DecompInterface keeps no results, so a repeated request would
+     * otherwise run the native decompiler again. The key carries every input a
+     * result depends on; soft references let the heap reclaim large results.
+     */
+    private final LinkedHashMap<DecompileCacheKey, SoftReference<DecompileResults>> decompileResults =
+        new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(
+                Map.Entry<DecompileCacheKey, SoftReference<DecompileResults>> eldest
+            ) {
+                return size() > DECOMPILE_RESULT_ENTRIES;
+            }
+        };
+    // Fixed: this bounds retained Java objects, not analysis the caller can
+    // observe. A miss only repeats a decompile, and soft references release
+    // entries under heap pressure. Ghidra's own panel keeps 10 by default.
+    private static final int DECOMPILE_RESULT_ENTRIES = 32;
+    /** Decompiler processes kept between read-ahead windows of one workflow. */
+    private DecompilerCallback<DecompileResults> decompileAheadWorkers;
+    /** QORVEX's own threads, so read-ahead never resizes or queues on Ghidra's shared pools. */
+    private GThreadPool decompileAheadThreads;
+    private static final int DECOMPILE_AHEAD_WORKERS = 8;
+    // A hint beyond the retained results would evict the window's own first
+    // results before their requests arrive, so later selectors are ignored.
+    private static final int DECOMPILE_AHEAD_WINDOW = DECOMPILE_RESULT_ENTRIES;
+    // Fixed: read-ahead serves consecutive requests of one workflow, which
+    // arrive milliseconds apart. After this idle time the pooled native
+    // decompiler processes are released; a later window starts them again.
+    private static final long DECOMPILE_AHEAD_IDLE_MILLIS = 30_000;
+    private final Object decompileAheadLock = new Object();
+    private final ScheduledExecutorService decompileAheadReaper =
+        Executors.newSingleThreadScheduledExecutor(task -> {
+            Thread thread = new Thread(task, "QORVEX decompile read-ahead reaper");
+            thread.setDaemon(true);
+            return thread;
+        });
+    private ScheduledFuture<?> decompileAheadIdleRelease;
+    /**
+     * The read-ahead result for the request that carried the window: that
+     * request consumes it whatever its outcome instead of decompiling again.
+     */
+    private DecompileCacheKey decompileAheadForegroundKey;
+    private DecompileResults decompileAheadForeground;
     private boolean existingProject;
     // A refused Program may only report its admission failure to the client.
     private String identityAdmissionFailure;
@@ -303,6 +365,9 @@ public final class ReaGhidraBridge extends HeadlessScript {
             serve(descriptor);
         }
         finally {
+            disposeDecompileAhead();
+            decompileAheadReaper.shutdownNow();
+            if (decompileAheadThreads != null) decompileAheadThreads.shutdownNow();
             if (decompiler != null) {
                 decompiler.dispose();
                 decompiler = null;
@@ -435,27 +500,115 @@ public final class ReaGhidraBridge extends HeadlessScript {
         }
     }
 
+    /**
+     * One frame handed from the connection reader to the request handler: a
+     * request with its cancellation monitor, an unusable frame, a read
+     * failure, or the end of the connection when every field is unset.
+     */
+    private record Inbound(Request request, TaskMonitor monitor, boolean invalid, IOException failure) {}
+
+    // A full queue only delays the reader; QORVEX writes one Program request at a
+    // time, plus lifecycle requests beside it.
+    private static final int INBOUND_REQUEST_CAPACITY = 8;
+
+    /** Monitors of requests that were read and have not been answered. */
+    private final Map<Integer, TaskMonitor> requestMonitors = new ConcurrentHashMap<>();
+
+    private Inbound admitRequest(Request request) {
+        // Registered before the handler can see the request, so a cancel read
+        // right behind it finds the monitor even while the request still waits.
+        TaskMonitor requestMonitor = new TaskMonitorAdapter(true);
+        requestMonitors.put(request.id, requestMonitor);
+        return new Inbound(request, requestMonitor, false, null);
+    }
+
+    /**
+     * Read frames while the handler works. This is the bridge's only second
+     * thread: it never touches the Program or the writer. It cancels the
+     * monitor of the request a `cancel` frame names and queues every other
+     * frame in arrival order, so requests still run one at a time.
+     */
+    private void readRequests(
+            SessionDescriptor descriptor,
+            BufferedReader reader,
+            BlockingQueue<Inbound> inbound) {
+        try {
+            while (true) {
+                String line;
+                try {
+                    line = reader.readLine();
+                }
+                catch (IOException exception) {
+                    inbound.put(new Inbound(null, null, false, exception));
+                    return;
+                }
+                if (line == null) {
+                    inbound.put(new Inbound(null, null, false, null));
+                    return;
+                }
+                Request request;
+                try {
+                    request = parseRequest(line, descriptor.token);
+                    if (request.method.equals("cancel")) {
+                        requireKeys(request.params, Set.of("request_id"));
+                        // A request that already answered has no monitor left.
+                        TaskMonitor active = requestMonitors.get(requireInteger(request.params, "request_id"));
+                        if (active != null) active.cancel();
+                        continue;
+                    }
+                }
+                catch (RuntimeException exception) {
+                    inbound.put(new Inbound(null, null, true, null));
+                    return;
+                }
+                inbound.put(admitRequest(request));
+            }
+        }
+        catch (InterruptedException exception) {
+            // The handler finished with this connection.
+        }
+    }
+
     private void serveClient(
             SessionDescriptor descriptor,
             BufferedReader reader,
             BufferedWriter writer,
             Request first) throws Exception {
+        TaskMonitor scriptMonitor = monitor;
+        BlockingQueue<Inbound> inbound = new ArrayBlockingQueue<>(INBOUND_REQUEST_CAPACITY);
+        if (first != null) inbound.put(admitRequest(first));
+        Thread requestReader = new Thread(
+            () -> readRequests(descriptor, reader, inbound), "qorvex-bridge-request-reader");
+        requestReader.setDaemon(true);
+        requestReader.start();
+        try {
+            serveRequests(descriptor, writer, inbound);
+        }
+        finally {
+            monitor = scriptMonitor;
+            requestMonitors.clear();
+            // Interrupting a blocked channel read closes the connection, which
+            // the caller is about to do anyway.
+            requestReader.interrupt();
+        }
+    }
+
+    private void serveRequests(
+            SessionDescriptor descriptor,
+            BufferedWriter writer,
+            BlockingQueue<Inbound> inbound) throws Exception {
         while (true) {
-            Request request = first;
-            first = null;
-            if (request == null) {
-                String line = reader.readLine();
-                if (line == null) return;
-                try {
-                    request = parseRequest(line, descriptor.token);
-                }
-                catch (RuntimeException exception) {
-                    // The request id may not have parsed, so the connection-level
-                    // failure uses id 0, which no client request uses.
-                    writeFailure(writer, CONNECTION_FAILURE_ID, "invalid_request", "Bridge request is invalid");
-                    return;
-                }
+            Inbound next = inbound.take();
+            if (next.failure() != null) throw next.failure();
+            if (next.invalid()) {
+                // The request id may not have parsed, so the connection-level
+                // failure uses id 0, which no client request uses.
+                writeFailure(writer, CONNECTION_FAILURE_ID, "invalid_request", "Bridge request is invalid");
+                return;
             }
+            Request request = next.request();
+            if (request == null) return;
+            monitor = next.monitor();
             try {
                 if (request.method.equals("shutdown")) {
                     requireKeys(request.params, Set.of());
@@ -476,11 +629,15 @@ public final class ReaGhidraBridge extends HeadlessScript {
                 decompileTimeoutSeconds = request.decompileTimeoutSeconds() == null
                     ? descriptor.decompileTimeoutSeconds() : request.decompileTimeoutSeconds();
                 valueFlowLimits = request.valueFlowLimits();
-                applyDecompilePayloadLimit(request.decompileMaxPayloadMiB());
+                applyRequestDecompilerOptions(request);
+                monitor.checkCancelled();
                 dispatchAndWrite(writer, request, descriptor);
             }
             catch (RequestFailure failure) {
                 writeFailure(writer, request.id, failure.code, failure.getMessage(), failure.candidates);
+            }
+            catch (CancelledException exception) {
+                writeFailure(writer, request.id, "request_cancelled", "Ghidra request was cancelled");
             }
             catch (Exception exception) {
                 writeFailure(
@@ -489,6 +646,9 @@ public final class ReaGhidraBridge extends HeadlessScript {
                     "bridge_exception",
                     exception.getClass().getSimpleName() + ": " + safeMessage(exception)
                 );
+            }
+            finally {
+                requestMonitors.remove(request.id);
             }
         }
     }
@@ -537,7 +697,16 @@ public final class ReaGhidraBridge extends HeadlessScript {
             case "procedure_callees" -> procedureCalls(request.params, false);
             case "procedure_callers" -> procedureCalls(request.params, true);
             case "procedure_info" -> procedureInfo(request.params);
-            case "procedure_pseudo_code" -> procedurePseudocode(request.params);
+            case "procedure_pseudo_code" -> {
+                try {
+                    decompileAhead(request.decompileReadAhead());
+                    yield procedurePseudocode(request.params);
+                }
+                finally {
+                    // An unconsumed foreground result belongs to this request only.
+                    clearDecompileAheadForeground();
+                }
+            }
             case "read_function_instructions" -> readFunctionInstructions(request.params);
             case "procedure_references" -> procedureReferences(request.params);
             case "resolve_containing_procedure" -> containingProcedure(request.params);
@@ -1250,6 +1419,16 @@ public final class ReaGhidraBridge extends HeadlessScript {
         return options;
     }
 
+    /**
+     * Only a request that carries decompiler options changes them. Another
+     * read leaves the session's payload limit, and the decompiles completed
+     * under it, in place.
+     */
+    private void applyRequestDecompilerOptions(Request request) {
+        if (request.decompilePayload() != null)
+            applyDecompilePayloadLimit(request.decompilePayload().mebibytes());
+    }
+
     private void applyDecompilePayloadLimit(Integer payloadMiB) {
         if (java.util.Objects.equals(decompileMaxPayloadMiB, payloadMiB)) return;
         // DecompInterface supports live setOptions: it updates the existing
@@ -1257,6 +1436,8 @@ public final class ReaGhidraBridge extends HeadlessScript {
         if (!decompiler.setOptions(decompileOptions(payloadMiB)))
             throw new RequestFailure("decompile_options_failed", "Ghidra could not apply the selected native decompiler payload limit");
         decompiler.flushCache();
+        decompileResults.clear();
+        disposeDecompileAhead();
         decompileMaxPayloadMiB = payloadMiB;
     }
 
@@ -1278,18 +1459,30 @@ public final class ReaGhidraBridge extends HeadlessScript {
         JsonObject selection = new JsonObject();
         Function function = resolveDecompileProcedure(selector, selection);
         try {
-            String value = decompiledText(decompile(function));
+            DecompileResults results = decompile(function);
+            String value = decompiledText(results);
+            Function decompiled = decompiledFunction(function, results);
+            List<String> limitations = new ArrayList<>(functionBoundaryLimitations(
+                decompiled,
+                currentProgram.getListing().getInstructions(decompiled.getBody(), true)
+            ));
+            if (selection.has("undefined_function_entry"))
+                limitations.add(0, undefinedFunctionLimitation(selection));
             JsonObject result = functionObservation(
                 value == null ? JsonNull.INSTANCE : GSON.toJsonTree(value),
-                functionBoundaryLimitations(
-                    function,
-                    currentProgram.getListing().getInstructions(function.getBody(), true)
-                )
+                limitations
             );
-            if (selection.size() > 0) result.add("selection", selection);
+            // The file-offset selection is a contract field; an undefined
+            // function's inferred entry is carried by its limitation.
+            if (selection.has("file_offset")) {
+                JsonObject fileOffsetSelection = new JsonObject();
+                for (String key : List.of("file_offset", "mapped_address", "procedure_address"))
+                    fileOffsetSelection.add(key, selection.get(key));
+                result.add("selection", fileOffsetSelection);
+            }
             return result;
         } catch (RequestFailure failure) {
-            if (selection.size() == 0) throw failure;
+            if (!selection.has("mapped_address")) throw failure;
             // Preserve completed resolution facts without changing the backend's
             // failure code or suggesting that the successful mapping was invalid.
             throw new RequestFailure(failure.code, "Selector " + selector +
@@ -1308,8 +1501,13 @@ public final class ReaGhidraBridge extends HeadlessScript {
             } catch (RequestFailure failure) {
                 // Existing names/addresses win. Only an unresolved numeric input
                 // can fall back to source coordinates; ambiguity never falls back.
-                if (!failure.code.equals("procedure_not_found") || !selector.matches("0x[0-9a-fA-F]+"))
-                    throw failure;
+                if (!failure.code.equals("procedure_not_found")) throw failure;
+                // Analyzed code outside every function is still an analysis
+                // address, so it wins over a file-offset reading of the number.
+                Address requested = isExplicitReaAddress(selector) ? parseReaAddress(selector) : tryParseAddress(selector);
+                Function undefined = requested == null ? null : undefinedFunctionAt(requested, selection);
+                if (undefined != null) return undefined;
+                if (!selector.matches("0x[0-9a-fA-F]+")) throw failure;
             }
         }
         String coordinate = explicitOffset ? selector.substring(prefix.length()) : selector;
@@ -1339,11 +1537,18 @@ public final class ReaGhidraBridge extends HeadlessScript {
                 " has multiple loaded mappings: " + candidates.stream().map(ReaGhidraBridge::canonicalAddress).toList() +
                 "; select an explicit analysis address");
         if (candidates.isEmpty())
-            throw new RequestFailure("file_offset_unmapped", "File offset " + coordinate +
+            throw new RequestFailure("file_offset_unmapped",
+                (explicitOffset || !isMappedAnalysisAddress(selector) ? "" :
+                    coordinate + " is a mapped analysis address that holds no disassembled code and no procedure. Read as a file offset instead: ") +
+                "File offset " + coordinate +
                 " has no loaded source mapping for the admitted target file; Ghidra image base: " + canonicalAddress(currentProgram.getImageBase()) +
                 ". Inspect mappings with qorvex inspect-native-load-image <path> --provider ghidra --json or MCP inspect_native_load_image.");
         Address mapped = candidates.get(0);
+        // A file offset names the same location as its mapped analysis
+        // address, so it resolves the way that address does, including code
+        // outside every function.
         Function function = functionAtOrContaining(mapped);
+        if (function == null) function = undefinedFunctionAt(mapped, selection);
         if (function == null)
             throw new RequestFailure("procedure_not_found", "File offset " + coordinate +
                 " maps to analysis address " + canonicalAddress(mapped) +
@@ -1353,6 +1558,47 @@ public final class ReaGhidraBridge extends HeadlessScript {
         selection.addProperty("mapped_address", canonicalAddress(mapped));
         selection.addProperty("procedure_address", canonicalAddress(function.getEntryPoint()));
         return function;
+    }
+
+    /**
+     * Ghidra can disassemble code without creating a function for it, for
+     * example a range named only by an exception-frame entry and reached
+     * through a data reference, as `main` is in a stripped ELF. The decompiler
+     * panel reads such code through an on-the-fly UndefinedFunction, which
+     * leaves the Program unchanged; this does the same and records that the
+     * entry is inferred from control flow and absent from the inventory.
+     */
+    private Function undefinedFunctionAt(Address address, JsonObject selection) throws Exception {
+        if (!isCodeOutsideFunctions(address)) return null;
+        UndefinedFunction undefined =
+            UndefinedFunction.findFunction(currentProgram, address, monitor);
+        if (undefined == null) return null;
+        selection.addProperty("requested_address", canonicalAddress(address));
+        selection.addProperty("undefined_function_entry", canonicalAddress(undefined.getEntryPoint()));
+        return undefined;
+    }
+
+    private static final String CODE_OUTSIDE_FUNCTIONS =
+        "Ghidra disassembled code there without creating a function, so it is absent from the procedure inventory";
+
+    private boolean isCodeOutsideFunctions(Address address) {
+        return address.isMemoryAddress() &&
+            currentProgram.getListing().getInstructionContaining(address) != null &&
+            functionAtOrContaining(address) == null;
+    }
+
+    private boolean isMappedAnalysisAddress(String selector) {
+        Address address = tryParseAddress(selector);
+        return address != null && address.isMemoryAddress() && currentProgram.getMemory().contains(address);
+    }
+
+    private static String undefinedFunctionLimitation(JsonObject selection) {
+        return "No Ghidra function contains " + selection.get("requested_address").getAsString() +
+            ": Ghidra disassembled this code without creating a function, so it is absent from the procedure inventory. " +
+            "This pseudocode is Ghidra's on-the-fly decompilation from " +
+            selection.get("undefined_function_entry").getAsString() +
+            ", an entry inferred by following control flow back from the requested address. " +
+            "The entry and extent are not an analyzed function boundary, and the Program is unchanged.";
     }
 
     private boolean isTargetSource(FileBytes source) throws Exception {
@@ -1806,6 +2052,8 @@ public final class ReaGhidraBridge extends HeadlessScript {
         nameInventory = null;
         procedureInventory = null;
         procedureNameIndex = null;
+        decompileResults.clear();
+        disposeDecompileAhead();
         if (decompiler != null) decompiler.flushCache();
     }
 
@@ -3158,6 +3406,8 @@ public final class ReaGhidraBridge extends HeadlessScript {
         if (function == null)
             // Other procedure operations retain their analysis-address semantics.
             throw new RequestFailure("procedure_not_found", "No procedure exists at the requested address: " + value +
+                (isCodeOutsideFunctions(address) ? ". " + CODE_OUTSIDE_FUNCTIONS +
+                    "; procedure_pseudo_code can decompile it on the fly, and inspect_native_instruction reads its instructions" : "") +
                 "; Ghidra image base: " + canonicalAddress(currentProgram.getImageBase()) +
                 ". Choose an observed analysis address. CLI: qorvex search <path> . --kind procedures --mode regex --provider ghidra --json; " +
                 "MCP: list_procedures. Inspect the loaded base and source mappings with CLI qorvex analyze <path> --provider ghidra --json " +
@@ -4576,7 +4826,21 @@ public final class ReaGhidraBridge extends HeadlessScript {
         if (function.isExternal() || function.getBody().isEmpty()) {
             return null;
         }
-        DecompileResults results = decompiler.decompileFunction(
+        // The modification number changes with every committed Program edit,
+        // so an edit that skipped the explicit invalidation still misses.
+        DecompileCacheKey key = new DecompileCacheKey(
+            function.getEntryPoint(),
+            function instanceof UndefinedFunction,
+            currentProgram.getModificationNumber(),
+            decompileMaxPayloadMiB
+        );
+        SoftReference<DecompileResults> retained = decompileResults.get(key);
+        DecompileResults reused = retained == null ? null : retained.get();
+        if (reused != null) return reused;
+        DecompileResults results = takeDecompileAheadForeground(key);
+        // A failure or timeout read ahead for this request already spent its
+        // deadline, so it is reported rather than started again.
+        if (results == null) results = decompiler.decompileFunction(
             function,
             decompileTimeoutSeconds,
             monitor
@@ -4603,8 +4867,203 @@ public final class ReaGhidraBridge extends HeadlessScript {
                 " MiB. " + decompilePayloadRecovery()
             );
         }
+        // Only a completed decompilation is reusable; failures stay retryable.
+        decompileResults.put(key, new SoftReference<>(results));
         return results;
     }
+
+    /**
+     * Decompile the functions a workflow will ask for next with several
+     * decompiler processes and keep the completed results for those requests.
+     * The first selector is the carrying request's own function. That request
+     * waits for the window only within its own decompile deadline: siblings
+     * still running when it has its result and the deadline has passed are
+     * cancelled and left for their own requests, which report any failure as
+     * before.
+     */
+    private void decompileAhead(List<String> selectors) throws Exception {
+        clearDecompileAheadForeground();
+        if (selectors.size() < 2) return;
+        long modification = currentProgram.getModificationNumber();
+        List<Function> pending = new ArrayList<>();
+        Set<Address> seen = new HashSet<>();
+        Address foreground = null;
+        for (int index = 0; index < selectors.size(); index++) {
+            Function function;
+            try {
+                function = resolveProcedure(selectors.get(index));
+            } catch (RequestFailure unresolved) {
+                continue;
+            }
+            if (function.isExternal() || function.getBody().isEmpty() || !seen.add(function.getEntryPoint())) continue;
+            SoftReference<DecompileResults> retained = decompileResults.get(
+                new DecompileCacheKey(function.getEntryPoint(), false, modification, decompileMaxPayloadMiB));
+            if (retained != null && retained.get() != null) continue;
+            if (index == 0) foreground = function.getEntryPoint();
+            pending.add(function);
+        }
+        if (pending.size() < 2) return;
+        Integer payloadMiB = decompileMaxPayloadMiB;
+        synchronized (decompileAheadLock) {
+            if (decompileAheadIdleRelease != null) decompileAheadIdleRelease.cancel(false);
+            if (decompileAheadThreads == null) {
+                decompileAheadThreads = GThreadPool.getPrivateThreadPool("QORVEX decompile read-ahead");
+                // Each worker is a native decompiler process with its own view
+                // of the Program, so the worker count bounds memory as well as
+                // CPU. Fixed: it shapes how the same results are produced, never
+                // what a caller observes, and the host's processor count caps it.
+                decompileAheadThreads.setMaxThreadCount(
+                    Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), DECOMPILE_AHEAD_WORKERS)));
+            }
+            if (decompileAheadWorkers == null) {
+                decompileAheadWorkers = new DecompilerCallback<>(currentProgram, prepared -> {
+                    prepared.setOptions(decompileOptions(payloadMiB));
+                    prepared.toggleCCode(true);
+                    prepared.toggleSyntaxTree(true);
+                    prepared.toggleJumpLoads(true);
+                }) {
+                    @Override
+                    public DecompileResults process(DecompileResults results, TaskMonitor taskMonitor) {
+                        return results;
+                    }
+                };
+            }
+            decompileAheadWorkers.setTimeout(decompileTimeoutSeconds);
+            try {
+                for (DecompileResults results : decompileWindow(pending, foreground)) {
+                    Address entry = results.getFunction().getEntryPoint();
+                    DecompileCacheKey key = new DecompileCacheKey(entry, false, modification, payloadMiB);
+                    if (entry.equals(foreground)) {
+                        decompileAheadForegroundKey = key;
+                        decompileAheadForeground = results;
+                    }
+                    if (results.decompileCompleted() && !results.isCancelled() && !results.isTimedOut())
+                        decompileResults.put(key, new SoftReference<>(results));
+                }
+            }
+            finally {
+                decompileAheadIdleRelease = decompileAheadReaper.schedule(
+                    this::releaseIdleDecompileAhead, DECOMPILE_AHEAD_IDLE_MILLIS,
+                    TimeUnit.MILLISECONDS);
+            }
+        }
+        monitor.checkCancelled();
+    }
+
+    /**
+     * Run one window and return the results that finished. With a configured
+     * deadline the wait ends once the foreground function has its result
+     * (its native deadline bounds that) and the deadline has elapsed.
+     */
+    private List<DecompileResults> decompileWindow(List<Function> pending, Address foreground) throws Exception {
+        ConcurrentQ<Function, DecompileResults> queue = new ConcurrentQBuilder<Function, DecompileResults>()
+            .setCollectResults(true)
+            .setThreadPool(decompileAheadThreads)
+            .setMonitor(monitor)
+            .build(decompileAheadWorkers);
+        List<DecompileResults> finished = new ArrayList<>();
+        try {
+            queue.add(pending);
+            if (decompileTimeoutSeconds == 0) {
+                collectDecompileResults(queue.waitForResults(), finished);
+                return finished;
+            }
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(decompileTimeoutSeconds);
+            boolean foregroundDone = foreground == null;
+            while (!queue.isEmpty()) {
+                long remaining = deadline - System.nanoTime();
+                if (foregroundDone && remaining <= 0) break;
+                // Past the deadline only the foreground's own native deadline
+                // is still running, so poll briefly until it reports.
+                long wait = remaining > 0 ? remaining : TimeUnit.MILLISECONDS.toNanos(50);
+                for (DecompileResults results : collectDecompileResults(
+                        queue.waitForResults(wait, TimeUnit.NANOSECONDS), finished))
+                    if (results.getFunction().getEntryPoint().equals(foreground)) foregroundDone = true;
+            }
+            // Cancellation reaches each sibling's decompiler through its task
+            // monitor. Results that finished meanwhile are kept; cancelled
+            // ones stay uncached for their own requests.
+            if (!queue.isEmpty()) queue.cancelAllTasks(false);
+            collectDecompileResults(queue.waitForResults(), finished);
+            return finished;
+        }
+        finally {
+            queue.dispose();
+        }
+    }
+
+    private static List<DecompileResults> collectDecompileResults(
+        Collection<QResult<Function, DecompileResults>> results,
+        List<DecompileResults> finished
+    ) {
+        List<DecompileResults> added = new ArrayList<>();
+        for (QResult<Function, DecompileResults> result : results) {
+            if (result.hasError() || result.isCancelled()) continue;
+            DecompileResults value;
+            try {
+                value = result.getResult();
+            } catch (Exception unavailable) {
+                continue;
+            }
+            if (value == null || value.isCancelled() || value.getFunction() == null) continue;
+            added.add(value);
+        }
+        finished.addAll(added);
+        return added;
+    }
+
+    private DecompileResults takeDecompileAheadForeground(DecompileCacheKey key) {
+        DecompileResults results = key.equals(decompileAheadForegroundKey) ? decompileAheadForeground : null;
+        clearDecompileAheadForeground();
+        return results;
+    }
+
+    private void clearDecompileAheadForeground() {
+        decompileAheadForegroundKey = null;
+        decompileAheadForeground = null;
+    }
+
+    private void releaseIdleDecompileAhead() {
+        synchronized (decompileAheadLock) {
+            if (decompileAheadWorkers == null) return;
+            decompileAheadWorkers.dispose();
+            decompileAheadWorkers = null;
+            decompileAheadIdleRelease = null;
+        }
+    }
+
+    /**
+     * Pooled decompilers hold native state for the Program and options they
+     * opened with, so an edit, an option change or shutdown releases them.
+     */
+    private void disposeDecompileAhead() {
+        clearDecompileAheadForeground();
+        synchronized (decompileAheadLock) {
+            if (decompileAheadIdleRelease != null) decompileAheadIdleRelease.cancel(false);
+            decompileAheadIdleRelease = null;
+            if (decompileAheadWorkers == null) return;
+            decompileAheadWorkers.dispose();
+            decompileAheadWorkers = null;
+        }
+    }
+
+    /**
+     * The function whose body the decompilation covers. Ghidra's decompile
+     * callback widens an UndefinedFunction's body to the code it followed, so
+     * a reused result keeps the widened function; a fresh lookup of the same
+     * entry covers only that entry.
+     */
+    private static Function decompiledFunction(Function requested, DecompileResults results) {
+        return results == null || results.getFunction() == null ? requested : results.getFunction();
+    }
+
+    /** Every input a completed decompilation of one Program state depends on. */
+    private record DecompileCacheKey(
+        Address entry,
+        boolean undefinedFunction,
+        long programModification,
+        Integer maxPayloadMiB
+    ) {}
 
     private String decompilePayloadRecovery() {
         int effective = decompiler.getOptions().getMaxPayloadMBytes();
@@ -6421,12 +6880,18 @@ public final class ReaGhidraBridge extends HeadlessScript {
             keys.add("value_flow_limits");
         if (parsed.isJsonObject() && parsed.getAsJsonObject().has("decompile_max_payload_mib"))
             keys.add("decompile_max_payload_mib");
+        if (parsed.isJsonObject() && parsed.getAsJsonObject().has("decompile_read_ahead"))
+            keys.add("decompile_read_ahead");
         JsonObject object = requireObject(parsed, keys);
-        Integer payloadMiB = null;
-        if (object.has("decompile_max_payload_mib") && !object.get("decompile_max_payload_mib").isJsonNull()) {
-            payloadMiB = requireInteger(object, "decompile_max_payload_mib");
-            if (payloadMiB < 1 || payloadMiB > MAX_DECOMPILE_PAYLOAD_MIB)
-                throw new IllegalArgumentException("Invalid per-request native decompiler payload limit");
+        DecompilePayload payload = null;
+        if (object.has("decompile_max_payload_mib")) {
+            Integer payloadMiB = null;
+            if (!object.get("decompile_max_payload_mib").isJsonNull()) {
+                payloadMiB = requireInteger(object, "decompile_max_payload_mib");
+                if (payloadMiB < 1 || payloadMiB > MAX_DECOMPILE_PAYLOAD_MIB)
+                    throw new IllegalArgumentException("Invalid per-request native decompiler payload limit");
+            }
+            payload = new DecompilePayload(payloadMiB);
         }
         ValueFlowLimits flowLimits = defaultValueFlowLimits();
         if (object.has("value_flow_limits")) {
@@ -6454,7 +6919,20 @@ public final class ReaGhidraBridge extends HeadlessScript {
         if (params == null || !params.isJsonObject()) {
             throw new IllegalArgumentException("Bridge request parameters are invalid");
         }
-        return new Request(id, requireString(object, "method"), params.getAsJsonObject(), timeout, payloadMiB, flowLimits);
+        List<String> readAhead = new ArrayList<>();
+        if (object.has("decompile_read_ahead")) {
+            JsonElement selectors = object.get("decompile_read_ahead");
+            if (!selectors.isJsonArray())
+                throw new IllegalArgumentException("Invalid decompile read-ahead");
+            for (JsonElement selector : selectors.getAsJsonArray()) {
+                if (!selector.isJsonPrimitive() || !selector.getAsJsonPrimitive().isString())
+                    throw new IllegalArgumentException("Invalid decompile read-ahead");
+                // The hint is advisory: selectors past one window are ignored.
+                if (readAhead.size() < DECOMPILE_AHEAD_WINDOW) readAhead.add(selector.getAsString());
+            }
+        }
+        return new Request(id, requireString(object, "method"), params.getAsJsonObject(), timeout, payload, flowLimits,
+            List.copyOf(readAhead));
     }
 
     private static JsonObject requireObject(JsonElement element, Set<String> keys) {
@@ -6959,7 +7437,15 @@ public final class ReaGhidraBridge extends HeadlessScript {
         return new ValueFlowLimits(DEFAULT_HIGH_PCODE_OPS, DEFAULT_HIGH_PCODE_INPUTS_PER_OP, DEFAULT_HIGH_PCODE_DEF_USE_EDGES);
     }
     private record ValueFlowLimits(int maxOperations, int maxInputsPerOperation, int maxEdges) {}
-    private record Request(int id, String method, JsonObject params, Integer decompileTimeoutSeconds, Integer decompileMaxPayloadMiB, ValueFlowLimits valueFlowLimits) {}
+    /**
+     * A request's decompiler payload selection. A null selection means the
+     * request carried no decompiler options; a null limit inside one selects
+     * the installed Ghidra default.
+     */
+    private record DecompilePayload(Integer mebibytes) {}
+
+    private record Request(int id, String method, JsonObject params, Integer decompileTimeoutSeconds, DecompilePayload decompilePayload, ValueFlowLimits valueFlowLimits,
+        List<String> decompileReadAhead) {}
 
     private static final class RequestFailure extends RuntimeException {
         private final String code;

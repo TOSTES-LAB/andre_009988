@@ -45,6 +45,14 @@ export const NUMERIC_LIMIT_REGISTRY = [
       "Caps how many debugger sessions the session manager created at startup will admit. Changing the pool size of a manager that already exists requires a new QORVEX process.",
   },
   {
+    name: "QORVEX_GHIDRA_CANCEL_GRACE_MS",
+    update_mode: "restart",
+    policy: "restart-only",
+    read: "startup",
+    reason:
+      "Parsed once when QORVEX starts and fixed for each Ghidra session when its request queue is constructed. It bounds how long a cancelled read may take to answer before that session is closed, so a session keeps the grace it opened with.",
+  },
+  {
     name: "QORVEX_HOPPER_DEMO_DIALOG_TIMEOUT_MS",
     update_mode: "restart",
     policy: "restart-only",

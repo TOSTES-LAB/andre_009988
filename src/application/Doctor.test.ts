@@ -173,6 +173,7 @@ describe("doctor native analysis configuration", () => {
     ["QORVEX_MCP_FIRST_CATALOG_BUDGET_MS", "0"],
     ["QORVEX_MCP_DOCTOR_DEADLINE_MS", "0"],
     ["QORVEX_GHIDRA_STARTUP_TIMEOUT_MS", "abc"],
+    ["QORVEX_GHIDRA_CANCEL_GRACE_MS", "99"],
     ["QORVEX_SWIFTC_COMPILE_TIMEOUT_MS", "0"],
     ["QORVEX_LOG_LEVEL", "verbose"],
     ["QORVEX_GHIDRA_COMPILER_SPEC_ID", "gcc"],
