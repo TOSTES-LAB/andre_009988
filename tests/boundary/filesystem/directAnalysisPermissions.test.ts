@@ -1,10 +1,8 @@
 import { projectCliAnalysisResult } from "../../../src/cli/projectCliAnalysisResult.js";
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
+import { createStubHopperProject } from "../../fixtures/hopperProjectFile.js";
 import { createDirectAnalysis } from "../../../src/composition/directAnalysis.js";
 
 afterEach(() => {
@@ -13,9 +11,7 @@ afterEach(() => {
 
 describe("direct analysis snapshot files", () => {
   it("forwards the CLI provider selector ahead of the environment preference", async () => {
-    const directory = await createTestTempDirectory("qorvex-direct-provider-");
-    const targetPath = join(directory, "fixture.hop");
-    await writeFile(targetPath, "fixture");
+    const targetPath = await createStubHopperProject("qorvex-direct-provider-");
     vi.stubEnv("HOPPER_LAUNCHER_PATH", process.execPath);
     vi.stubEnv("QORVEX_ANALYSIS_PROVIDER", "environment-provider");
 
