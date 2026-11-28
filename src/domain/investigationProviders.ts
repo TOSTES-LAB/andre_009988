@@ -233,6 +233,12 @@ export const PE_UNWIND_RANGES_PROVIDER = Object.freeze({
   version: "1",
 } as const);
 
+export const MACHO_FUNCTION_STARTS_PROVIDER = Object.freeze({
+  id: "qorvex-macho-function-starts",
+  name: "QORVEX Mach-O function-start parser",
+  version: "1",
+} as const);
+
 export const PE_LOAD_CONFIG_PROVIDER = Object.freeze({
   id: "qorvex-pe-load-config",
   name: "QORVEX PE TLS/load-config parser",
@@ -257,5 +263,17 @@ export const RELEASE_EXPOSURE_PROVIDER = Object.freeze({
 export const BINARY_HARDENING_PROVIDER = Object.freeze({
   id: "qorvex-binary-hardening",
   name: "QORVEX binary hardening parser",
+  version: "1",
+} as const);
+
+export const ESP_NVS_PROVIDER = Object.freeze({
+  id: "qorvex-esp-nvs",
+  name: "QORVEX ESP-IDF NVS partition decoder",
+  version: "1",
+} as const);
+
+export const FIRMWARE_VECTOR_TABLE_PROVIDER = Object.freeze({
+  id: "qorvex-firmware-vector-table",
+  name: "QORVEX firmware vector table decoder",
   version: "1",
 } as const);
