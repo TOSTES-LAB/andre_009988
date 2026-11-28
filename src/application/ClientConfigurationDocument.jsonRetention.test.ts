@@ -151,3 +151,59 @@ it("keeps native JSON separators valid across replaced and emptied collections",
   if (!result.ok) throw new Error("collection edit refused");
   expect(JSON.parse(result.value).mcpServers.qorvex).toEqual(qorvex);
 });
+
+const removeRea = (source: string, format: ClientConfigurationFormat) => {
+  const parsed = expectResultValue(parseClientConfiguration(source, format));
+  const { qorvex: _removed, ...servers } = parsed.servers;
+  const result = serializeClientConfiguration(
+    withClientServers(parsed, servers, HOST_PLATFORM.platform),
+    format,
+    source,
+    [clientServerPath(parsed, "qorvex")],
+  );
+  if (!result.ok) throw new Error("registration removal refused");
+  return result.value;
+};
+
+it.each([
+  [
+    "last",
+    `{\n  "mcpServers": {\n    "other": {\n      "command": "foo"\n    },\n    "qorvex": {\n      "command": "qorvex"\n    }\n  },\n  "theme": "dark"\n}\n`,
+    `{\n  "mcpServers": {\n    "other": {\n      "command": "foo"\n    }\n  },\n  "theme": "dark"\n}\n`,
+  ],
+  [
+    "first",
+    `{\n  "mcpServers": {\n    "qorvex": {\n      "command": "qorvex"\n    },\n    "other": {\n      "command": "foo"\n    }\n  }\n}\n`,
+    `{\n  "mcpServers": {\n    "other": {\n      "command": "foo"\n    }\n  }\n}\n`,
+  ],
+  [
+    "only",
+    `{\n  "mcpServers": {\n    "qorvex": {\n      "command": "qorvex"\n    }\n  }\n}\n`,
+    `{\n  "mcpServers": {}\n}\n`,
+  ],
+  [
+    "only trailing-comma",
+    `{"mcpServers":{\n  "qorvex":{},\n}}`,
+    `{"mcpServers":{}}`,
+  ],
+  [
+    "single-line",
+    `{"mcpServers":{"other":{"command":"foo"}, "qorvex":{"command":"qorvex"}}}`,
+    `{"mcpServers":{"other":{"command":"foo"}}}`,
+  ],
+] as const)(
+  "removes the %s registration without leaving its indentation",
+  (_position, source, expected) => {
+    expect(removeRea(source, "json")).toBe(expected);
+  },
+);
+
+it("keeps the source gap when a comment precedes the removed registration", () => {
+  const source = `{\n  "mcpServers": {\n    "other": { "command": "foo" },\n    // QORVEX\n    "qorvex": { "command": "qorvex" }\n  }\n}\n`;
+  const removed = removeRea(source, "json");
+  expect(removed).toContain(`"other": { "command": "foo" }\n    // QORVEX\n`);
+  expect(removed).not.toContain('"qorvex"');
+  expect(
+    expectResultValue(parseClientConfiguration(removed, "json")).servers,
+  ).toEqual({ other: { command: "foo" } });
+});
